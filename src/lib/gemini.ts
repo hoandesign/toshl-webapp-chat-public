@@ -65,8 +65,8 @@ export async function processUserRequestViaGemini( // Renamed function
         throw new Error(STRINGS.TOSHL_ACCOUNTS_REQUIRED);
     }
 
-
-    const prompt = constructGeminiPrompt(
+    // Construct prompt parts, including dynamic time info
+    const { systemInstructions, dynamicContext, currentTime, today } = constructGeminiPrompt(
         categories,
         tags,
         accounts,
@@ -74,7 +74,7 @@ export async function processUserRequestViaGemini( // Renamed function
         userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
         lastShowContext,
         lastSuccessfulEntryId
-    ); // 'prompt' now holds { systemInstructions: string; dynamicContext: string }
+    );
 
     const endpoint = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
 
@@ -84,14 +84,15 @@ export async function processUserRequestViaGemini( // Renamed function
     if (!cacheName) {
         console.log('[Cache Check] promptCacheName is null or empty, attempting to create a new cache.'); // Add diagnostic log
         try {
+            // Cache only the static instructions and context, NOT the time info
             const cache = await createGeminiCache(apiKey, {
                 model,
                 config: {
                     contents: [
-                        { role: 'user', parts: [{ text: prompt.systemInstructions }] },
-                        { role: 'user', parts: [{ text: prompt.dynamicContext }] }
+                        { role: 'user', parts: [{ text: systemInstructions }] },
+                        { role: 'user', parts: [{ text: dynamicContext }] }
                     ],
-                    ttl: '3600s'
+                    ttl: '3600s' // Keep the 1-hour TTL
                 }
             });
             cacheName = cache.name;
@@ -101,19 +102,27 @@ export async function processUserRequestViaGemini( // Renamed function
         }
     }
 
-    // Build the request contents, skipping static prompt if cached
+    // Build the request contents array
     const contents: GeminiGenerateContentRequest['contents'] = [];
+
+    // Add static parts ONLY if not using cache
     if (!cacheName) {
-        if (prompt.systemInstructions) {
-            contents.push({ role: 'user', parts: [{ text: prompt.systemInstructions }] });
+        if (systemInstructions) {
+            contents.push({ role: 'user', parts: [{ text: systemInstructions }] });
         }
-        if (prompt.dynamicContext) {
-            contents.push({ role: 'user', parts: [{ text: prompt.dynamicContext }] });
+        if (dynamicContext) {
+            contents.push({ role: 'user', parts: [{ text: dynamicContext }] });
         }
     }
-    // Model acknowledgment
+
+    // Model acknowledgment (always included, not cached)
     contents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
-    // Chat history
+
+    // Add dynamic time context (always included, not cached)
+    const timeContextMessage = `Current time context: ${currentTime} on ${today} (${userTimezone}).`;
+    contents.push({ role: 'user', parts: [{ text: timeContextMessage }] });
+
+    // Add Chat history (always included, not cached)
     chatHistory.forEach(msg => {
         contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
     });
@@ -158,16 +167,18 @@ export async function processUserRequestViaGemini( // Renamed function
                 console.warn(`Gemini cache error detected (Cache Name: ${requestBody.cachedContent}). Clearing local cache reference and retrying with full prompt...`);
                 promptCacheName = null; // Clear the module-level cache name
 
-                // Rebuild contents WITH static prompt parts
+                // Rebuild contents WITH static prompt parts for retry
                 const retryContents: GeminiGenerateContentRequest['contents'] = [];
-                if (prompt.systemInstructions) {
-                    retryContents.push({ role: 'user', parts: [{ text: prompt.systemInstructions }] });
+                if (systemInstructions) {
+                    retryContents.push({ role: 'user', parts: [{ text: systemInstructions }] });
                 }
-                if (prompt.dynamicContext) {
-                    retryContents.push({ role: 'user', parts: [{ text: prompt.dynamicContext }] });
+                if (dynamicContext) {
+                    retryContents.push({ role: 'user', parts: [{ text: dynamicContext }] });
                 }
                 // Model acknowledgment
                 retryContents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
+                // Add dynamic time context again for retry
+                retryContents.push({ role: 'user', parts: [{ text: timeContextMessage }] });
                 // Chat history
                 chatHistory.forEach(msg => {
                     retryContents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });

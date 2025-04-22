@@ -15,7 +15,7 @@ import promptTemplateRaw from '../gemini_prompt.txt?raw';
  * @param chatHistory - Recent chat history for context.
  * @param lastShowContext - Filters and header from the previous 'show' action, if any.
  * @param lastSuccessfulEntryId - The ID of the last entry successfully added/edited.
- * @returns An object containing the system instructions and dynamic context parts of the prompt.
+ * @returns An object containing system instructions, dynamic context, current time, and today's date.
  */
 export function constructGeminiPrompt(
     // userMessage: string, // No longer used here
@@ -27,7 +27,7 @@ export function constructGeminiPrompt(
     // chatHistory: GeminiChatMessage[], // No longer used here
     lastShowContext?: { filters: GeminiShowFilters, headerText: string },
     lastSuccessfulEntryId?: string
-): { systemInstructions: string; dynamicContext: string } { // Updated return type
+): { systemInstructions: string; dynamicContext: string; currentTime: string; today: string; } { // Updated return type
     // Prepare lists of names and IDs for the prompt, separated by type
     const incomeCategories = categories.filter(c => c.type === STRINGS.INCOME_TYPE_FILTER);
     const expenseCategories = categories.filter(c => c.type === STRINGS.EXPENSE_TYPE_FILTER);
@@ -100,8 +100,9 @@ export function constructGeminiPrompt(
     // Remove potential initial comment/export lines from raw text
     promptText = promptText.replace(/^\/\/.*?\n/, '').replace(/^export const.*?=\s*`\n?/, '').replace(/`;\s*$/, '');
 
-    promptText = promptText.replace(/{{currentTime}}/g, currentTime);
-    promptText = promptText.replace(/{{today}}/g, today);
+    // DO NOT replace currentTime and today here - they will be sent dynamically
+    // promptText = promptText.replace(/{{currentTime}}/g, currentTime);
+    // promptText = promptText.replace(/{{today}}/g, today);
     promptText = promptText.replace(/{{userTimezone}}/g, userTimezone);
     // promptText = promptText.replace(/{{userMessage}}/g, userMessage); // REMOVED - Will be added as a separate turn
     promptText = promptText.replace(/{{incomeCategoryList}}/g, incomeCategoryList);
@@ -141,14 +142,14 @@ export function constructGeminiPrompt(
 
     if (parts.length !== 2) {
         console.warn("Could not split Gemini prompt template at the expected marker. Sending as a single block.");
-        // Fallback: return the whole prompt as context, empty instructions
-        return { systemInstructions: "", dynamicContext: promptText };
+        // Fallback: return the whole prompt as context, empty instructions, plus time info
+        return { systemInstructions: "", dynamicContext: promptText, currentTime, today };
     }
 
     const systemInstructionsPart = parts[0].trim();
     // Re-add the marker and the rest of the content to the dynamic part
     const dynamicContextPart = (splitMarker + parts[1]).trim();
 
-    // Return the two parts
-    return { systemInstructions: systemInstructionsPart, dynamicContext: dynamicContextPart };
+    // Return the parts along with the dynamic time info
+    return { systemInstructions: systemInstructionsPart, dynamicContext: dynamicContextPart, currentTime, today };
 }
