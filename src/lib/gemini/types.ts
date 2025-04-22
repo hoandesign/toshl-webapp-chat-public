@@ -94,7 +94,8 @@ export interface GeminiGenerationConfig {
 
 export interface GeminiGenerateContentRequest {
     contents: GeminiContentTurn[];
-    generationConfig?: GeminiGenerationConfig; // Add the optional generationConfig property
+    generationConfig?: GeminiGenerationConfig; 
+    cachedContent?: string; // Optional reference to context cache
     // safetySettings can also be added
 }
 
@@ -134,4 +135,56 @@ export interface GeminiErrorResponse {
         status: string;
         details?: GeminiErrorDetail[];
     }
+}
+
+// --- Context Caching Types ---
+/**
+ * Metadata about cached tokens usage.
+ */
+export interface GeminiCacheUsageMetadata {
+    cachedTokenCount: number;
+}
+
+/**
+ * Represents a context cache resource.
+ */
+export interface GeminiCache {
+    name: string;
+    model: string;
+    displayName?: string;
+    usageMetadata: GeminiCacheUsageMetadata;
+    createTime: string;
+    updateTime: string;
+    expireTime: string;
+}
+
+/**
+ * Response for listing caches.
+ */
+export interface GeminiListCachesResponse {
+    caches: GeminiCache[];
+    nextPageToken?: string;
+}
+
+/**
+ * Request body for creating a cache.
+ */
+export interface GeminiCreateCacheRequest {
+    model: string;
+    config: {
+        contents: GeminiContentTurn[];
+        systemInstruction?: string;
+        ttl?: string;
+    };
+}
+
+/**
+ * Request body for updating cache TTL or expireTime.
+ */
+export interface GeminiUpdateCacheRequest {
+    name: string;
+    config: {
+        ttl?: string;
+        expireTime?: string;
+    };
 }

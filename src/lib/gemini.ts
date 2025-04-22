@@ -6,14 +6,22 @@ import {
     GeminiResponseAction,
     GeminiGenerateContentRequest,
     GeminiGenerateContentResponse,
-    GeminiErrorResponse
+    GeminiErrorResponse,
+    GeminiCache,
+    GeminiListCachesResponse,
+    GeminiCreateCacheRequest,
+    GeminiUpdateCacheRequest
 } from './gemini/types';
+
 // Import the prompt construction function
 import { constructGeminiPrompt } from './gemini/prompt';
 import * as STRINGS from '../constants/strings'; // Import constants
 
 // Base URL might vary slightly depending on the exact API version and region
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+
+// Cache storage for static prompt content
+let promptCacheName: string | null = null;
 
 /**
  * Calls the Gemini API to process the user's request.
@@ -59,58 +67,65 @@ export async function processUserRequestViaGemini( // Renamed function
 
 
     const prompt = constructGeminiPrompt(
-        // userMessage, // Removed argument
         categories,
         tags,
         accounts,
         defaultCurrency,
-        userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone, // Use system TZ if not provided
-        // chatHistory, // Removed argument
-        lastShowContext, // Pass last show context
-        lastSuccessfulEntryId // Pass last entry ID
+        userTimezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+        lastShowContext,
+        lastSuccessfulEntryId
     ); // 'prompt' now holds { systemInstructions: string; dynamicContext: string }
 
     const endpoint = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
 
-    // --- Build the new contents structure ---
-    const contents: GeminiGenerateContentRequest['contents'] = [];
-
-    // 1. System Instructions (User Role)
-    if (prompt.systemInstructions) { // Check if not empty
-        contents.push({ role: 'user', parts: [{ text: prompt.systemInstructions }] });
-    }
-
-    // 2. Dynamic Context (User Role - without user message/history embedded)
-    if (prompt.dynamicContext) { // Check if not empty
-        contents.push({ role: 'user', parts: [{ text: prompt.dynamicContext }] });
-    }
-
-    // 3. Model Acknowledgment (Model Role)
-    contents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
-
-    // 4. Chat History (Alternating User/Model Roles)
-    chatHistory.forEach(msg => {
-        contents.push({
-            role: msg.sender === 'user' ? 'user' : 'model', // Map 'bot' to 'model'
-            parts: [{ text: msg.text }]
-        });
-    });
-
-    // 5. Latest User Message (User Role)
-    contents.push({ role: 'user', parts: [{ text: userMessage }] });
-    // --- End building contents structure ---
-
-
-    // Structure the request body
-    const requestBody: GeminiGenerateContentRequest = {
-        contents: contents, // Use the newly built contents array
-        // Generation Config to control creativity and output format
-        generationConfig: {
-            // responseMimeType: "application/json", // Enforce JSON - uncomment if model supports & desired
-            temperature: 0.7, // Increase creativity/randomness (0.0 = deterministic, 1.0 = max random)
-            topK: 40,         // Consider top K most likely tokens at each step
-            // topP: 0.95,    // Alternative/additional sampling method (nucleus sampling)
+    // --- Context Caching: cache static prompt instructions & context ---
+    let cacheName = promptCacheName;
+    if (!cacheName) {
+        try {
+            const cache = await createGeminiCache(apiKey, {
+                model,
+                config: {
+                    contents: [
+                        { role: 'user', parts: [{ text: prompt.systemInstructions }] },
+                        { role: 'user', parts: [{ text: prompt.dynamicContext }] }
+                    ],
+                    ttl: '3600s'
+                }
+            });
+            cacheName = cache.name;
+            promptCacheName = cacheName;
+        } catch (e) {
+            console.warn('Prompt cache creation failed, proceeding without cache', e);
         }
+    }
+
+    // Build the request contents, skipping static prompt if cached
+    const contents: GeminiGenerateContentRequest['contents'] = [];
+    if (!cacheName) {
+        if (prompt.systemInstructions) {
+            contents.push({ role: 'user', parts: [{ text: prompt.systemInstructions }] });
+        }
+        if (prompt.dynamicContext) {
+            contents.push({ role: 'user', parts: [{ text: prompt.dynamicContext }] });
+        }
+    }
+    // Model acknowledgment
+    contents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
+    // Chat history
+    chatHistory.forEach(msg => {
+        contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+    });
+    // Latest user message
+    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+    // Structure request body with optional cache reference
+    const requestBody: GeminiGenerateContentRequest = {
+        contents,
+        generationConfig: {
+            temperature: 0.7,
+            topK: 40,
+        },
+        ...(cacheName ? { cachedContent: cacheName } : {})
     };
 
     console.log('Sending request to Gemini API...');
@@ -254,4 +269,89 @@ export async function processUserRequestViaGemini( // Renamed function
         console.error('Error calling or processing Gemini API response:', error);
         throw error; // Re-throw the error
     }
+}
+
+// --- Context Caching API Functions ---
+
+/**
+ * List all available context caches.
+ */
+export async function listGeminiCaches(
+  apiKey: string,
+  pageSize?: number,
+  pageToken?: string
+): Promise<GeminiListCachesResponse> {
+  const url = new URL('https://generativelanguage.googleapis.com/v1beta/cachedContents');
+  url.searchParams.append('key', apiKey);
+  if (pageSize !== undefined) url.searchParams.append('pageSize', pageSize.toString());
+  if (pageToken) url.searchParams.append('pageToken', pageToken);
+  const response = await fetch(url.toString());
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Error listing caches: ${data.error?.message || response.status}`);
+  return data as GeminiListCachesResponse;
+}
+
+/**
+ * Create a new context cache.
+ */
+export async function createGeminiCache(
+  apiKey: string,
+  request: GeminiCreateCacheRequest
+): Promise<GeminiCache> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${apiKey}`;
+  // Normalize model name to required format
+  const modelName = request.model.startsWith('models/') ? request.model : `models/${request.model}`;
+  const body: any = {
+    model: modelName,
+    contents: request.config.contents,
+  };
+  if (request.config.systemInstruction) {
+    body.systemInstruction = { text: request.config.systemInstruction };
+  }
+  if (request.config.ttl) {
+    body.ttl = request.config.ttl;
+  }
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Error creating cache: ${data.error?.message || response.status}`);
+  return data as GeminiCache;
+}
+
+/**
+ * Update TTL or expireTime of an existing context cache.
+ */
+export async function updateGeminiCache(
+  apiKey: string,
+  request: GeminiUpdateCacheRequest
+): Promise<GeminiCache> {
+  const { name, config } = request;
+  const updateMask = Object.keys(config).map(k => `config.${k}`).join(',');
+  const url = `https://generativelanguage.googleapis.com/v1beta/${name}?updateMask=${updateMask}&key=${apiKey}`;
+  const response = await fetch(url, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ config }),
+  });
+  const data = await response.json();
+  if (!response.ok) throw new Error(`Error updating cache: ${data.error?.message || response.status}`);
+  return data as GeminiCache;
+}
+
+/**
+ * Delete a context cache.
+ */
+export async function deleteGeminiCache(
+  apiKey: string,
+  name: string
+): Promise<void> {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/${name}?key=${apiKey}`;
+  const response = await fetch(endpoint, { method: 'DELETE' });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(`Error deleting cache: ${error.error?.message || response.status}`);
+  }
 }

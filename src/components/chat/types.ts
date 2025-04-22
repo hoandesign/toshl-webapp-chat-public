@@ -1,4 +1,10 @@
 import { ToshlBudget } from '../../lib/toshl'; // Import budget type
+import type {
+  GeminiCache,
+  GeminiListCachesResponse,
+  GeminiCreateCacheRequest,
+  GeminiUpdateCacheRequest
+} from '../../lib/gemini/types';
 
 // Define structure for entry data to be used in cards
 export interface EntryCardData {
@@ -34,11 +40,30 @@ export interface Message {
   id: string;
   text?: string; // Optional for structured messages
   sender: 'user' | 'system' | 'bot';
-  // Added 'account_balance', 'account_balance_see_more', and 'budget_card' types
-  type?: 'text' | 'entry_success' | 'entry_edit_success' | 'history_entry' | 'history_header' | 'error' | 'loading' | 'system_info' | 'history_see_more' | 'account_balance' | 'account_balance_see_more' | 'budget_card' | 'budget_header'; // Added budget_card and budget_header
+  // Added budget_card, budget_header, and context caching message types
+  type?:
+    | 'text'
+    | 'entry_success'
+    | 'entry_edit_success'
+    | 'history_entry'
+    | 'history_header'
+    | 'error'
+    | 'loading'
+    | 'system_info'
+    | 'history_see_more'
+    | 'account_balance'
+    | 'account_balance_see_more'
+    | 'budget_card'
+    | 'budget_header'
+    | 'cache_list'
+    | 'cache_created'
+    | 'cache_updated'
+    | 'cache_deleted';
   entryData?: EntryCardData; // Structured data for single entry cards
   accountBalanceData?: AccountBalanceCardData; // Re-added single card data field
   budgetData?: ToshlBudget; // Data for a single budget card
+  cacheListData?: GeminiCache[]; // For 'cache_list'
+  cacheData?: GeminiCache;     // For create/update/delete
   // accountBalanceCarouselData?: AccountBalanceCardData[]; // Removed carousel data field
   fullEntryData?: EntryCardData[]; // Optional, only for 'history_see_more' type
   fullAccountBalanceData?: AccountBalanceCardData[]; // Optional, only for 'account_balance_see_more' type
@@ -53,6 +78,11 @@ export interface ChatInterfaceProps {
   isSettingsOpen: boolean; // Receive state from parent
   toggleSettings: () => void; // Receive toggle function from parent
   hideNumbers: boolean; // Add hideNumbers prop
+  // Context caching handlers
+  listCaches?: (pageSize?: number, pageToken?: string) => Promise<GeminiListCachesResponse>;
+  createCache?: (request: GeminiCreateCacheRequest) => Promise<GeminiCache>;
+  updateCache?: (request: GeminiUpdateCacheRequest) => Promise<GeminiCache>;
+  deleteCache?: (name: string) => Promise<void>;
 }
 
 // Define structure for mention suggestions
