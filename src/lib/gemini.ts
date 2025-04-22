@@ -134,7 +134,7 @@ export async function processUserRequestViaGemini( // Renamed function
     console.log('Gemini Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
 
     try {
-        const response = await fetch(endpoint, {
+        let response = await fetch(endpoint, { // Use let for potential reassignment on retry
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
@@ -142,15 +142,78 @@ export async function processUserRequestViaGemini( // Renamed function
             body: JSON.stringify(requestBody),
         });
 
-        const responseData = await response.json();
+        let responseData = await response.json(); // Use let for potential reassignment on retry
 
         if (!response.ok) {
             const errorResponse = responseData as GeminiErrorResponse;
+            const errorMessage = errorResponse?.error?.message || `HTTP error! status: ${response.status}`;
             console.error('Gemini API Error Response:', JSON.stringify(errorResponse, null, 2));
-            const message = errorResponse?.error?.message || `HTTP error! status: ${response.status}`;
-            throw new Error(STRINGS.GEMINI_API_ERROR(message));
+
+            // Check if it's a cache-related error AND if we actually tried to use the cache
+            // Using a simple regex check - adjust keywords based on actual Gemini error messages if needed
+            const isCacheError = /cached content|invalid cache/i.test(errorMessage);
+            const usedCache = !!requestBody.cachedContent; // Check if cachedContent was in the initial request
+
+            if (isCacheError && usedCache) {
+                console.warn(`Gemini cache error detected (Cache Name: ${requestBody.cachedContent}). Clearing local cache reference and retrying with full prompt...`);
+                promptCacheName = null; // Clear the module-level cache name
+
+                // Rebuild contents WITH static prompt parts
+                const retryContents: GeminiGenerateContentRequest['contents'] = [];
+                if (prompt.systemInstructions) {
+                    retryContents.push({ role: 'user', parts: [{ text: prompt.systemInstructions }] });
+                }
+                if (prompt.dynamicContext) {
+                    retryContents.push({ role: 'user', parts: [{ text: prompt.dynamicContext }] });
+                }
+                // Model acknowledgment
+                retryContents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
+                // Chat history
+                chatHistory.forEach(msg => {
+                    retryContents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+                });
+                // Latest user message
+                retryContents.push({ role: 'user', parts: [{ text: userMessage }] });
+
+
+                // Rebuild request body WITHOUT cachedContent
+                const retryRequestBody: GeminiGenerateContentRequest = {
+                    contents: retryContents,
+                    generationConfig: requestBody.generationConfig, // Use same generation config
+                    // No cachedContent property here
+                };
+
+                console.log('Retrying Gemini request with full prompt...');
+                console.log('Gemini Retry Request Body:', JSON.stringify(retryRequestBody, null, 2));
+
+                // Retry the fetch call
+                response = await fetch(endpoint, { // Reassign response
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(retryRequestBody),
+                });
+                responseData = await response.json(); // Reassign responseData
+
+                // Check the response of the retry attempt
+                if (!response.ok) {
+                    const retryErrorResponse = responseData as GeminiErrorResponse;
+                    const retryErrorMessage = retryErrorResponse?.error?.message || `HTTP error! status: ${response.status}`;
+                    console.error('Gemini API Error Response (after retry):', JSON.stringify(retryErrorResponse, null, 2));
+                    // Throw error from the retry attempt
+                    throw new Error(STRINGS.GEMINI_API_ERROR(`Retry failed: ${retryErrorMessage}`));
+                }
+
+                // If retry succeeded, responseData is now the successful response, proceed normally
+                console.log('Gemini request succeeded after retry.');
+                // The next call to this function will attempt to create a new cache since promptCacheName is now null.
+
+            } else {
+                // Not a cache error, or cache wasn't used, throw the original error
+                throw new Error(STRINGS.GEMINI_API_ERROR(errorMessage));
+            }
         }
 
+        // If we reach here, response is OK (either initially or after retry)
         const geminiResponse = responseData as GeminiGenerateContentResponse;
 
         // Extract the text content from the first candidate
