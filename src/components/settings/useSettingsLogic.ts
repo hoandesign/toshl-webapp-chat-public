@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
-import toast from 'react-hot-toast'; // Import toast
-import { fetchToshlSetupData } from '../../lib/toshl';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import toast from 'react-hot-toast';
+import { fetchToshlSetupData, updateToshlProfile } from '../../lib/toshl';
+import { clearGeminiPromptCache } from '../../lib/gemini'; // Import the cache clearing function
 import * as STRINGS from '../../constants/strings';
 
 // Define all model options (copied from SettingsPage)
@@ -27,7 +28,8 @@ interface UseSettingsLogicReturn {
     hideNumbers: boolean; // Add hideNumbers state
     setHideNumbers: React.Dispatch<React.SetStateAction<boolean>>; // Add setter
     isLoadingSetup: boolean;
-    handleSave: () => void;
+    isSaving: boolean; // Add saving state
+    handleSave: () => Promise<void>; // Make async
     handleToshlSetup: () => Promise<void>;
     handleClearChatHistory: () => void;
 }
@@ -44,6 +46,8 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         return saved ? JSON.parse(saved) : false;
     });
     const [isLoadingSetup, setIsLoadingSetup] = useState(false);
+    const [isSaving, setIsSaving] = useState(false); // State for save operation
+    const initialCurrencyRef = useRef<string | null>(null); // Ref to store initial currency
 
     // Load settings from localStorage on mount
     useEffect(() => {
@@ -56,7 +60,12 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
 
         if (savedToshlKey) setToshlApiKey(savedToshlKey);
         if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
-        if (savedCurrency) setCurrency(savedCurrency);
+        if (savedCurrency) {
+            setCurrency(savedCurrency);
+            initialCurrencyRef.current = savedCurrency; // Store initial currency
+        } else {
+             initialCurrencyRef.current = STRINGS.DEFAULT_CURRENCY_VALUE; // Store default if nothing saved
+        }
         if (savedHideNumbers) setHideNumbers(JSON.parse(savedHideNumbers)); // Set hideNumbers state
         if (savedGeminiModel && isValidSavedModel) {
             setGeminiModel(savedGeminiModel);
@@ -65,15 +74,41 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         }
     }, []); // Empty dependency array ensures this runs only once on mount
 
-    const handleSave = useCallback(() => {
-        localStorage.setItem('toshlApiKey', toshlApiKey);
-        localStorage.setItem('geminiApiKey', geminiApiKey);
-        localStorage.setItem('currency', currency);
-        localStorage.setItem('geminiModel', geminiModel);
-        localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
-        // alert(STRINGS.SETTINGS_SAVED_ALERT); // Removed alert
-        window.location.reload(); // Refresh the page
-    }, [toshlApiKey, geminiApiKey, currency, geminiModel, hideNumbers]); // Add hideNumbers dependency
+    const handleSave = useCallback(async () => {
+        setIsSaving(true);
+        let profileUpdateSuccess = true; // Assume success unless API call fails
+
+        // Check if currency changed and API key exists
+        const currencyChanged = currency !== initialCurrencyRef.current;
+        if (currencyChanged && toshlApiKey) {
+            console.log(`Currency changed from ${initialCurrencyRef.current} to ${currency}. Updating Toshl profile...`);
+            try {
+                await updateToshlProfile(toshlApiKey, { currency: { main: currency } });
+                toast.success(STRINGS.TOSHL_CURRENCY_UPDATE_SUCCESS);
+                initialCurrencyRef.current = currency; // Update ref to prevent re-updating on immediate re-save
+            } catch (error) {
+                profileUpdateSuccess = false; // Mark as failed
+                console.error('Failed to update Toshl profile currency:', error);
+                const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_ERROR;
+                toast.error(STRINGS.TOSHL_CURRENCY_UPDATE_FAILED(errorMessage));
+                // Do not proceed with saving or reloading if the profile update failed
+            }
+        }
+
+        // Only save locally and reload if the profile update was successful (or not needed)
+        if (profileUpdateSuccess) {
+            localStorage.setItem('toshlApiKey', toshlApiKey);
+            localStorage.setItem('geminiApiKey', geminiApiKey);
+            localStorage.setItem('currency', currency); // Save potentially updated currency
+            localStorage.setItem('geminiModel', geminiModel);
+            localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
+            toast.success(STRINGS.SETTINGS_SAVED_SUCCESS); // Use toast for general save success
+            // Consider delaying reload slightly to allow toast to be seen
+            setTimeout(() => window.location.reload(), 1000); // Refresh the page after 1s
+        }
+
+        setIsSaving(false);
+    }, [toshlApiKey, geminiApiKey, currency, geminiModel, hideNumbers]); // Dependencies
 
     const handleToshlSetup = useCallback(async () => {
         if (!toshlApiKey) {
@@ -82,15 +117,36 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         }
         setIsLoadingSetup(true);
         try {
-            const { accounts, categories, tags } = await fetchToshlSetupData(toshlApiKey);
+            // Fetch setup data including user profile
+            const { accounts, categories, tags, userProfile } = await fetchToshlSetupData(toshlApiKey);
 
+            // Store fetched data
             localStorage.setItem('toshlAccounts', JSON.stringify(accounts));
             localStorage.setItem('toshlCategories', JSON.stringify(categories));
             localStorage.setItem('toshlTags', JSON.stringify(tags));
-             localStorage.setItem('toshlDataFetched', 'true');
+            localStorage.setItem('toshlDataFetched', 'true');
 
-             // Show success toast
-             toast.success(STRINGS.TOSHL_SETUP_SUCCESS_ALERT(accounts.length, categories.length, tags.length));
+            // Extract main currency and update state + localStorage
+            if (userProfile?.currency?.main) {
+                const mainCurrency = userProfile.currency.main;
+                console.log(`Fetched main currency from Toshl profile: ${mainCurrency}`);
+                setCurrency(mainCurrency); // Update state
+                localStorage.setItem('currency', mainCurrency); // Save to localStorage
+            } else {
+                console.warn('Could not find main currency in Toshl user profile. Using default.');
+                // Optionally keep the existing default or saved currency
+            }
+
+            // Clear Gemini cache after successful setup
+            if (geminiApiKey) {
+                await clearGeminiPromptCache(geminiApiKey);
+            } else {
+                console.warn('Gemini API key not available, skipping cache clearing.');
+                // Optionally inform the user via toast if this is critical
+            }
+
+             // Show success toast (updated message potentially)
+             toast.success(STRINGS.TOSHL_SETUP_SUCCESS_ALERT(accounts.length, categories.length, tags.length) + ` Default currency set to ${userProfile?.currency?.main || 'default'}. Gemini cache cleared.`);
 
          } catch (error) {
              console.error('Toshl setup failed:', error); // Keep console error for debugging
@@ -101,7 +157,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
          } finally {
             setIsLoadingSetup(false);
         }
-    }, [toshlApiKey]); // Dependency on toshlApiKey
+    }, [toshlApiKey, geminiApiKey]); // Add geminiApiKey to dependencies
 
     // Function to clear chat history from localStorage
     const handleClearChatHistory = useCallback(() => {
@@ -132,6 +188,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         hideNumbers, // Return hideNumbers state
         setHideNumbers, // Return setter
         isLoadingSetup,
+        isSaving, // Return saving state
         handleSave,
         handleToshlSetup,
         handleClearChatHistory,

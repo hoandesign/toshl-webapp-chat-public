@@ -8,7 +8,7 @@ export interface ToshlErrorResponse {
 export interface ToshlAccount {
   id: string;
   name: string;
-  currency: { code: string; rate?: number; fixed?: boolean }; // Added optional rate/fixed
+  currency: { code: string; rate: number; main_rate?: number; fixed: boolean };
   balance: number;
   type: string; // e.g., 'cash', 'bank', 'custom'
   status?: string; // e.g., 'active', 'archived'
@@ -98,8 +98,16 @@ export interface ToshlEntryPayload {
 // --- API Response Structures ---
 
 // Define Toshl Entry structure received from API (extends the payload)
-export interface ToshlEntry extends ToshlEntryPayload {
+export interface ToshlEntry {
     id: string;
+    amount: number; // Negative for expense, positive for income
+    currency: { code: string; rate: number; main_rate?: number; fixed: boolean };
+    date: string; // YYYY-MM-DD
+    desc?: string; // Description
+    account: string; // Account ID
+    category: string; // Category ID
+    tags?: string[]; // Array of Tag IDs
+    location?: ToshlLocationPayload; // Optional: For adding location
     modified: string; // ISO timestamp string e.g., "2025-01-26 17:13:58.252"
     created: string; // ISO timestamp string e.g., "2025-01-26T17:13:58Z"
     completed: boolean;
@@ -120,7 +128,7 @@ export interface ToshlEntry extends ToshlEntryPayload {
         id: string;
         amount: number;
         account: string;
-        currency: { code: string; rate: number; main_rate: number; fixed: boolean };
+        currency: { code: string; rate: number; fixed: boolean };
     };
     split?: { // Optional split info
         parent: string;
@@ -216,4 +224,88 @@ export interface FetchEntriesFilters {
     min_amount?: number;
     max_amount?: number;
     // Add other potential filters based on full API spec: page, per_page (handled by fetchFromToshl), order, etc.
+}
+
+// --- User Profile Type ---
+
+export interface ToshlUserProfile {
+    id: string;
+    email: string;
+    first_name?: string;
+    last_name?: string;
+    joined: string; // ISO date-time
+    modified: string; // ISO date-time
+    pro?: {
+        level?: 'pro' | 'medici';
+        since?: string; // ISO date-time
+        until?: string; // ISO date-time
+        payment?: {
+            id?: string;
+            provider?: 'apple' | 'google' | 'microsoft' | 'g2s' | 'adyen' | 'amazon' | 'bitpay' | 'paypal' | 'unknown';
+            next?: string; // ISO date-time
+            trial?: boolean;
+        };
+        trial?: {
+            start?: string; // ISO date-time
+            end?: string; // ISO date-time
+        };
+        remaining_credit?: number;
+        vat?: {
+            name: string;
+            address: string;
+            city: string;
+            post: string;
+            state?: string;
+            country: string;
+            vat: string;
+        };
+        partner?: {
+            name?: string;
+            start?: string; // ISO date-time
+            end?: string; // ISO date-time
+        }[];
+        trial_eligible?: boolean;
+    };
+    currency: {
+        main: string; // Main currency code (e.g., "USD")
+        update?: 'historical' | 'custom' | 'sign';
+        update_accounts?: boolean;
+        custom_exchange_rate?: number;
+        custom?: {
+            code: string;
+            rate: number;
+            fixed: boolean;
+        };
+        reference_currency?: string;
+    };
+    start_day: number; // 1-31
+    notifications?: number;
+    social?: ('toshl' | 'google' | 'facebook' | 'twitter' | 'evernote' | 'foursquare' | 'etalio' | 'flickr' | 'apple')[];
+    steps?: ('income' | 'expense' | 'budget' | 'budget_category')[];
+    migration?: {
+        finished?: boolean;
+        date_migrated?: string; // ISO date-time
+        revert_until?: string; // ISO date-time
+    };
+    limits?: {
+        accounts?: boolean;
+        budgets?: boolean;
+        images?: boolean;
+        import?: boolean;
+        bank?: boolean;
+        repeats?: boolean;
+        reminders?: boolean;
+        export?: boolean;
+        pro_share?: boolean;
+        passcode?: boolean;
+        planning?: boolean;
+        locations?: boolean;
+    };
+    locale?: string;
+    language?: string;
+    timezone?: string;
+    country?: string; // 2-letter code
+    otp_enabled?: boolean;
+    flags?: string[];
+    extra?: Record<string, any>; // Custom JSON object
 }

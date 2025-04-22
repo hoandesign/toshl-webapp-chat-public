@@ -95,6 +95,84 @@ export async function fetchFromToshl<T>( // Added export
 }
 
 /**
+ * Helper function to make authenticated requests to Toshl API for endpoints returning a single object.
+ * Uses Basic Authentication (API Key as username, password from storage).
+ * @param endpoint - The endpoint path (e.g., /me, /entries/{id}).
+ * @param apiKey - The Toshl API key (used as username).
+ * @param options - Optional fetch options (method, headers, body).
+ * @returns A promise that resolves to the fetched object.
+ */
+export async function fetchSingleFromToshl<T>( // Added export
+  endpoint: string,
+  apiKey: string,
+  options: RequestInit = {}
+): Promise<T> {
+  // Construct URL relative to the current origin when using the proxy
+  const url = new URL(`${TOSHL_API_BASE}${endpoint}`, window.location.origin);
+
+  // Retrieve password from local storage
+  const password = localStorage.getItem('toshlPassword') || ''; // Use empty string if not found
+
+  // Encode API key and password for Basic Auth
+  const basicAuth = btoa(`${apiKey}:${password}`); // Base64 encode "apiKey:password"
+
+  const headers = new Headers({
+    'Authorization': `Basic ${basicAuth}`, // Use Basic Auth with password
+    'Content-Type': 'application/json',
+    ...options.headers,
+  });
+
+  try {
+    const response = await fetch(url.toString(), { ...options, headers });
+
+    if (!response.ok) {
+      let errorData: ToshlErrorResponse | string = STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching ${endpoint}`;
+      try {
+        // Try to parse specific Toshl error format
+        const jsonError = await response.json();
+        if (jsonError && (jsonError.error || jsonError.description)) {
+           errorData = jsonError;
+           console.error('Toshl API Error:', errorData);
+           throw new Error(STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status));
+        }
+      } catch (parseError) {
+         // If parsing fails or it's not the expected format, use the status text
+         console.error('Failed to parse Toshl error response or unexpected format.');
+      }
+      // Throw generic error if specific one wasn't parsed/thrown
+      throw new Error(typeof errorData === 'string' ? errorData : STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching ${endpoint}`);
+    }
+
+    // Handle 204 No Content - might happen on PUT/DELETE, return undefined or handle appropriately
+    if (response.status === 204) {
+        console.warn(`Received 204 No Content for ${url.toString()}, returning undefined.`);
+        // For a GET request expecting an object, 204 is unusual. Might indicate an error or empty resource.
+        // Throwing an error might be more appropriate depending on context.
+        // For now, returning undefined as T might cause issues if T isn't Promise<T | undefined>.
+        // Let's throw an error for GET requests receiving 204.
+        if (options.method === 'GET' || !options.method) {
+            throw new Error(`Received unexpected 204 No Content for GET request to ${endpoint}`);
+        }
+        // For PUT/DELETE, returning something might be needed, but the function signature is Promise<T>.
+        // This needs careful handling based on how it's used. Let's assume GET for now.
+        // A better approach might be separate functions for GET vs PUT/DELETE.
+        // Or adjust the return type to Promise<T | void>.
+        // For now, we'll assume GET and throw on 204.
+    }
+
+    // Parse the JSON response body
+    const data = await response.json() as T;
+    return data;
+
+  } catch (error) {
+    console.error(`Error fetching ${url.toString()}:`, error);
+    // Re-throw the error so the caller can handle it
+    throw error;
+  }
+}
+
+
+/**
  * Fetches daily entry sums from Toshl API based on specified criteria.
  * @param apiKey - The Toshl API key.
  * @param from - Start date (YYYY-MM-DD).

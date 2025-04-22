@@ -26,7 +26,7 @@ export const DEFAULT_CURRENCY_PLACEHOLDER = "e.g., VND, USD";
 export const DEFAULT_CURRENCY_HELP_TEXT = "Default: VND";
 export const GEMINI_MODEL_LABEL = "Gemini Model";
 export const GEMINI_MODEL_HELP_TEXT = "Default: gemini-2.0-flash"; // Update if default changes
-export const SETUP_TOSHL_BUTTON = "Setup Toshl Categories & Tags";
+export const SETUP_TOSHL_BUTTON = "Setup Accounts, Categories & Tags";
 export const SAVE_SETTINGS_BUTTON = "Save Settings";
 export const CLEAR_CHAT_HISTORY_BUTTON = "Clear Chat History"; // Added
 export const HIDE_NUMBERS_LABEL = "Hide Numbers"; // Added
@@ -194,3 +194,8 @@ export const CONSOLE_ERROR_FETCHING_BUDGETS = "Error fetching Toshl budgets:";
 export const MARKDOWN_TABLE_HEADER = '| Name | ID |';
 export const MARKDOWN_TABLE_SEPARATOR = '|---|---|';
 export const MARKDOWN_TABLE_EMPTY = '(No items of this type)';
+
+// Settings Logic Hook (useSettingsLogic.ts) - Additional
+export const TOSHL_CURRENCY_UPDATE_SUCCESS = "Toshl profile currency updated successfully.";
+export const TOSHL_CURRENCY_UPDATE_FAILED = (error: string) => `Failed to update Toshl profile currency: ${error}`;
+export const SETTINGS_SAVED_SUCCESS = "Settings saved successfully.";

@@ -216,11 +216,53 @@ export const handleProcessUserRequestApi = async (
                 try {
                     const defaultCurrency = localStorage.getItem('currency') || STRINGS.DEFAULT_CURRENCY_VALUE;
                     let netSum = 0;
-                    entries.forEach(entry => { if (typeof entry.amount === 'number') netSum += entry.amount; });
+                    let skippedEntriesCount = 0;
+                    let conversionWarningLogged = false; // Flag to log only once
+
+                    entries.forEach(entry => {
+                        if (typeof entry.amount === 'number' && entry.currency?.code) {
+                            if (entry.currency.code === defaultCurrency) {
+                                netSum += entry.amount;
+                            } else {
+                                // Attempt conversion using main_rate
+                                const mainRate = entry.currency.main_rate;
+                                if (typeof mainRate === 'number' && mainRate > 0) {
+                                    // Divide amount by main_rate to convert to default currency
+                                    netSum += entry.amount / mainRate;
+                                } else {
+                                    // Cannot convert, skip this entry
+                                    skippedEntriesCount++;
+                                    if (!conversionWarningLogged) {
+                                        console.warn(`Cannot convert entry ${entry.id} (${entry.amount} ${entry.currency.code}) to ${defaultCurrency}. Missing or invalid main_rate: ${mainRate}. Further warnings suppressed.`);
+                                        conversionWarningLogged = true; // Suppress further logs for this fetch
+                                    }
+                                }
+                            }
+                        } else {
+                            // Skip entries with invalid amount or currency data
+                            skippedEntriesCount++;
+                             if (!conversionWarningLogged) {
+                                console.warn(`Skipping entry ${entry.id} due to missing amount or currency code. Further warnings suppressed.`);
+                                conversionWarningLogged = true;
+                             }
+                        }
+                    });
+
                     const formattedSum = netSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     calculatedSumText = `${formattedSum} ${defaultCurrency}`;
+
+                    // Add a note if some entries couldn't be included in the sum
+                    if (skippedEntriesCount > 0) {
+                        calculatedSumText += ` (${skippedEntriesCount} ${skippedEntriesCount === 1 ? 'entry' : 'entries'} excluded due to missing conversion rate)`;
+                        console.log(`Sum calculation finished. ${skippedEntriesCount} entries were excluded.`);
+                    }
+
                     headerTextWithSum = headerTextWithSum.replace(STRINGS.SUM_PLACEHOLDER, calculatedSumText);
-                } catch (manualSumError) { console.error(STRINGS.CONSOLE_ERROR_MANUAL_SUM, manualSumError); }
+                } catch (manualSumError) {
+                    console.error(STRINGS.CONSOLE_ERROR_MANUAL_SUM, manualSumError);
+                    // Replace placeholder with an error message if sum calculation fails
+                    headerTextWithSum = headerTextWithSum.replace(STRINGS.SUM_PLACEHOLDER, '[Sum Calculation Error]');
+                }
             }
 
             // Add header message FIRST

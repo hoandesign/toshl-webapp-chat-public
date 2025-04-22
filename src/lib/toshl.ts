@@ -7,10 +7,11 @@ import {
     ToshlTag,
     ToshlEntryPayload,
     ToshlEntry,
-    FetchEntriesFilters
+    FetchEntriesFilters,
+    ToshlUserProfile // Import the new user profile type
 } from './toshl/types'; // Keep internal imports if needed
 // Import the API helper functions
-import { fetchFromToshl, fetchDailySums, fetchToshlBudgets } from './toshl/apiHelper'; // Added fetchDailySums and fetchToshlBudgets
+import { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets } from './toshl/apiHelper'; // Added fetchSingleFromToshl, fetchDailySums and fetchToshlBudgets
 import * as STRINGS from '../constants/strings'; // Import constants
 
 // Use the local proxy path during development to avoid CORS issues
@@ -23,33 +24,94 @@ const TOSHL_API_BASE = '/api/toshl';
  * Uses Basic Authentication (API Key as username, password from storage).
  * Handles pagination automatically.
  * @param apiKey - The Toshl API key (used as username).
- * @returns An object containing arrays of accounts, categories, and tags.
+ * @returns An object containing arrays of accounts, categories, tags, and the user profile.
  */
 export async function fetchToshlSetupData(apiKey: string): Promise<{
   accounts: ToshlAccount[];
   categories: ToshlCategory[];
   tags: ToshlTag[];
+  userProfile: ToshlUserProfile; // Add user profile to the return type
 }> {
   if (!apiKey) {
     throw new Error(STRINGS.TOSHL_API_KEY_REQUIRED);
   }
 
-  console.log('Fetching Toshl setup data (with pagination)...');
+  console.log('Fetching Toshl setup data (accounts, categories, tags, profile)...');
   try {
-    // fetchFromToshl now returns the complete array directly and handles auth
-    const [accounts, categories, tags] = await Promise.all([
+    // Fetch lists and profile concurrently
+    const [accounts, categories, tags, userProfile] = await Promise.all([
       fetchFromToshl<ToshlAccount>('/accounts', apiKey), // Fetch ToshlAccount items
       fetchFromToshl<ToshlCategory>('/categories', apiKey), // Fetch ToshlCategory items
       fetchFromToshl<ToshlTag>('/tags', apiKey), // Fetch ToshlTag items
+      fetchSingleFromToshl<ToshlUserProfile>('/me', apiKey), // Fetch user profile
     ]);
-    console.log(`Successfully fetched ${accounts.length} accounts, ${categories.length} categories, ${tags.length} tags.`);
-    return { accounts, categories, tags }; // Return the arrays in an object
+    console.log(`Successfully fetched ${accounts.length} accounts, ${categories.length} categories, ${tags.length} tags, and user profile.`);
+    return { accounts, categories, tags, userProfile }; // Return all data in an object
   } catch (error) {
     console.error('Failed to fetch Toshl setup data:', error);
     // Propagate the error to be handled by the caller UI
     throw error;
   }
 }
+
+/**
+ * Updates the Toshl user profile (/me endpoint).
+ * Only include fields that need to be updated in the payload.
+ * @param apiKey - The Toshl API key.
+ * @param payload - A partial ToshlUserProfile object containing the fields to update.
+ * @returns A promise resolving to the updated ToshlUserProfile object.
+ */
+export async function updateToshlProfile(apiKey: string, payload: Partial<ToshlUserProfile>): Promise<ToshlUserProfile> {
+    if (!apiKey) {
+        throw new Error(STRINGS.TOSHL_API_KEY_REQUIRED);
+    }
+    if (!payload || Object.keys(payload).length === 0) {
+        throw new Error("Update payload cannot be empty."); // Add specific error
+    }
+
+    // Ensure only writable fields are sent. For currency, we only send the 'currency' object.
+    // Create a minimal payload based on what we intend to change.
+    const updateData: Partial<ToshlUserProfile> = {};
+    if (payload.currency) {
+        // Only include the 'main' part if that's what we're updating
+        if (payload.currency.main) {
+            updateData.currency = { main: payload.currency.main };
+        } else {
+             throw new Error("Payload must include 'currency.main' to update currency.");
+        }
+        // Add other updatable currency fields here if needed in the future
+    }
+    // Add other updatable profile fields here if needed (e.g., first_name, last_name)
+    if (payload.first_name) updateData.first_name = payload.first_name;
+    if (payload.last_name) updateData.last_name = payload.last_name;
+    // ... etc. for other writable fields like start_day, locale, timezone, country
+
+    if (Object.keys(updateData).length === 0) {
+         throw new Error("No valid fields provided in the update payload.");
+    }
+
+
+    console.log('Updating Toshl user profile (/me) with payload:', updateData);
+
+    try {
+        // Use fetchSingleFromToshl with PUT method and the constructed payload
+        const updatedProfile = await fetchSingleFromToshl<ToshlUserProfile>(
+            '/me',
+            apiKey,
+            {
+                method: 'PUT',
+                body: JSON.stringify(updateData), // Send only the fields to update
+            }
+        );
+        console.log('Successfully updated Toshl user profile.');
+        return updatedProfile; // Toshl PUT /me returns the updated profile
+    } catch (error) {
+        console.error('Failed to update Toshl user profile:', error);
+        // Add more specific error handling if needed based on potential API responses
+        throw error; // Re-throw
+    }
+}
+
 
 /**
  * Fetches entries from Toshl, optionally filtering by date range, accounts, categories, or tags.
@@ -124,7 +186,7 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
 
 // --- Export API Helper Functions ---
 // Re-export the helper functions intended for external use
-export { fetchFromToshl, fetchDailySums, fetchToshlBudgets };
+export { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets };
 
 /**
  * Fetches a single Toshl entry by its ID.
