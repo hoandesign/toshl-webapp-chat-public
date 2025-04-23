@@ -1,152 +1,139 @@
-# Toshl WebApp Chat – Logic & Architecture Overview
+# Toshl WebApp Chat
 
-This document provides a clear, up-to-date explanation of the core architecture, data flow, and logic of the Toshl WebApp Chat application. It is based on the current codebase, including all major React components, hooks, and supporting libraries.
+A conversational web application to manage your Toshl Finance data using natural language, powered by Google Gemini.
 
----
+![Welcome Image](public/toshl-app.png)
 
-## Application Flow Diagram
+## Overview
 
-```mermaid
-flowchart TD
-    subgraph UI
-        A[App.tsx]
-        B[SettingsPage.tsx]
-        C[ChatInterface.tsx]
-    end
-    subgraph Hooks
-        D[useSettingsLogic.ts]
-        E[useChatLogic.ts]
-    end
-    subgraph API
-        F[apiHandler.ts]
-        G[lib/toshl.ts]
-        H[lib/gemini.ts]
-        I[lib/gemini/prompt.ts]
-    end
-    subgraph Storage
-        J[localStorage]
-    end
+Toshl WebApp Chat provides a natural language interface for interacting with your Toshl Finance data. Using Google Gemini, you can add, view, edit, and delete financial entries through simple chat commands.
 
-    A -- opens/closes --> B
-    A -- renders --> C
-    B -- uses --> D
-    C -- uses --> E
-    D -- reads/writes --> J
-    E -- reads/writes --> J
-    E -- calls --> F
-    F -- orchestrates --> G
-    F -- orchestrates --> H
-    H -- uses --> I
-    G -- reads/writes --> J
-    F -- reads/writes --> J
-```
+## Key Features
 
----
+-   **Conversational Finance:** Manage your finances using natural language.
+-   **Toshl Finance Integration:**
+    -   Add expenses and income.
+    -   View entries by date, category, tags, and description.
+    -   Edit and delete existing entries.
+-   **Google Gemini Integration:** Understands natural language requests to extract financial details and determine actions.
+-   **Contextual Awareness:** Remembers recent requests and modifications for follow-up commands.
+-   **Settings Management:** Configure API keys, default currency, and Gemini model.
+-   **Local Storage:** Securely stores API keys and settings in your browser's `localStorage`.
+-   **Offline Support:** Continue composing and queuing messages even when offline; they are sent automatically when you reconnect.
+-   **Mention Suggestions:** Type `@` in the chat to quickly mention Toshl accounts, categories, or tags.
+-   **Responsive Design:** Built with React and Tailwind CSS for a clean, adaptable user interface.
+-   **Account Balance Overview:** View your Toshl account balances at a glance with interactive cards.
+-   **Budget Insights:** Visualize your budgets, including limits, spending, planned amounts, and rollover details through budget cards.
 
-## 1. Core Architecture
+## Technologies
 
-- **App.tsx**: The root component. Handles layout, initialization, and conditional rendering of the chat and settings interfaces. Checks for required API keys in `localStorage` and manages the visibility of the settings sidebar.
-- **ChatInterface.tsx**: The main chat UI. Renders header, messages, input, and controls. Delegates all chat-related state and logic to the `useChatLogic` hook.
-- **SettingsPage.tsx**: UI for user configuration. Lets users enter API keys, select currency/Gemini model, and clear chat history. Delegates logic and state to `useSettingsLogic`.
-- **useChatLogic.ts**: Custom React hook providing all chat state and logic, including message management, API interactions, mention handling, offline support, and history fetching.
-- **useSettingsLogic.ts**: Custom hook for settings state and logic. Handles API key validation, metadata fetching, and persistence to `localStorage`.
-- **apiHandler.ts**: Centralizes all API calls and orchestration between Gemini and Toshl. Handles request routing, data formatting, and error handling.
-- **lib/toshl.ts**: Handles all Toshl API operations (fetch, add, edit, delete entries and metadata). Used by `apiHandler.ts`.
-- **lib/gemini.ts**: Handles all Gemini API interactions, including prompt construction and response parsing.
-- **lib/gemini/prompt.ts**: Builds dynamic prompts for Gemini using templates and runtime data.
-- **AccountBalanceCard.tsx, BudgetCard.tsx, HistoryCard.tsx**: Specialized UI components for displaying Toshl account, budget, and entry data in chat.
-- **localStorage**: Used throughout to persist API keys, settings, Toshl metadata, chat history, and user preferences.
+-   **Frontend:** React, TypeScript, Vite
+-   **Styling:** Tailwind CSS, lucide-react
+-   **NLP:** Google Gemini API
+-   **Finance API:** Toshl Finance API
+-   **State Management:** React Hooks
+-   **Libraries:**
+    -   react: A JavaScript library for building user interfaces.
+    -   react-dom: Provides DOM-specific methods for React.
+    -   lucide-react: A library of beautiful SVG icons for React.
+    -   currency-symbol-map: Get currency symbols by code.
+    -   react-hot-toast: For displaying toast notifications.
+    -   @vercel/speed-insights: Collect web performance metrics.
 
----
+## Quick Start
 
-## 2. Initialization & State Flow
+1.  **Clone the repository:**
 
-### On App Startup (App.tsx)
-1. On mount, checks for `toshlApiKey` and `geminiApiKey` in `localStorage`.
-2. If missing, opens the settings sidebar for user input.
-3. Loads the `hideNumbers` preference from storage.
-4. Sets up listeners for online/offline browser events (via `useChatLogic`).
-5. Lazy-loads `ChatInterface` and `SettingsPage` for performance.
+    ```bash
+    git clone <repository-url>
+    cd toshl-webapp-chat
+    ```
+2.  **Install dependencies:**
 
----
+    ```bash
+    npm install
+    ```
+3.  **Run the development server:**
 
-## 3. Settings Management (SettingsPage.tsx & useSettingsLogic.ts)
-1. User enters Toshl and Gemini API keys, selects currency/model, and saves.
-2. Inputs are validated by `useSettingsLogic`.
-3. Valid settings are saved to `localStorage`.
-4. Metadata (accounts, categories, tags) is fetched from Toshl and stored locally.
-5. Settings UI displays feedback and closes on success.
+    ```bash
+    npm run dev
+    ```
 
----
+    The application will be available at `http://localhost:5173`.
 
-## 4. Chat Logic & Message Flow (ChatInterface.tsx & useChatLogic.ts)
+## Usage
 
-### Sending a Message (Online)
-1. User types and submits a request.
-2. Input is validated (non-empty, not offline, not loading).
-3. User message is added to chat state.
-4. Loading indicator is shown.
-5. `handleFormSubmit` calls `handleProcessUserRequestApi` (API handler).
-6. API handler:
-   - Loads all required data (API keys, settings, Toshl metadata) from `localStorage`.
-   - Prepares chat history for Gemini.
-   - Sends request to Gemini and parses action/response.
-   - If needed, calls Toshl API (add/edit/delete entry, fetch history, accounts, budgets).
-   - Formats all results into `Message` objects for display.
-7. Chat state is updated with new messages, context, and any updated entry IDs.
-8. Loading indicator is removed, UI scrolls to bottom, and state is persisted to `localStorage`.
+1.  **Open the application** in your web browser.
+2.  **Configure Settings:**
+    -   Enter your Toshl API Key and Google Gemini API Key in the Settings sidebar.
+    -   Set your default currency and preferred Gemini model (optional).
+    -   Save the settings. The app will fetch your Toshl data.
+3.  **Start Chatting:**
+    -   Use natural language to manage your finances.
+    -   **Example Commands:**
+        -   `Add 50k vnd for coffee yesterday`
+        -   `Log $2000 salary income today`
+        -   `Show expenses from last week`
+        -   `Edit the last entry, change amount to $60`
+        -   `Show my account balances`
+        -   `Show budgets for groceries this month`
+    -   Use the history button to view recent entries.
+    -   Click on entries for more options.
+    -   Type `@` to mention accounts, categories, or tags.
+    -   You can continue composing messages while offline; they will be sent when you reconnect.
 
-### Fetching History (handleFetchDateRange)
-1. User clicks the History button.
-2. If offline, an error is shown.
-3. Otherwise, loading state is set and a loading message is displayed.
-4. API handler fetches entries for the selected date range and formats them as messages.
-5. Results are displayed, including a 'See More' option if truncated.
+## Logic
 
-### Deleting an Entry
-1. User clicks the delete icon on an entry.
-2. `handleDeleteEntry` validates the request and calls the API handler.
-3. Toshl API is called to delete the entry.
-4. On success, the message is updated to reflect deletion. On error, an error message is shown.
+For a detailed explanation of the application's logic, refer to [logic.md](./logic.md).
 
-### Showing More Entries/Accounts/Budgets
-- 'See More' cards open a bottom sheet with the full list for the selected group (entries, accounts, budgets).
+## Deployment
 
----
+Deploy to Vercel:
 
-## 5. Offline Support
-- `useChatLogic` tracks online/offline status.
-- If offline, submitted messages are marked as 'pending' and saved locally with a unique `offlineId`.
-- When online, pending messages are automatically retried and updated based on API responses.
-- Errors are handled and surfaced to the user if retries fail.
+1.  Push your code to a Git repository.
+2.  Connect your repository to Vercel.
+3.  Vercel will automatically build and deploy the application.
 
----
+No environment variables are needed on Vercel as API keys are managed client-side.
 
-## 6. Mention Feature
-- Typing `@` in the chat input triggers a popup with filtered suggestions for Toshl accounts, categories, and tags.
-- Suggestions are dynamically filtered as the user types.
-- Selecting a suggestion inserts a formatted mention into the input.
-- The popup closes on space, deletion, cursor movement, or submit.
+## API Key Security
 
----
+-   API keys are stored in your browser's `localStorage` and are **never sent to any backend server**.
+-   Treat your API keys as sensitive and do not share them.
 
-## 7. Data Persistence & Local Storage
-- API keys, user settings, Toshl metadata, chat history, and preferences (like `hideNumbers`) are all stored in `localStorage`.
-- State is loaded from storage on startup and updated after relevant actions.
+## License
 
----
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 8. Error Handling & User Feedback
-- All API operations are wrapped with error handling.
-- Errors (e.g., offline actions, failed API calls) are surfaced in the chat as system messages or UI toasts.
-- Loading, retry, and deletion states are clearly indicated in the UI.
+**Exception:** Images used in this project are sourced from the Toshl website and are subject to their respective terms of use.
 
----
+## Libraries Used
 
-## 9. Extensibility
-- The architecture is modular, with clear separation between UI, logic hooks, and API handlers.
-- Adding new Toshl or Gemini features typically involves updating the API handler, logic hook, and possibly new UI cards/components.
+### Dependencies
+- @vercel/speed-insights
+- currency-symbol-map
+- lucide-react
+- react-markdown
+- remark-gfm
+- react
+- react-dom
+- react-hot-toast
 
----
-
-*This document is based on direct inspection of the current codebase (April 2025). For further technical details, see the source files referenced above.*
+### Dev Dependencies
+- @eslint/js
+- @tailwindcss/typography
+- @types/react
+- @types/react-dom
+- @vitejs/plugin-react
+- autoprefixer
+- eslint
+- eslint-plugin-react-hooks
+- eslint-plugin-react-refresh
+- globals
+- postcss
+- tailwind-scrollbar
+- tailwindcss
+- terser
+- typescript
+- typescript-eslint
+- vite
