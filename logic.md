@@ -149,4 +149,57 @@ flowchart TD
 
 ---
 
+## Directory Structure
+
+```
+toshl-webapp-chat/
+├── public/                    # Static assets (images, icons, etc.)
+├── src/
+│   ├── App.tsx                # Root React component
+│   ├── main.tsx               # Entry point
+│   ├── assets/                # App-specific images/assets
+│   ├── components/            # UI components
+│   │   ├── ChatInterface.tsx      # Main chat UI
+│   │   ├── SettingsPage.tsx       # Settings UI
+│   │   ├── LoadingFallback.tsx    # Loading UI
+│   │   ├── chat/
+│   │   │   ├── AccountBalanceCard.tsx
+│   │   │   ├── BudgetCard.tsx
+│   │   │   ├── HistoryCard.tsx
+│   │   │   ├── MentionSuggestionsPopup.tsx
+│   │   │   ├── MessageRenderer.tsx
+│   │   │   ├── SeeMoreAccountsCard.tsx
+│   │   │   ├── SeeMoreEntriesCard.tsx
+│   │   │   ├── BottomSheet.tsx
+│   │   │   ├── apiHandler.ts
+│   │   │   ├── types.ts
+│   │   │   └── useChatLogic.ts
+│   │   └── settings/
+│   │       └── ...             # Settings-related components
+│   ├── constants/
+│   │   └── strings.ts          # String constants
+│   ├── lib/
+│   │   ├── toshl.ts            # Toshl API logic
+│   │   ├── gemini.ts           # Gemini API logic
+│   │   ├── prompts.ts          # Prompt templates
+│   │   ├── gemini/             # Gemini helpers
+│   │   │   ├── prompt.ts       # Prompt construction logic
+│   │   └── toshl/              # Toshl helpers
+│   ├── utils/
+│   │   └── formatting.ts       # Formatting helpers
+│   └── index.css, App.css      # Stylesheets
+├── index.html                  # Main HTML file
+├── package.json                # Project metadata and dependencies
+├── tailwind.config.cjs         # Tailwind CSS config
+├── tsconfig*.json              # TypeScript configs
+├── vite.config.ts              # Vite config
+├── README.md                   # Project overview
+├── logic.md                    # Architecture & logic details
+└── ...                         # Other configs and files
+```
+
+This structure reflects the modular, feature-oriented organization of the codebase. Major logic is separated into UI components, hooks, API handlers, and helpers for maintainability and clarity.
+
+---
+
 *This document is based on direct inspection of the current codebase (April 2025). For further technical details, see the source files referenced above.*
