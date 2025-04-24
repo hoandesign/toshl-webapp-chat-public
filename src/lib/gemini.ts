@@ -22,6 +22,7 @@ const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models
 
 // Cache storage for static prompt content
 let promptCacheName: string | null = null;
+let cacheAttempted = false; // Track if cache creation has been attempted to avoid repeated failures
 
 /**
  * Calls the Gemini API to process the user's request.
@@ -78,10 +79,18 @@ export async function processUserRequestViaGemini( // Renamed function
 
     const endpoint = `${GEMINI_API_BASE}${model}:generateContent?key=${apiKey}`;
 
-    // --- Context Caching: cache static prompt instructions & context ---
-    console.log(`[Cache Check] Current promptCacheName before check: ${promptCacheName}`); // Add diagnostic log
-    let cacheName = promptCacheName;
-    if (!cacheName) {
+    // Cache toggle based on user settings
+    const cacheEnabled = JSON.parse(localStorage.getItem('useGeminiCache') || 'false');
+    console.log(`[Cache Setting] cacheEnabled: ${cacheEnabled}`);
+    let cacheName = cacheEnabled ? promptCacheName : null; // Allow reassignment
+    if (cacheEnabled) {
+        console.log(`[Cache Check] Current promptCacheName before check: ${promptCacheName}`);
+    } else {
+        console.log('[Cache Disabled] Skipping cache logic.');
+    }
+
+    if (cacheEnabled && !cacheName && !cacheAttempted) {
+        cacheAttempted = true; // Avoid repeated cache creation attempts
         console.log('[Cache Check] promptCacheName is null or empty, attempting to create a new cache.'); // Add diagnostic log
         try {
             // Cache only the static instructions and context, NOT the time info
@@ -92,7 +101,7 @@ export async function processUserRequestViaGemini( // Renamed function
                         { role: 'user', parts: [{ text: systemInstructions }] },
                         { role: 'user', parts: [{ text: dynamicContext }] }
                     ],
-                    ttl: '3600s' // Keep the 1-hour TTL
+                    ttl: '360s' // Keep the 1-hour TTL
                 }
             });
             cacheName = cache.name;
@@ -136,8 +145,13 @@ export async function processUserRequestViaGemini( // Renamed function
             temperature: 0.7,
             topK: 40,
         },
-        ...(cacheName ? { cachedContent: cacheName } : {})
+        ...(cacheEnabled && cacheName ? { cachedContent: cacheName } : {})
     };
+    if ((requestBody as any).cachedContent) {
+        console.log(`[Cache Usage] Using cachedContent: ${(requestBody as any).cachedContent}`);
+    } else {
+        console.log('[Cache Usage] Sending full prompt (no cache).');
+    }
 
     console.log('Sending request to Gemini API...');
     console.log('Gemini Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
@@ -166,6 +180,7 @@ export async function processUserRequestViaGemini( // Renamed function
             if (isCacheError && usedCache) {
                 console.warn(`Gemini cache error detected (Cache Name: ${requestBody.cachedContent}). Clearing local cache reference and retrying with full prompt...`);
                 promptCacheName = null; // Clear the module-level cache name
+                cacheAttempted = false; // Reset cacheAttempted so caching can be retried after clear
 
                 // Rebuild contents WITH static prompt parts for retry
                 const retryContents: GeminiGenerateContentRequest['contents'] = [];
@@ -361,8 +376,11 @@ export async function listGeminiCaches(
   url.searchParams.append('key', apiKey);
   if (pageSize !== undefined) url.searchParams.append('pageSize', pageSize.toString());
   if (pageToken) url.searchParams.append('pageToken', pageToken);
+  console.log(`[Cache List] Fetching caches from ${url.toString()}`);
   const response = await fetch(url.toString());
   const data = await response.json();
+  console.log(`[Cache List] Response status: ${response.status}`);
+  console.log(`[Cache List] Response data:`, data);
   if (!response.ok) throw new Error(`Error listing caches: ${data.error?.message || response.status}`);
   return data as GeminiListCachesResponse;
 }
@@ -387,12 +405,16 @@ export async function createGeminiCache(
   if (request.config.ttl) {
     body.ttl = request.config.ttl;
   }
+  console.log(`[Cache Create] Request: model=${modelName}, ttl=${request.config.ttl || 'none'}, systemInstruction=${request.config.systemInstruction ? 'present' : 'none'}`);
+  console.log(`[Cache Create] Sending POST to ${endpoint} with body:`, JSON.stringify(body, null, 2));
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
   const data = await response.json();
+  console.log(`[Cache Create] Response status: ${response.status}`);
+  console.log(`[Cache Create] Response data:`, data);
   if (!response.ok) throw new Error(`Error creating cache: ${data.error?.message || response.status}`);
   return data as GeminiCache;
 }
@@ -406,6 +428,7 @@ export async function updateGeminiCache(
 ): Promise<GeminiCache> {
   const { name, config } = request;
   const updateMask = Object.keys(config).map(k => `config.${k}`).join(',');
+  console.log(`[Cache Update] Request: name=${name}, updateMask=${updateMask}, config=${JSON.stringify(config)}`);
   const url = `https://generativelanguage.googleapis.com/v1beta/${name}?updateMask=${updateMask}&key=${apiKey}`;
   const response = await fetch(url, {
     method: 'PATCH',
@@ -413,6 +436,8 @@ export async function updateGeminiCache(
     body: JSON.stringify({ config }),
   });
   const data = await response.json();
+  console.log(`[Cache Update] Response status: ${response.status}`);
+  console.log(`[Cache Update] Response data:`, data);
   if (!response.ok) throw new Error(`Error updating cache: ${data.error?.message || response.status}`);
   return data as GeminiCache;
 }
@@ -420,16 +445,18 @@ export async function updateGeminiCache(
 /**
  * Delete a context cache.
  */
-async function deleteGeminiCache( // Make internal again if only used by clearGeminiPromptCache
+async function deleteGeminiCache(
   apiKey: string,
   name: string
 ): Promise<void> {
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/${name}?key=${apiKey}`;
+  console.log(`[Cache Delete] Sending DELETE to ${endpoint}`);
   const response = await fetch(endpoint, { method: 'DELETE' });
   if (!response.ok) {
     const error = await response.json();
     throw new Error(`Error deleting cache: ${error.error?.message || response.status}`);
   }
+  console.log(`[Cache Delete] Successfully deleted cache ${name}`);
 }
 
 /**
@@ -438,66 +465,67 @@ async function deleteGeminiCache( // Make internal again if only used by clearGe
  * @param apiKey - The Gemini API key needed to authorize the deletion and listing.
  */
 export async function clearGeminiPromptCache(apiKey: string): Promise<void> {
-    const cacheNameToDelete = promptCacheName; // Store the name before clearing the reference
+  console.log(`[Cache Clear] Starting clearGeminiPromptCache. Local cacheName: ${promptCacheName}`);
+  const cacheNameToDelete = promptCacheName; // Store the name before clearing the reference
+  if (cacheNameToDelete) {
+    console.log(`Attempting to clear Gemini prompt cache: ${cacheNameToDelete}`);
 
-    if (cacheNameToDelete) {
-        console.log(`Attempting to clear Gemini prompt cache: ${cacheNameToDelete}`);
-
-        // --- Log caches BEFORE deletion ---
-        try {
-            console.log("--- Listing caches BEFORE deletion attempt ---");
-            const beforeCaches = await listGeminiCaches(apiKey);
-            if (beforeCaches.caches && beforeCaches.caches.length > 0) { // Use .caches
-                beforeCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
-            } else {
-                console.log("  No caches found.");
-            }
-            console.log("------------------------------------------");
-        } catch (listError) {
-            console.warn("Failed to list caches before deletion:", listError);
-        }
-
-        // --- Attempt deletion ---
-        try {
-            await deleteGeminiCache(apiKey, cacheNameToDelete);
-            console.log(`Successfully requested deletion for Gemini cache ${cacheNameToDelete} from server.`);
-        } catch (deleteError) {
-            console.warn(`Failed to delete Gemini cache ${cacheNameToDelete} from server. It might have already expired or been deleted. Error:`, deleteError);
-            // Proceed to clear local reference and list caches even if deletion fails
-        } finally {
-             promptCacheName = null; // Clear the local reference regardless of deletion success
-             console.log(`Cleared local Gemini prompt cache reference (was ${cacheNameToDelete}).`);
-
-             // --- Log caches AFTER deletion attempt ---
-             try {
-                 console.log("--- Listing caches AFTER deletion attempt ---");
-                 // Add a small delay in case deletion is not instantaneous on the server
-                 await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
-                 const afterCaches = await listGeminiCaches(apiKey);
-                 if (afterCaches.caches && afterCaches.caches.length > 0) { // Use .caches
-                     afterCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
-                 } else {
-                     console.log("  No caches found.");
-                 }
-                 console.log("-----------------------------------------");
-             } catch (listError) {
-                 console.warn("Failed to list caches after deletion:", listError);
-             }
-        }
-    } else {
-        console.log('No active Gemini prompt cache reference to clear.');
-         // Optionally list existing caches even if no local reference exists
-         try {
-            console.log("--- Listing caches (no local reference to clear) ---");
-            const currentCaches = await listGeminiCaches(apiKey);
-             if (currentCaches.caches && currentCaches.caches.length > 0) { // Use .caches
-                 currentCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
-             } else {
-                 console.log("  No caches found.");
-             }
-            console.log("--------------------------------------------------");
-        } catch (listError) {
-            console.warn("Failed to list caches:", listError);
-        }
+    // --- Log caches BEFORE deletion ---
+    try {
+      console.log("--- Listing caches BEFORE deletion attempt ---");
+      const beforeCaches = await listGeminiCaches(apiKey);
+      if (beforeCaches.caches && beforeCaches.caches.length > 0) { // Use .caches
+        beforeCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
+      } else {
+        console.log("  No caches found.");
+      }
+      console.log("------------------------------------------");
+    } catch (listError) {
+      console.warn("Failed to list caches before deletion:", listError);
     }
+
+    // --- Attempt deletion ---
+    try {
+      await deleteGeminiCache(apiKey, cacheNameToDelete);
+      console.log(`Successfully requested deletion for Gemini cache ${cacheNameToDelete} from server.`);
+    } catch (deleteError) {
+      console.warn(`Failed to delete Gemini cache ${cacheNameToDelete} from server. It might have already expired or been deleted. Error:`, deleteError);
+      // Proceed to clear local reference and list caches even if deletion fails
+    } finally {
+      promptCacheName = null; // Clear the local reference regardless of deletion success
+      cacheAttempted = false; // Reset cacheAttempted so caching can be retried after clear
+      console.log(`Cleared local Gemini prompt cache reference (was ${cacheNameToDelete}).`);
+
+      // --- Log caches AFTER deletion attempt ---
+      try {
+        console.log("--- Listing caches AFTER deletion attempt ---");
+        // Add a small delay in case deletion is not instantaneous on the server
+        await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+        const afterCaches = await listGeminiCaches(apiKey);
+        if (afterCaches.caches && afterCaches.caches.length > 0) { // Use .caches
+          afterCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
+        } else {
+          console.log("  No caches found.");
+        }
+        console.log("-----------------------------------------");
+      } catch (listError) {
+        console.warn("Failed to list caches after deletion:", listError);
+      }
+    }
+  } else {
+    console.log('No active Gemini prompt cache reference to clear.');
+    // Optionally list existing caches even if no local reference exists
+    try {
+      console.log("--- Listing caches (no local reference to clear) ---");
+      const currentCaches = await listGeminiCaches(apiKey);
+      if (currentCaches.caches && currentCaches.caches.length > 0) { // Use .caches
+        currentCaches.caches.forEach((cache: GeminiCache) => console.log(`  - ${cache.name} (Model: ${cache.model}, Expires: ${cache.expireTime})`)); // Use .caches and add type
+      } else {
+        console.log("  No caches found.");
+      }
+      console.log("--------------------------------------------------");
+    } catch (listError) {
+      console.warn("Failed to list caches:", listError);
+    }
+  }
 }

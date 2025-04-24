@@ -27,6 +27,8 @@ interface UseSettingsLogicReturn {
     setGeminiModel: React.Dispatch<React.SetStateAction<string>>;
     hideNumbers: boolean; // Add hideNumbers state
     setHideNumbers: React.Dispatch<React.SetStateAction<boolean>>; // Add setter
+    useCache: boolean; // Add cache toggle
+    setUseCache: React.Dispatch<React.SetStateAction<boolean>>; // Add cache toggle setter
     isLoadingSetup: boolean;
     isSaving: boolean; // Add saving state
     handleSave: () => Promise<void>; // Make async
@@ -45,6 +47,10 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         const saved = localStorage.getItem('hideNumbers');
         return saved ? JSON.parse(saved) : false;
     });
+    const [useCache, setUseCache] = useState<boolean>(() => { // Toggle Gemini context cache (default OFF)
+        const saved = localStorage.getItem('useGeminiCache');
+        return saved ? JSON.parse(saved) : false;
+    });
     const [isLoadingSetup, setIsLoadingSetup] = useState(false);
     const [isSaving, setIsSaving] = useState(false); // State for save operation
     const initialCurrencyRef = useRef<string | null>(null); // Ref to store initial currency
@@ -56,6 +62,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         const savedCurrency = localStorage.getItem('currency');
         const savedGeminiModel = localStorage.getItem('geminiModel');
         const savedHideNumbers = localStorage.getItem('hideNumbers'); // Load hideNumbers
+        const savedUseCache = localStorage.getItem('useGeminiCache'); // Load cache toggle
         const isValidSavedModel = geminiModelOptions.some(option => option.value === savedGeminiModel);
 
         if (savedToshlKey) setToshlApiKey(savedToshlKey);
@@ -67,6 +74,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
              initialCurrencyRef.current = STRINGS.DEFAULT_CURRENCY_VALUE; // Store default if nothing saved
         }
         if (savedHideNumbers) setHideNumbers(JSON.parse(savedHideNumbers)); // Set hideNumbers state
+        if (savedUseCache) setUseCache(JSON.parse(savedUseCache)); // Set cache toggle
         if (savedGeminiModel && isValidSavedModel) {
             setGeminiModel(savedGeminiModel);
         } else {
@@ -102,13 +110,14 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
             localStorage.setItem('currency', currency); // Save potentially updated currency
             localStorage.setItem('geminiModel', geminiModel);
             localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
+            localStorage.setItem('useGeminiCache', JSON.stringify(useCache)); // Save cache toggle
             toast.success(STRINGS.SETTINGS_SAVED_SUCCESS); // Use toast for general save success
             // Consider delaying reload slightly to allow toast to be seen
             setTimeout(() => window.location.reload(), 1000); // Refresh the page after 1s
         }
 
         setIsSaving(false);
-    }, [toshlApiKey, geminiApiKey, currency, geminiModel, hideNumbers]); // Dependencies
+    }, [toshlApiKey, geminiApiKey, currency, geminiModel, hideNumbers, useCache]); // Dependencies
 
     const handleToshlSetup = useCallback(async () => {
         if (!toshlApiKey) {
@@ -187,6 +196,8 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         setGeminiModel,
         hideNumbers, // Return hideNumbers state
         setHideNumbers, // Return setter
+        useCache, // Return cache toggle
+        setUseCache, // Return cache toggle setter
         isLoadingSetup,
         isSaving, // Return saving state
         handleSave,

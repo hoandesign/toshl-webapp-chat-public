@@ -21,14 +21,16 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
     currency,
     setCurrency,
     geminiModel,
-        setGeminiModel,
-        hideNumbers, // Get hideNumbers state
-        setHideNumbers, // Get setter
-        isLoadingSetup,
-        handleSave,
-        handleToshlSetup,
-        handleClearChatHistory,
-    } = useSettingsLogic();
+    setGeminiModel,
+    hideNumbers, // Get hideNumbers state
+    setHideNumbers, // Get setter
+    useCache, // Get cache toggle
+    setUseCache, // Get cache toggle setter
+    isLoadingSetup,
+    handleSave,
+    handleToshlSetup,
+    handleClearChatHistory,
+  } = useSettingsLogic();
 
   // The component now only focuses on rendering the UI
 
@@ -135,6 +137,23 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
         </div>
         <p className="text-xs text-gray-text pt-1">{STRINGS.HIDE_NUMBERS_HELP_TEXT}</p> {/* Help text */}
 
+        {/* Use Gemini Cache Toggle - Themed */}
+        <div className="flex items-center justify-between space-y-1">
+          <label htmlFor="useCache" className="block text-sm font-medium text-black-text">
+            {STRINGS.USE_GEMINI_CACHE_LABEL}
+          </label>
+          <label htmlFor="useCache" className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="useCache"
+              className="sr-only peer"
+              checked={useCache}
+              onChange={(e) => setUseCache(e.target.checked)}
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+          </label>
+        </div>
+        <p className="text-xs text-gray-text pt-1">{STRINGS.USE_GEMINI_CACHE_HELP_TEXT}</p>
 
         {/* Action Buttons */}
         {/* Action Buttons */}
