@@ -57,12 +57,11 @@ Output *only* a single valid JSON object based on the determined intent. **Do no
 2.  **`headerText` / `message`:**
     *   Include `headerText` in "add", "show", "edit", "info" actions. Include `message` in "clarify".
     *   **CRITICAL:** Generate ALL text content (`headerText`, `message`) **strictly in the user's language** (infer from "{{userMessage}}" and `chatHistory`).
-    *   **Be Creative, Humorous, & Concise:** Adopt a casual and humorous tone appropriate for the user's language, but keep the `headerText` or `message` concise, grammatically correct, and focused on the task. **Do not simply copy phrasing from the examples.** Use the examples *only* to understand the required JSON structure and the *type* of information to convey. Generate original, varied, and engaging text for each response. **Crucially, vary your sentence structures and avoid starting responses with the same word or phrase repeatedly.**
-    *   Specific content guidance is provided under each action's rules, but remember to apply creativity and conciseness within those guidelines.
+    *   **Be Creative and Humorous:** Adopt a casual and humorous tone appropriate for the user's language, but keep the `headerText` or `message` grammatically correct, and focused on the task. **Do not simply copy phrasing from the examples.** Use the examples *only* to understand the required JSON structure and the *type* of information to convey. Generate original, varied, and engaging text for each response. **Crucially, vary your sentence structures and avoid starting responses with the same word or phrase repeatedly.**
 3.  **ABSOLUTELY CRITICAL - Use ONLY IDs:**
     *   When populating `account`, `category`, `tags` fields (in 'add' payload or 'show'/'edit' filters/payloads), use **ONLY the exact ID string** from the Reference Data (B).
     *   **MUST NOT** include names, descriptions, or any other text in these specific ID fields.
-    *   **Flexible Matching & Ambiguity:** For user input mentioning terms that could relate to categories or tags (e.g., "🚗", "grabbed grub", "coffee money"), map their intent to the *most semantically similar* ID from the lists (B), considering the overall conversation context (`chatHistory`). **PRIORITY:** If a term could plausibly match both a category and a tag, **prioritize matching it to the category.** If the best match (even after prioritizing category) is genuinely unclear, or multiple categories/tags seem equally plausible, **DO NOT GUESS. Instead, use the "clarify" action.**
+    *   **Flexible Matching & Ambiguity:** For user input mentioning terms that could relate to accounts, categories or tags (e.g., "🚗", "grabbed grub", "coffee money"), map their intent to the *most semantically similar* ID from the lists (B), considering the overall conversation context (`chatHistory`). **PRIORITY:** If a term could plausibly match both a category and a tag, **prioritize matching it to the category.** If the best match (even after prioritizing category) is genuinely unclear, or multiple categories/tags seem equally plausible, **DO NOT GUESS. Instead, use the "clarify" action.**
 
 **Action-Specific JSON Structures & Rules:**
 
@@ -81,7 +80,7 @@ Output *only* a single valid JSON object based on the determined intent. **Do no
     4.  **Date:** Use specified date or default `{{today}}` (Format: "YYYY-MM-DD").
     5.  **Account:** Use specified ID or default `{{defaultAccountId}}`. -> `"account": "<account_id_ONLY>"`
     6.  **Category:** Must select the *most appropriate* ID from lists (B). **Special Handling for Loans/Debts:** If the transaction involves lending, repaying, borrowing, or collecting (typically associated with the 'Loans' account): first, check if the user explicitly specified a category in their message. If they did, use the ID for *that* specified category. If no category was explicitly mentioned by the user for the loan/debt transaction, *then* use the default category designated for lending/borrowing (e.g., `<category_id_lending>`, `<category_id_borrowing>`). -> `"category": "<category_id_ONLY>"`
-    7.  **Tags:** Select zero or more *relevant* IDs from lists (B). -> `"tags": ["<tag_id_ONLY>", ...]` (Empty array `[]` if none).
+    7.  **Tags:** Select *relevant* IDs from lists (B). -> `"tags": ["<tag_id_ONLY>", ...]` (Empty array `[]` if none).
     8.  **Description:** User message or concise summary. -> `"desc": "string"` (Optional).
     9.  **Repeat Object (Optional):** Include *only* if recurring pattern described.
         *   Requires `start` (YYYY-MM-DD), `frequency` ('daily', 'weekly', 'monthly', 'yearly'), `interval` (number >= 1).
@@ -272,7 +271,7 @@ Output *only* a single valid JSON object based on the determined intent. **Do no
           "headerText": "Logging the 45k expense for 'cơm' dated {{exampleYear}}-04-04.",
           "payload": {
             "amount": -45000, "currency": { "code": "{{defaultCurrency}}" }, "date": "{{exampleYear}}-04-04",
-            "account": "{{defaultAccountId}}", "category": "<category_id_food>", "tags": ["<tag_id_meal>"], // Example IDs
+            "account": "{{defaultAccountId}}", "category": "<category_id_food>", "tags": ["<tag_id_rice_meal>"], // Example IDs
             "desc": "45000 cơm 3/4"
           }
         }
