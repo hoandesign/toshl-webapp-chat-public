@@ -1,7 +1,8 @@
 import {
     ToshlAccount, ToshlCategory, ToshlTag, ToshlBudget, // Added ToshlBudget
     addToshlEntry, fetchEntries, deleteToshlEntry, editToshlEntry, fetchEntryById, ToshlEntry,
-    fetchToshlBudgets // Added fetchToshlBudgets
+    fetchToshlBudgets, // Added fetchToshlBudgets
+    FetchEntriesFilters // Import the specific filter type
 } from '../../lib/toshl';
 // Import the MCP tool hook (assuming it's exported from somewhere, adjust path if needed)
 // NOTE: We can't directly call MCP tools from here as it's not a React component.
@@ -44,7 +45,7 @@ const getRequiredApiData = () => {
 
 // --- API Handler for Fetching Entries (used by handleFetchDateRange and Gemini 'show') ---
 export const handleFetchEntriesApi = async (
-    filters: { from: string; to: string; [key: string]: any }, // Allow additional filters
+    filters: FetchEntriesFilters, // Use the imported specific type
     toshlApiKey: string,
     categories: ToshlCategory[],
     allTags: ToshlTag[]
@@ -106,7 +107,7 @@ export const handleProcessUserRequestApi = async (
 ): Promise<ProcessRequestResult> => {
     const { toshlApiKey, geminiApiKey, currency, geminiModel, accounts, categories, tags } = getRequiredApiData();
 
-    let messagesToAdd: Message[] = [];
+    const messagesToAdd: Message[] = []; // Use const as variable reference doesn't change
     let newLastShowContext = currentLastShowContext;
     let newLastSuccessfulEntryId = currentLastSuccessfulEntryId;
     let updatedEntryId: string | undefined = undefined;
@@ -127,7 +128,7 @@ export const handleProcessUserRequestApi = async (
                 if (msg.type === 'history_header') {
                     botText = `Response Header: ${msg.text}`;
                     if (currentLastShowContext?.filters) { // Use passed context
-                        try { botText += `\nToshl Request Filters Used: ${JSON.stringify(currentLastShowContext.filters)}`; } catch (e) { console.error("Failed to stringify filters for history"); }
+                        try { botText += `\nToshl Request Filters Used: ${JSON.stringify(currentLastShowContext.filters)}`; } catch (e) { console.error("Error stringifying filters for history:", e); } // Log the caught error
                     }
                 } else if (msg.type === 'entry_success' && msg.entryData?.id) {
                     botText = `System Confirmation: Entry ${msg.entryData.id} processed successfully.`;
@@ -186,10 +187,11 @@ export const handleProcessUserRequestApi = async (
         }
         case 'show': {
             newLastShowContext = { filters: geminiResult.filters, headerText: geminiResult.headerText }; // Set context on show
-            let finalFilters = geminiResult.filters || {};
+            const finalFilters = geminiResult.filters || {}; // Use const
             let finalHeaderText = geminiResult.headerText || STRINGS.ENTRIES_DEFAULT_HEADER;
 
             // Apply default date range if needed
+            // Note: We are modifying properties of finalFilters, which is allowed for const objects.
             if (!finalFilters.from || !finalFilters.to) {
                 const today = new Date();
                 const pastDate = new Date();
@@ -205,7 +207,8 @@ export const handleProcessUserRequestApi = async (
             }
 
             // Fetch entries using the determined filters
-            const { entries, formattedMessages: fetchedFormattedMessages } = await handleFetchEntriesApi(finalFilters as any, toshlApiKey, categories, tags); // Use the other handler
+            // Assert type as FetchEntriesFilters because the preceding logic guarantees 'from' and 'to' are strings here.
+            const { entries, formattedMessages: fetchedFormattedMessages } = await handleFetchEntriesApi(finalFilters as FetchEntriesFilters, toshlApiKey, categories, tags);
 
             // --- Process fetched entries ---
             let calculatedSumText = '';
@@ -424,7 +427,8 @@ export const handleProcessUserRequestApi = async (
             messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
 
             try {
-                const budgets: ToshlBudget[] = await fetchToshlBudgets(toshlApiKey); // API Call
+                // Pass from and to dates from Gemini result to the API call
+                const budgets: ToshlBudget[] = await fetchToshlBudgets(toshlApiKey, geminiResult.from, geminiResult.to); // API Call
 
                 if (budgets.length === 0) {
                     messagesToAdd.push({

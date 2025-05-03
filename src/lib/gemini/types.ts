@@ -67,6 +67,8 @@ export type GeminiGetAccountBalancesAction = {
 export type GeminiShowBudgetsAction = {
     action: 'show_budgets';
     headerText: string; // Confirmation/summary text
+    from?: string; // Optional start date (YYYY-MM-DD)
+    to?: string;   // Optional end date (YYYY-MM-DD)
 };
 
 // Union type for all possible valid Gemini response actions
