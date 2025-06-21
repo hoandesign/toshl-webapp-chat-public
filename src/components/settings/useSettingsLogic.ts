@@ -6,13 +6,14 @@ import * as STRINGS from '../../constants/strings';
 
 // Define all model options (copied from SettingsPage)
 export const geminiModelOptions = [
-    { value: 'gemini-2.5-pro-preview-03-25', label: 'Gemini 2.5 Pro Preview (Advanced reasoning)' },
+    { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Advanced reasoning)' },
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Next-gen speed & reasoning)' },
     { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (Cost-effective & low latency)' },
     { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Fast & balanced)' },
     { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B (Large scale, lower intelligence)' },
     { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Complex reasoning)' },
-    { value: 'gemini-2.5-flash-preview-04-17', label: 'Gemini 2.5 Flash Preview 04-17 (Adaptive thinking, cost efficiency)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Adaptive thinking, cost efficiency)' },
+    { value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
 ];
 
 // Define the return type of the hook
