@@ -447,7 +447,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           />
           <button
             type="submit"
-            disabled={isLoading || isLoadingHistory || !!isDeleting || !inputValue.trim()}
+            disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage)}
             className="bg-black hover:bg-gray-700 text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black self-end mb-0.5" /* Updated bg, hover, focus */
             aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
           >

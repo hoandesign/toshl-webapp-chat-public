@@ -16,6 +16,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Clock from 'lucide-react/dist/esm/icons/clock';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Copy from 'lucide-react/dist/esm/icons/copy';
+import { FileImage } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
@@ -31,6 +32,191 @@ interface MessageRendererProps {
     hideNumbers: boolean; // Add hideNumbers prop
     // Removed handleShowMoreAccountsClick prop
 }
+
+// Enhanced Image Display Component with comprehensive error handling and fallback mechanisms
+const ImageDisplay: React.FC<{
+    src: string;
+    alt: string;
+    messageId: string;
+    displayUrl?: string;
+    metadata?: Message['imageMetadata'];
+}> = ({ src, alt, messageId, displayUrl, metadata }) => {
+    const [imageLoading, setImageLoading] = useState(true);
+    const [imageError, setImageError] = useState(false);
+    const [cachedImageUrl, setCachedImageUrl] = useState<string | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const [fallbackAttempted, setFallbackAttempted] = useState(false);
+
+    const MAX_RETRY_ATTEMPTS = 2;
+
+    // Simplified image URL resolution - prioritize direct src
+    React.useEffect(() => {
+        setImageLoading(true);
+        setImageError(false);
+
+        // Priority 1: Use original src if available and valid (most common case)
+        if (src && src.startsWith('data:image/')) {
+            setCachedImageUrl(src);
+            setImageLoading(false);
+            return;
+        }
+
+        // Priority 2: Use provided displayUrl if available and valid
+        if (displayUrl && displayUrl.startsWith('data:image/')) {
+            setCachedImageUrl(displayUrl);
+            setImageLoading(false);
+            return;
+        }
+
+        // If no valid image URL found, show error
+        console.warn('No valid image URL found for message:', messageId, { src, displayUrl });
+        setCachedImageUrl(null);
+        setImageError(true);
+        setImageLoading(false);
+    }, [src, messageId, displayUrl, retryCount]);
+
+    const handleImageLoad = () => {
+        setImageLoading(false);
+        setImageError(false);
+        setRetryCount(0); // Reset retry count on successful load
+    };
+
+    const handleImageError = () => {
+        setImageLoading(false);
+
+        if (retryCount < MAX_RETRY_ATTEMPTS && !fallbackAttempted) {
+            // Try to retry with a different approach
+            setTimeout(() => {
+                setRetryCount(prev => prev + 1);
+                setFallbackAttempted(true);
+            }, 1000);
+        } else {
+            setImageError(true);
+        }
+    };
+
+    const handleRetryClick = () => {
+        if (retryCount < MAX_RETRY_ATTEMPTS) {
+            setRetryCount(prev => prev + 1);
+            setFallbackAttempted(false);
+        }
+    };
+
+    // Enhanced loading state with better visual feedback
+    if (imageLoading && !imageError) {
+        return (
+            <div
+                className="flex items-center justify-center h-32 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg border-2 border-dashed border-blue-200 animate-pulse"
+                role="status"
+                aria-label="Loading image"
+            >
+                <div className="flex flex-col items-center space-y-3">
+                    <div className="relative">
+                        <Loader2 size={24} className="animate-spin text-blue-500" />
+                        <div className="absolute inset-0 animate-ping">
+                            <Loader2 size={24} className="text-blue-300 opacity-75" />
+                        </div>
+                    </div>
+                    <span className="text-sm font-medium text-blue-700">Loading image...</span>
+                    {metadata && (
+                        <span className="text-xs text-blue-600/70">
+                            {metadata.mimeType?.split('/')[1]?.toUpperCase() || 'IMG'} • {Math.round((metadata.fileSize || 0) / 1024)}KB
+                        </span>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Enhanced error state with better visual feedback and accessibility
+    if (imageError || !cachedImageUrl) {
+        return (
+            <div
+                className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg border-2 border-dashed border-red-200 p-4"
+                role="alert"
+                aria-label="Image failed to load"
+            >
+                <div className="flex flex-col items-center space-y-2">
+                    <div className="p-2 bg-red-100 rounded-full">
+                        <FileImage size={24} className="text-red-500" />
+                    </div>
+                    <span className="text-sm font-medium text-red-700 text-center">
+                        {STRINGS.IMAGE_DISPLAY_ERROR}
+                    </span>
+                    {metadata && (
+                        <span className="text-xs text-red-600/70 text-center">
+                            {metadata.mimeType} • {Math.round((metadata.fileSize || 0) / 1024)}KB
+                        </span>
+                    )}
+                    {retryCount < MAX_RETRY_ATTEMPTS && (
+                        <button
+                            onClick={handleRetryClick}
+                            className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            title="Retry loading image"
+                            aria-label="Retry loading image"
+                        >
+                            <RefreshCw size={12} />
+                            Retry ({MAX_RETRY_ATTEMPTS - retryCount} left)
+                        </button>
+                    )}
+                </div>
+            </div>
+        );
+    }
+
+    // Enhanced successful image display with better visual feedback
+    return (
+        <div className="relative group">
+            {imageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-blue-50/80 rounded-lg backdrop-blur-sm z-10">
+                    <div className="flex flex-col items-center space-y-2">
+                        <Loader2 size={20} className="animate-spin text-blue-500" />
+                        <span className="text-xs text-blue-700 font-medium">Loading...</span>
+                    </div>
+                </div>
+            )}
+            <img
+                src={cachedImageUrl}
+                alt={alt}
+                className="max-w-full h-auto rounded-lg shadow-md border-2 border-blue-200/50 transition-all duration-300 hover:shadow-lg hover:border-blue-300/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                style={{
+                    maxHeight: '300px',
+                    objectFit: 'contain',
+                    opacity: imageLoading ? 0.3 : 1
+                }}
+                loading="lazy"
+                onLoad={handleImageLoad}
+                onError={handleImageError}
+                tabIndex={0}
+                role="img"
+            />
+            {/* Enhanced metadata overlay with better visibility */}
+            {metadata && !imageLoading && (
+                <div className="absolute bottom-2 right-2 bg-gradient-to-r from-black/70 to-black/50 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <div className="flex items-center space-x-2">
+                        <span className="font-medium">
+                            {metadata.mimeType?.split('/')[1]?.toUpperCase() || 'IMG'}
+                        </span>
+                        <span className="text-white/80">•</span>
+                        <span>{Math.round((metadata.fileSize || 0) / 1024)}KB</span>
+                        {metadata.originalWidth && metadata.originalHeight && (
+                            <>
+                                <span className="text-white/80">•</span>
+                                <span>{metadata.originalWidth}×{metadata.originalHeight}</span>
+                            </>
+                        )}
+                    </div>
+                </div>
+            )}
+            {/* Success indicator for loaded images */}
+            {!imageLoading && !imageError && (
+                <div className="absolute top-2 left-2 bg-green-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <CheckCircle size={12} />
+                </div>
+            )}
+        </div>
+    );
+};
 
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDeleting, isRetrying, handleDeleteEntry, handleDeleteMessageLocally, retrySendMessage, hideNumbers }) => { // Accept hideNumbers prop
     const [showActions, setShowActions] = useState(false); // State to control action visibility on hover
@@ -82,13 +268,13 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 )}
                 {/* Local Delete Button */}
                 {canDeleteLocally && (
-                     <button
-                         onClick={() => handleDeleteMessageLocally(msg.id)}
-                         className="text-gray-200 hover:text-accent-negative p-1"
-                         title={STRINGS.DELETE_MESSAGE_BUTTON_TITLE}
-                     >
-                         <Trash2 size={14} /> {/* Consistent icon size */}
-                     </button>
+                    <button
+                        onClick={() => handleDeleteMessageLocally(msg.id)}
+                        className="text-gray-200 hover:text-accent-negative p-1"
+                        title={STRINGS.DELETE_MESSAGE_BUTTON_TITLE}
+                    >
+                        <Trash2 size={14} /> {/* Consistent icon size */}
+                    </button>
                 )}
             </div>
         );
@@ -170,12 +356,12 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         }
         case 'loading': {
             // Loading message - no actions - Themed
-            content = ( <div className={`px-4 py-2.5 rounded-xl shadow-md bg-gray-100 ${secondaryTextColor} italic text-sm rounded-bl-none flex items-center space-x-2 animate-pulse relative`}> <Loader2 size={16} className="animate-spin" /> <span>{msg.text || STRINGS.PROCESSING}</span> </div> );
+            content = (<div className={`px-4 py-2.5 rounded-xl shadow-md bg-gray-100 ${secondaryTextColor} italic text-sm rounded-bl-none flex items-center space-x-2 animate-pulse relative`}> <Loader2 size={16} className="animate-spin" /> <span>{msg.text || STRINGS.PROCESSING}</span> </div>);
             break;
         }
         case 'error': {
             // Error message - allow copy/delete - Themed
-            content = ( <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-accent-negative/10 text-text-primary border border-accent-negative/30 rounded-bl-none flex items-center space-x-2 relative`}> <AlertTriangle size={16} className="text-accent-negative"/> <p className="text-sm">{msg.text}</p> {actionButtons} </div> );
+            content = (<div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-accent-negative/10 text-text-primary border border-accent-negative/30 rounded-bl-none flex items-center space-x-2 relative`}> <AlertTriangle size={16} className="text-accent-negative" /> <p className="text-sm">{msg.text}</p> {actionButtons} </div>);
             break;
         }
         case 'history_header': {
@@ -193,7 +379,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             // Edit success message - allow copy/delete - Themed (using purple still)
             content = (
                 <div className="max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-purple-100 text-text-primary border border-purple-300 rounded-bl-none flex items-center space-x-2 relative">
-                    <Pencil size={16} className="text-purple-500"/>
+                    <Pencil size={16} className="text-purple-500" />
                     <p className="text-sm">{msg.text}</p>
                     {actionButtons}
                 </div>
@@ -205,18 +391,18 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             // Keep existing colors for differentiation, but use primary text
             const bgColor = isClarification ? 'bg-yellow-100 border-yellow-300' : 'bg-blue-100 border-blue-300';
             const textColor = 'text-text-primary';
-            const icon = isClarification ? <MessageCircleQuestion size={16} className="text-yellow-600 mt-0.5 flex-shrink-0"/> : <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0"/>;
+            const icon = isClarification ? <MessageCircleQuestion size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" /> : <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />;
 
             // System info/clarification - allow copy/delete - Themed text
             content = (
-               <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words border rounded-bl-none flex items-start space-x-2 relative ${bgColor} ${textColor}`}>
-                   {icon}
-                   <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm break-words">{msg.text || ''}</ReactMarkdown>
-                   {actionButtons}
-               </div>
-             );
-             break;
-           }
+                <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words border rounded-bl-none flex items-start space-x-2 relative ${bgColor} ${textColor}`}>
+                    {icon}
+                    <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm break-words">{msg.text || ''}</ReactMarkdown>
+                    {actionButtons}
+                </div>
+            );
+            break;
+        }
         // Removed budget_list case - handled by grouping logic now
         // Cases 'account_balance' and 'account_balance_see_more' are handled by the grouping logic in ChatInterface.tsx now.
         // We only need the default case to render text messages or other unhandled types.
@@ -233,40 +419,84 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                     statusIndicator = <span title="Pending..."><Clock size={12} className="text-blue-200 ml-1.5 flex-shrink-0" /></span>; // Keep blue-ish for pending
                     // Optionally add retry button for pending messages too
                     if (msg.offlineId) {
-                         retryButton = (
-                             <button
-                                 onClick={() => retrySendMessage(msg.offlineId!)}
-                                 disabled={isRetrying === msg.offlineId}
-                                 className="text-xs text-navigation-icon hover:text-navigation-text underline ml-2 disabled:opacity-50 disabled:cursor-wait" // Use navigation theme colors
-                                 title="Retry sending"
-                             >
-                                 {isRetrying === msg.offlineId ? <Loader2 size={12} className="animate-spin inline-block"/> : <RefreshCw size={12} className="inline-block"/>} Retry
-                             </button>
-                         );
+                        retryButton = (
+                            <button
+                                onClick={() => retrySendMessage(msg.offlineId!)}
+                                disabled={isRetrying === msg.offlineId}
+                                className="text-xs text-navigation-icon hover:text-navigation-text underline ml-2 disabled:opacity-50 disabled:cursor-wait" // Use navigation theme colors
+                                title="Retry sending"
+                            >
+                                {isRetrying === msg.offlineId ? <Loader2 size={12} className="animate-spin inline-block" /> : <RefreshCw size={12} className="inline-block" />} Retry
+                            </button>
+                        );
                     }
                 } else if (msg.status === 'error' && msg.offlineId) {
                     // Wrap icon in span for title attribute
                     statusIndicator = <span title="Failed to send"><AlertTriangle size={12} className="text-red-300 ml-1.5 flex-shrink-0" /></span>; // Keep red-ish for error
                     retryButton = (
                         <button
-                                 onClick={() => retrySendMessage(msg.offlineId!)}
-                                 disabled={isRetrying === msg.offlineId}
-                                 className="text-xs text-red-400 hover:text-navigation-text underline ml-2 disabled:opacity-50 disabled:cursor-wait" // Use red-400 for error, hover to white
-                                 title="Retry sending"
-                             >
-                                 {isRetrying === msg.offlineId ? <Loader2 size={12} className="animate-spin inline-block"/> : <RefreshCw size={12} className="inline-block"/>} Retry
+                            onClick={() => retrySendMessage(msg.offlineId!)}
+                            disabled={isRetrying === msg.offlineId}
+                            className="text-xs text-red-400 hover:text-navigation-text underline ml-2 disabled:opacity-50 disabled:cursor-wait" // Use red-400 for error, hover to white
+                            title="Retry sending"
+                        >
+                            {isRetrying === msg.offlineId ? <Loader2 size={12} className="animate-spin inline-block" /> : <RefreshCw size={12} className="inline-block" />} Retry
                         </button>
                     );
                 }
                 // else status is 'sent' or undefined (treat as sent), no indicator needed
 
-                // User message - allow copy/delete + show status/retry
+                // User message - allow copy/delete + show status/retry + display images
+                const hasImage = !!msg.image;
+                const hasText = !!msg.text;
+                const isImageProcessing = hasImage && msg.status === 'pending';
+
                 content = (
-                    <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${userStyle}`}>
-                        <p className="text-sm">{msg.text}</p>
-                        <div className="flex items-center justify-end mt-1"> {/* Removed min-h */}
-                            {statusIndicator}
-                            {retryButton}
+                    <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${userStyle} ${hasImage ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isImageProcessing ? 'animate-pulse' : ''}`}>
+
+
+                        {/* Display image if present with enhanced loading state */}
+                        {msg.image && (
+                            <div className={hasText ? "mb-3" : "mb-1"}>
+                                <div className="relative">
+                                    {/* Image loading overlay for better UX */}
+                                    <ImageDisplay
+                                        src={msg.image}
+                                        alt={`Uploaded image${msg.imageMetadata?.mimeType ? ` (${msg.imageMetadata.mimeType})` : ''}`}
+                                        messageId={msg.id}
+                                        displayUrl={msg.imageDisplayUrl}
+                                        metadata={msg.imageMetadata}
+                                    />
+                                    {/* Accessibility enhancement: Screen reader description */}
+                                    <div className="sr-only">
+                                        Image message containing {msg.imageMetadata?.mimeType || 'image file'}
+                                        {msg.imageMetadata?.fileSize && `, file size ${Math.round(msg.imageMetadata.fileSize / 1024)}KB`}
+                                        {msg.imageMetadata?.originalWidth && msg.imageMetadata?.originalHeight &&
+                                            `, dimensions ${msg.imageMetadata.originalWidth} by ${msg.imageMetadata.originalHeight} pixels`
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Display text if present */}
+                        {msg.text && <p className="text-sm">{msg.text}</p>}
+
+                        {/* Enhanced status section with better visual hierarchy */}
+                        <div className="flex items-center justify-between mt-2">
+                            <div className="flex items-center">
+                                {/* Processing indicator for image messages */}
+                                {isImageProcessing && (
+                                    <div className="flex items-center text-blue-300 text-xs mr-2">
+                                        <Loader2 size={12} className="animate-spin mr-1" />
+                                        <span>Processing image...</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center">
+                                {statusIndicator}
+                                {retryButton}
+                            </div>
                         </div>
                         {actionButtons}
                     </div>
@@ -275,7 +505,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             } else {
                 // Default Bot/System messages - allow copy/delete - Themed
                 const otherStyle = 'bg-card-bg text-black-text rounded-bl-none border border-separator-gray'; // Use separator-gray
-                content = ( <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${otherStyle}`} > <p className="text-sm">{msg.text}</p> {actionButtons} </div> );
+                content = (<div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${otherStyle}`} > <p className="text-sm">{msg.text}</p> {actionButtons} </div>);
             }
             break;
         }

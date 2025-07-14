@@ -130,15 +130,19 @@ flowchart TD
 
 ---
 
-## 7. Photo Input Feature
+## 7. Image Message Rendering & Processing
 - Users can attach images to their messages using the image upload button in the chat interface.
-- Images are processed as base64 data URLs and stored in the message state.
-- The Gemini API receives both text and image content in multimodal format.
-- Images are preferentially uploaded to the Gemini Files API for better performance and larger file support.
-- If Files API upload fails, the system falls back to inline base64 data with MIME type encoding.
-- Chat history preserves image attachments for context in subsequent requests.
-- Users can preview selected images before sending and remove them if needed.
-- The Files API supports larger images (up to the API limits) compared to the 20MB inline data limit.
+- **Caption-free sending**: Images can be sent without requiring text captions for streamlined receipt processing.
+- **Visual display**: Images are displayed directly in the chat interface with proper aspect ratio and sizing.
+- **Image caching**: Browser-based cache stores resized images for display performance using IndexedDB.
+- **Metadata display**: Shows image dimensions, file size, and format information alongside images.
+- **Multimodal AI processing**: The Gemini API receives both text and image content in multimodal format.
+- **Files API optimization**: Images are preferentially uploaded to the Gemini Files API for better performance and larger file support.
+- **Fallback handling**: If Files API upload fails, the system falls back to inline base64 data with MIME type encoding.
+- **Chat history optimization**: Old images in chat history are replaced with "[image]" placeholders when sending to AI to reduce payload size.
+- **Context preservation**: Only current/new images are sent to AI while maintaining conversation context.
+- **Error handling**: Graceful degradation for image processing failures with user-friendly error messages.
+- **Accessibility**: Visual indicators distinguish image messages from text-only messages.
 
 ---
 

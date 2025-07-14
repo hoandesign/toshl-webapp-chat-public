@@ -201,3 +201,18 @@ export const MARKDOWN_TABLE_EMPTY = '(No items of this type)';
 export const TOSHL_CURRENCY_UPDATE_SUCCESS = "Toshl profile currency updated successfully.";
 export const TOSHL_CURRENCY_UPDATE_FAILED = (error: string) => `Failed to update Toshl profile currency: ${error}`;
 export const SETTINGS_SAVED_SUCCESS = "Settings saved successfully.";
+
+// Image Processing Error Messages
+export const IMAGE_INVALID_FILE_TYPE = "Please select a valid image file (JPEG, PNG, GIF, WebP).";
+export const IMAGE_FILE_TOO_LARGE = (maxSizeMB: number) => `Image file is too large. Maximum size allowed is ${maxSizeMB}MB.`;
+export const IMAGE_PROCESSING_FAILED = "Failed to process the image. Please try again with a different image.";
+export const IMAGE_RESIZE_FAILED = "Failed to resize the image. Please try with a smaller image.";
+export const IMAGE_CACHE_FAILED = "Failed to cache the image. The image will still be sent but may not display properly.";
+export const IMAGE_CACHE_UNAVAILABLE = "Cached image unavailable. Displaying placeholder.";
+export const IMAGE_DISPLAY_ERROR = "Unable to display image";
+export const IMAGE_LOAD_FAILED = "Failed to load image";
+export const IMAGE_DIMENSIONS_INVALID = "Image dimensions are invalid or too large.";
+export const IMAGE_CORRUPTED = "The selected image appears to be corrupted or invalid.";
+export const IMAGE_UNSUPPORTED_FORMAT = "This image format is not supported. Please use JPEG, PNG, GIF, or WebP.";
+export const IMAGE_CACHE_STORAGE_FULL = "Image cache storage is full. Some older images may not display properly.";
+export const IMAGE_PROCESSING_TIMEOUT = "Image processing timed out. Please try with a smaller image.";

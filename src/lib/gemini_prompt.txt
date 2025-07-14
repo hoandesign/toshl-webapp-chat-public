@@ -1,6 +1,3 @@
-// Gemini Prompt for Toshl Assistant - v2 (Refactored for Clarity)
-// Using placeholders like {{variableName}} for dynamic content
-
 You are an intelligent assistant processing user requests related to Toshl finances. Your core task is to analyze the user's message and context, determine their intent, and output **ONLY a single, valid JSON object** representing the required action or clarification, following all rules precisely.
 
 **A. Contextual Information:**
@@ -423,26 +420,3 @@ Output *only* a single valid JSON object based on the determined intent. **Do no
 **D. Final Instruction:**
 
 Now, analyze the user message "{{userMessage}}" using all context (A), reference data (B), and processing steps/rules (C). Ensure your output is **ONLY** a single, valid JSON object adhering strictly to all rules (especially regarding IDs, user language, and the `[SUM_PLACEHOLDER]` for 'show' actions with date ranges).
-
-</file_content>
-
-Now that you have the latest state of the file, try the operation again with fewer, more precise SEARCH blocks. For large files especially, it may be prudent to try to limit yourself to <5 SEARCH/REPLACE blocks at a time, then wait for the user to respond with the result of the operation before following up with another replace_in_file call to make additional edits.
-(If you run into this error 3 times in a row, you may use the write_to_file tool as a fallback.)
-</error><environment_details>
-# VSCode Visible Files
-src/lib/gemini_prompt.txt
-
-# VSCode Open Tabs
-src/lib/gemini/types.ts
-src/components/chat/apiHandler.ts
-src/lib/gemini_prompt.txt
-
-# Current Time
-5/3/2025, 7:12:12 PM (Asia/Saigon, UTC+7:00)
-
-# Context Window Usage
-68,522 / 1,048.576K tokens used (7%)
-
-# Current Mode
-ACT MODE
-</environment_details>

@@ -38,6 +38,9 @@ interface UseChatLogicReturn {
     selectedImage: string | null;
     handleImageUpload: (event: ChangeEvent<HTMLInputElement>) => void;
     removeSelectedImage: () => void;
+    // Image cache functionality
+    getCachedDisplayImage: (imageId: string) => Promise<string | null>;
+    clearImageCache: () => Promise<void>;
 }
 
 const LOCAL_STORAGE_KEY = 'chatMessages';
@@ -45,53 +48,454 @@ const TOSHL_ACCOUNTS_KEY = 'toshlAccounts';
 const TOSHL_CATEGORIES_KEY = 'toshlCategories';
 const TOSHL_TAGS_KEY = 'toshlTags';
 
-// Helper function to resize images before upload
+// IndexedDB configuration for image caching
+const IMAGE_CACHE_DB_NAME = 'ImageCacheDB';
+const IMAGE_CACHE_DB_VERSION = 1;
+const IMAGE_CACHE_STORE_NAME = 'images';
+const MAX_CACHE_SIZE_MB = 50; // Maximum cache size in MB
+const MAX_CACHE_ENTRIES = 100; // Maximum number of cached images
+
+// Image cache interface
+interface CachedImage {
+  id: string;
+  displayUrl: string; // Resized version for display
+  aiUrl: string; // Original/AI-processing version
+  timestamp: number;
+  size: number; // Size in bytes
+}
+
+// Image validation configuration
+const SUPPORTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+const MAX_FILE_SIZE_MB = 10; // Maximum file size in MB
+const MAX_FILE_SIZE_BYTES = MAX_FILE_SIZE_MB * 1024 * 1024;
+const MAX_IMAGE_DIMENSION = 4096; // Maximum width or height in pixels
+const IMAGE_PROCESSING_TIMEOUT_MS = 30000; // 30 seconds timeout
+
+// Image validation result interface
+interface ImageValidationResult {
+  isValid: boolean;
+  error?: string;
+  metadata?: {
+    width: number;
+    height: number;
+    fileSize: number;
+    mimeType: string;
+  };
+}
+
+// Image cache utility functions
+const initImageCacheDB = (): Promise<IDBDatabase> => {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(IMAGE_CACHE_DB_NAME, IMAGE_CACHE_DB_VERSION);
+    
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+    
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+      if (!db.objectStoreNames.contains(IMAGE_CACHE_STORE_NAME)) {
+        const store = db.createObjectStore(IMAGE_CACHE_STORE_NAME, { keyPath: 'id' });
+        store.createIndex('timestamp', 'timestamp', { unique: false });
+      }
+    };
+  });
+};
+
+const cacheImage = async (id: string, displayUrl: string, aiUrl: string): Promise<void> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    
+    // Calculate approximate size (base64 data URL size)
+    const size = displayUrl.length + aiUrl.length;
+    
+    // Check if we have enough space before caching
+    const totalSize = await getCurrentCacheSize();
+    const totalSizeMB = (totalSize + size) / (1024 * 1024);
+    
+    if (totalSizeMB > MAX_CACHE_SIZE_MB) {
+      // Try to cleanup first
+      await cleanupImageCache();
+      
+      // Check again after cleanup
+      const newTotalSize = await getCurrentCacheSize();
+      const newTotalSizeMB = (newTotalSize + size) / (1024 * 1024);
+      
+      if (newTotalSizeMB > MAX_CACHE_SIZE_MB) {
+        throw new Error(STRINGS.IMAGE_CACHE_STORAGE_FULL);
+      }
+    }
+    
+    const cachedImage: CachedImage = {
+      id,
+      displayUrl,
+      aiUrl,
+      timestamp: Date.now(),
+      size
+    };
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.put(cachedImage);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error || new Error('Failed to store image in cache'));
+    });
+    
+    // Cleanup old entries if needed
+    await cleanupImageCache();
+    
+  } catch (error) {
+    console.error('Failed to cache image:', error);
+    throw error; // Re-throw to allow caller to handle
+  }
+};
+
+// Helper function to get current cache size
+const getCurrentCacheSize = async (): Promise<number> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    
+    const allEntries = await new Promise<CachedImage[]>((resolve, reject) => {
+      const request = store.getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error);
+    });
+    
+    return allEntries.reduce((sum, entry) => sum + entry.size, 0);
+  } catch (error) {
+    console.error('Failed to get current cache size:', error);
+    return 0;
+  }
+};
+
+const getCachedImage = async (id: string): Promise<CachedImage | null> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readonly');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    
+    return new Promise<CachedImage | null>((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        reject(new Error('Cache retrieval timeout'));
+      }, 5000); // 5 second timeout
+      
+      const request = store.get(id);
+      
+      request.onsuccess = () => {
+        clearTimeout(timeout);
+        const result = request.result;
+        
+        // Validate cached data integrity
+        if (result && result.displayUrl && result.displayUrl.startsWith('data:image/')) {
+          resolve(result);
+        } else if (result) {
+          console.warn(`Invalid cached image data for ${id}, removing from cache`);
+          // Remove invalid cache entry
+          removeCachedImage(id).catch(console.error);
+          resolve(null);
+        } else {
+          resolve(null);
+        }
+      };
+      
+      request.onerror = () => {
+        clearTimeout(timeout);
+        reject(request.error || new Error('Failed to retrieve cached image'));
+      };
+    });
+  } catch (error) {
+    console.error('Failed to get cached image:', error);
+    return null;
+  }
+};
+
+// Helper function to remove invalid cached images
+const removeCachedImage = async (id: string): Promise<void> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.delete(id);
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error(`Failed to remove cached image ${id}:`, error);
+  }
+};
+
+const cleanupImageCache = async (): Promise<void> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    const index = store.index('timestamp');
+    
+    // Set timeout for cleanup operation
+    const cleanupTimeout = setTimeout(() => {
+      throw new Error('Cache cleanup timeout');
+    }, 10000); // 10 second timeout
+    
+    try {
+      // Get all entries sorted by timestamp (oldest first)
+      const allEntries = await new Promise<CachedImage[]>((resolve, reject) => {
+        const request = index.getAll();
+        request.onsuccess = () => resolve(request.result || []);
+        request.onerror = () => reject(request.error || new Error('Failed to get cache entries'));
+      });
+      
+      clearTimeout(cleanupTimeout);
+      
+      if (allEntries.length <= MAX_CACHE_ENTRIES) {
+        // Check total size
+        const totalSize = allEntries.reduce((sum, entry) => sum + (entry.size || 0), 0);
+        const totalSizeMB = totalSize / (1024 * 1024);
+        
+        if (totalSizeMB <= MAX_CACHE_SIZE_MB) {
+          return; // No cleanup needed
+        }
+      }
+      
+      // Sort by timestamp (oldest first) and remove excess entries
+      allEntries.sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0));
+      
+      let currentSize = allEntries.reduce((sum, entry) => sum + (entry.size || 0), 0);
+      const targetSizeMB = MAX_CACHE_SIZE_MB * 0.8; // Clean up to 80% of max size
+      const targetSize = targetSizeMB * 1024 * 1024;
+      
+      // Remove oldest entries until we're under limits
+      const entriesToDelete = [];
+      for (let i = 0; i < allEntries.length && (allEntries.length - i > MAX_CACHE_ENTRIES * 0.8 || currentSize > targetSize); i++) {
+        const entryToDelete = allEntries[i];
+        entriesToDelete.push(entryToDelete);
+        currentSize -= (entryToDelete.size || 0);
+      }
+      
+      // Delete entries in batch
+      for (const entry of entriesToDelete) {
+        try {
+          await new Promise<void>((resolve, reject) => {
+            const deleteRequest = store.delete(entry.id);
+            deleteRequest.onsuccess = () => resolve();
+            deleteRequest.onerror = () => reject(deleteRequest.error);
+          });
+        } catch (deleteError) {
+          console.warn(`Failed to delete cache entry ${entry.id}:`, deleteError);
+          // Continue with other deletions
+        }
+      }
+      
+      console.log(`Cache cleanup completed. Removed ${entriesToDelete.length} entries.`);
+      
+    } catch (timeoutError) {
+      clearTimeout(cleanupTimeout);
+      throw timeoutError;
+    }
+    
+  } catch (error) {
+    console.error('Failed to cleanup image cache:', error);
+    // Don't throw error to prevent breaking the main flow
+  }
+};
+
+const clearImageCache = async (): Promise<void> => {
+  try {
+    const db = await initImageCacheDB();
+    const transaction = db.transaction([IMAGE_CACHE_STORE_NAME], 'readwrite');
+    const store = transaction.objectStore(IMAGE_CACHE_STORE_NAME);
+    
+    await new Promise<void>((resolve, reject) => {
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  } catch (error) {
+    console.error('Failed to clear image cache:', error);
+  }
+};
+
+// Image validation function
+const validateImageFile = (file: File): Promise<ImageValidationResult> => {
+  return new Promise((resolve) => {
+    // Check file type
+    if (!SUPPORTED_IMAGE_TYPES.includes(file.type.toLowerCase())) {
+      resolve({
+        isValid: false,
+        error: STRINGS.IMAGE_UNSUPPORTED_FORMAT
+      });
+      return;
+    }
+
+    // Check file size
+    if (file.size > MAX_FILE_SIZE_BYTES) {
+      resolve({
+        isValid: false,
+        error: STRINGS.IMAGE_FILE_TOO_LARGE(MAX_FILE_SIZE_MB)
+      });
+      return;
+    }
+
+    // Check image dimensions and validate image integrity
+    const img = new Image();
+    const reader = new FileReader();
+
+    const timeout = setTimeout(() => {
+      resolve({
+        isValid: false,
+        error: STRINGS.IMAGE_PROCESSING_TIMEOUT
+      });
+    }, IMAGE_PROCESSING_TIMEOUT_MS);
+
+    img.onload = () => {
+      clearTimeout(timeout);
+      
+      // Check dimensions
+      if (img.width > MAX_IMAGE_DIMENSION || img.height > MAX_IMAGE_DIMENSION) {
+        resolve({
+          isValid: false,
+          error: STRINGS.IMAGE_DIMENSIONS_INVALID
+        });
+        return;
+      }
+
+      // Check for valid dimensions (not zero)
+      if (img.width === 0 || img.height === 0) {
+        resolve({
+          isValid: false,
+          error: STRINGS.IMAGE_CORRUPTED
+        });
+        return;
+      }
+
+      resolve({
+        isValid: true,
+        metadata: {
+          width: img.width,
+          height: img.height,
+          fileSize: file.size,
+          mimeType: file.type
+        }
+      });
+    };
+
+    img.onerror = () => {
+      clearTimeout(timeout);
+      resolve({
+        isValid: false,
+        error: STRINGS.IMAGE_CORRUPTED
+      });
+    };
+
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        img.src = event.target.result as string;
+      } else {
+        clearTimeout(timeout);
+        resolve({
+          isValid: false,
+          error: STRINGS.IMAGE_PROCESSING_FAILED
+        });
+      }
+    };
+
+    reader.onerror = () => {
+      clearTimeout(timeout);
+      resolve({
+        isValid: false,
+        error: STRINGS.IMAGE_PROCESSING_FAILED
+      });
+    };
+
+    reader.readAsDataURL(file);
+  });
+};
+
+// Enhanced helper function to resize images with error handling
 const resizeImage = (
     file: File,
     maxWidth: number,
     maxHeight: number,
     quality: number,
-    callback: (dataUrl: string) => void
+    callback: (dataUrl: string | null, error?: string) => void
 ) => {
     const reader = new FileReader();
+    
+    const timeout = setTimeout(() => {
+        callback(null, STRINGS.IMAGE_PROCESSING_TIMEOUT);
+    }, IMAGE_PROCESSING_TIMEOUT_MS);
+
     reader.onload = (event) => {
         const img = new Image();
+        
         img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const ctx = canvas.getContext('2d');
+            clearTimeout(timeout);
             
-            if (!ctx) {
-                console.error('Could not get canvas context');
-                return;
-            }
-            
-            // Calculate new dimensions
-            let { width, height } = img;
-            
-            if (width > height) {
-                if (width > maxWidth) {
-                    height = (height * maxWidth) / width;
-                    width = maxWidth;
+            try {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                
+                if (!ctx) {
+                    callback(null, STRINGS.IMAGE_RESIZE_FAILED);
+                    return;
                 }
-            } else {
-                if (height > maxHeight) {
-                    width = (width * maxHeight) / height;
-                    height = maxHeight;
+                
+                // Calculate new dimensions
+                let { width, height } = img;
+                
+                if (width > height) {
+                    if (width > maxWidth) {
+                        height = (height * maxWidth) / width;
+                        width = maxWidth;
+                    }
+                } else {
+                    if (height > maxHeight) {
+                        width = (width * maxHeight) / height;
+                        height = maxHeight;
+                    }
                 }
+                
+                canvas.width = width;
+                canvas.height = height;
+                
+                // Draw and compress
+                ctx.drawImage(img, 0, 0, width, height);
+                
+                // Convert to data URL with specified quality
+                const dataUrl = canvas.toDataURL('image/jpeg', quality);
+                
+                // Validate the result
+                if (dataUrl && dataUrl.startsWith('data:image/')) {
+                    callback(dataUrl);
+                } else {
+                    callback(null, STRINGS.IMAGE_RESIZE_FAILED);
+                }
+            } catch (error) {
+                callback(null, STRINGS.IMAGE_RESIZE_FAILED);
             }
-            
-            canvas.width = width;
-            canvas.height = height;
-            
-            // Draw and compress
-            ctx.drawImage(img, 0, 0, width, height);
-            
-            // Convert to data URL with specified quality
-            const dataUrl = canvas.toDataURL('image/jpeg', quality);
-            callback(dataUrl);
         };
-        img.src = event.target?.result as string;
+        
+        img.onerror = () => {
+            clearTimeout(timeout);
+            callback(null, STRINGS.IMAGE_CORRUPTED);
+        };
+        
+        if (event.target?.result) {
+            img.src = event.target.result as string;
+        } else {
+            clearTimeout(timeout);
+            callback(null, STRINGS.IMAGE_PROCESSING_FAILED);
+        }
     };
+    
+    reader.onerror = () => {
+        clearTimeout(timeout);
+        callback(null, STRINGS.IMAGE_PROCESSING_FAILED);
+    };
+    
     reader.readAsDataURL(file);
 };
 
@@ -195,24 +599,139 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         }
     }, []); // Run only on mount
 
-    const handleImageUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+    // Effect to populate cached display images for messages that have imageId but no imageDisplayUrl
+    useEffect(() => {
+        const populateDisplayImages = async () => {
+            const messagesToUpdate: Message[] = [];
+            
+            for (const message of messages) {
+                if (message.imageId && !message.imageDisplayUrl) {
+                    const cachedImage = await getCachedImage(message.imageId);
+                    if (cachedImage) {
+                        messagesToUpdate.push({
+                            ...message,
+                            imageDisplayUrl: cachedImage.displayUrl
+                        });
+                    }
+                }
+            }
+            
+            if (messagesToUpdate.length > 0) {
+                setMessages(prevMessages => 
+                    prevMessages.map(msg => {
+                        const updatedMessage = messagesToUpdate.find(updated => updated.id === msg.id);
+                        return updatedMessage || msg;
+                    })
+                );
+            }
+        };
+        
+        populateDisplayImages();
+    }, [messages.length]); // Only run when messages array length changes to avoid infinite loops
+
+    // State for selected image and its cache ID
+    const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
+    // State for selected image metadata
+    const [selectedImageMetadata, setSelectedImageMetadata] = useState<{
+        width: number;
+        height: number;
+        fileSize: number;
+        mimeType: string;
+    } | null>(null);
+
+    const handleImageUpload = useCallback(async (event: ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
         if (!file) return;
 
-        // Check if file is an image
-        if (!file.type.startsWith('image/')) {
-            console.error('Selected file is not an image');
-            return;
-        }
+        try {
+            // Validate the image file first
+            const validation = await validateImageFile(file);
+            
+            if (!validation.isValid) {
+                // Show error message to user
+                const errorMessage: Message = {
+                    id: `img_error_${Date.now()}`,
+                    text: validation.error || STRINGS.IMAGE_PROCESSING_FAILED,
+                    sender: 'system',
+                    type: 'error',
+                    status: 'error',
+                    timestamp: new Date().toISOString()
+                };
+                setMessages(prev => [...prev, errorMessage]);
+                return;
+            }
 
-        // Resize the image before setting it
-        resizeImage(file, 1024, 1024, 0.8, (resizedDataUrl) => {
-            setSelectedImage(resizedDataUrl);
-        });
-    }, []);
+            const imageId = `img_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+
+            // Create display version (smaller, optimized for UI)
+            resizeImage(file, 800, 600, 0.7, (displayUrl, displayError) => {
+                if (displayError || !displayUrl) {
+                    // Show error message for display version failure
+                    const errorMessage: Message = {
+                        id: `img_display_error_${Date.now()}`,
+                        text: displayError || STRINGS.IMAGE_RESIZE_FAILED,
+                        sender: 'system',
+                        type: 'error',
+                        status: 'error',
+                        timestamp: new Date().toISOString()
+                    };
+                    setMessages(prev => [...prev, errorMessage]);
+                    return;
+                }
+
+                // Create AI processing version (larger, higher quality)
+                resizeImage(file, 1024, 1024, 0.8, async (aiUrl, aiError) => {
+                    if (aiError || !aiUrl) {
+                        // Show error message for AI version failure
+                        const errorMessage: Message = {
+                            id: `img_ai_error_${Date.now()}`,
+                            text: aiError || STRINGS.IMAGE_RESIZE_FAILED,
+                            sender: 'system',
+                            type: 'error',
+                            status: 'error',
+                            timestamp: new Date().toISOString()
+                        };
+                        setMessages(prev => [...prev, errorMessage]);
+                        return;
+                    }
+
+                    // Set the AI version for immediate use (will be sent to API)
+                    setSelectedImage(aiUrl);
+                    setSelectedImageId(imageId);
+                    
+                    // Store the metadata from validation for later use
+                    if (validation.metadata) {
+                        setSelectedImageMetadata(validation.metadata);
+                    }
+                    
+                    // Try to cache both versions (non-blocking)
+                    cacheImage(imageId, displayUrl, aiUrl).catch(cacheError => {
+                        // Cache failed but we can still use the image - just log the error
+                        console.warn('Image caching failed (non-critical):', cacheError);
+                        // Don't show user-facing error message since the image still works
+                    });
+                });
+            });
+            
+        } catch (error) {
+            // Unexpected error during validation
+            console.error('Unexpected error during image upload:', error);
+            const errorMessage: Message = {
+                id: `img_unexpected_error_${Date.now()}`,
+                text: STRINGS.IMAGE_PROCESSING_FAILED,
+                sender: 'system',
+                type: 'error',
+                status: 'error',
+                timestamp: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        }
+    }, [setMessages]);
 
     const removeSelectedImage = useCallback(() => {
         setSelectedImage(null);
+        setSelectedImageId(null);
+        setSelectedImageMetadata(null);
     }, []);
 
     // --- Core Logic Functions ---
@@ -329,7 +848,10 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
 
             setInputValue(''); // Clear input immediately
             const currentImage = selectedImage;
+            const currentImageId = selectedImageId;
             setSelectedImage(null); // Clear selected image
+            setSelectedImageId(null); // Clear selected image ID
+            setSelectedImageMetadata(null); // Clear selected image metadata
 
             if (!isOnline) {
                 // --- Offline Handling ---
@@ -339,6 +861,14 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 offlineId: offlineId,
                 text,
                 image: currentImage || undefined,
+                imageId: currentImageId || undefined,
+                imageMetadata: currentImage ? {
+                    processedAt: new Date().toISOString(),
+                    mimeType: selectedImageMetadata?.mimeType || 'image/jpeg', // Use original mime type or default
+                    fileSize: selectedImageMetadata?.fileSize || 0,
+                    originalWidth: selectedImageMetadata?.width,
+                    originalHeight: selectedImageMetadata?.height
+                } : undefined,
                 sender: 'user',
                 type: 'text',
                 status: 'pending', // Mark as pending
@@ -350,7 +880,23 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         } else {
             // --- Online Handling ---
             const now = new Date().toISOString();
-            const userMessage: Message = { id: `user_${Date.now()}`, text, image: currentImage || undefined, sender: 'user', type: 'text', status: 'sent', timestamp: now }; // Mark as sent initially
+            const userMessage: Message = { 
+                id: `user_${Date.now()}`, 
+                text, 
+                image: currentImage || undefined, 
+                imageId: currentImageId || undefined,
+                imageMetadata: currentImage ? {
+                    processedAt: new Date().toISOString(),
+                    mimeType: selectedImageMetadata?.mimeType || 'image/jpeg', // Use original mime type or default
+                    fileSize: selectedImageMetadata?.fileSize || 0,
+                    originalWidth: selectedImageMetadata?.width,
+                    originalHeight: selectedImageMetadata?.height
+                } : undefined,
+                sender: 'user', 
+                type: 'text', 
+                status: 'sent', 
+                timestamp: now 
+            }; // Mark as sent initially
             const loadingId = `loading_${Date.now()}`;
             const loadingMessage: Message = { id: loadingId, text: STRINGS.THINKING, sender: 'system', type: 'loading', status: 'sent', timestamp: now };
 
@@ -754,5 +1300,27 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         selectedImage,
         handleImageUpload,
         removeSelectedImage,
+        // Image cache
+        getCachedDisplayImage: useCallback(async (imageId: string): Promise<string | null> => {
+            try {
+                const cachedImage = await getCachedImage(imageId);
+                if (cachedImage && cachedImage.displayUrl) {
+                    // Validate that the cached URL is still valid
+                    if (cachedImage.displayUrl.startsWith('data:image/')) {
+                        return cachedImage.displayUrl;
+                    } else {
+                        console.warn(`Invalid cached image URL for ${imageId}`);
+                        return null;
+                    }
+                }
+                return null;
+            } catch (error) {
+                console.error(`Failed to get cached display image for ${imageId}:`, error);
+                return null;
+            }
+        }, []),
+        clearImageCache: useCallback(async (): Promise<void> => {
+            await clearImageCache();
+        }, []),
     };
 };

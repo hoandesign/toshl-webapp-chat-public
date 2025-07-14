@@ -40,7 +40,16 @@ export interface Message {
   id: string;
   text?: string; // Optional for structured messages
   sender: 'user' | 'system' | 'bot';
-  image?: string; // Optional base64 encoded image
+  image?: string; // Optional base64 encoded image (AI processing version)
+  imageId?: string; // Optional image cache ID for retrieving display version
+  imageDisplayUrl?: string; // Optional cached display-optimized image URL
+  imageMetadata?: {
+    originalWidth?: number;
+    originalHeight?: number;
+    fileSize?: number;
+    mimeType?: string;
+    processedAt?: string; // ISO timestamp
+  }; // Optional metadata for image display and caching
   // Added budget_card, budget_header, and context caching message types
   type?:
     | 'text'
@@ -91,4 +100,38 @@ export interface MentionSuggestion {
     id: string; // Toshl ID of the item
     name: string; // Display name
     type: 'category' | 'tag' | 'account'; // Type of item
+}
+
+// Define structure for image processing and caching
+export interface ImageCacheEntry {
+    id: string; // Unique cache ID
+    displayUrl: string; // Cached display-optimized image URL
+    originalUrl?: string; // Original image URL if different
+    metadata: {
+        width: number;
+        height: number;
+        fileSize: number;
+        mimeType: string;
+        cachedAt: string; // ISO timestamp
+    };
+}
+
+// Define interface for image processing utilities
+export interface ImageProcessor {
+    resizeImage(file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string>;
+    cacheImage(imageData: string, messageId: string, metadata: Partial<ImageCacheEntry['metadata']>): Promise<string>;
+    getCachedImage(cacheId: string): Promise<string | null>;
+    clearCache(): Promise<void>;
+}
+
+// Define structure for image validation
+export interface ImageValidationResult {
+    isValid: boolean;
+    error?: string;
+    metadata?: {
+        width: number;
+        height: number;
+        fileSize: number;
+        mimeType: string;
+    };
 }

@@ -4,7 +4,8 @@ import { ToshlEntryPayload } from '../toshl'; // Import necessary base type
 export interface GeminiChatMessage {
     sender: 'user' | 'bot'; // Simplified sender types for the prompt
     text: string;
-    image?: string; // Optional base64 encoded image
+    image?: string; // Optional base64 encoded image (only for current/new messages)
+    hasImagePlaceholder?: boolean; // Indicates if text contains "[image]" placeholder for old images
 }
 
 // Define the possible structured responses from Gemini based on the new prompt

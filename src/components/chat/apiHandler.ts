@@ -116,14 +116,33 @@ export const handleProcessUserRequestApi = async (
     // --- Construct Enhanced History for Gemini ---
     const historyForGemini: GeminiChatMessage[] = currentMessages
         .filter(msg =>
-            (msg.sender === 'user' && msg.text) ||
+            (msg.sender === 'user' && (msg.text || msg.image)) ||
             (msg.sender === 'system' && (msg.type === 'system_info' || msg.type === 'history_header')) ||
             (msg.sender === 'bot' && msg.type === 'entry_success')
         )
         .slice(-10)
         .map((msg): GeminiChatMessage | null => {
-            if (msg.sender === 'user' && msg.text) {
-                return { sender: 'user', text: msg.text, image: msg.image };
+            if (msg.sender === 'user' && (msg.text || msg.image)) {
+                // Replace old image messages with "[image]" placeholder
+                // Only include actual image data for the current message (handled separately)
+                let messageText = msg.text || '';
+                let hasImagePlaceholder = false;
+                
+                if (msg.image && !messageText.trim()) {
+                    // If message has only an image (no text), use placeholder
+                    messageText = '[image]';
+                    hasImagePlaceholder = true;
+                } else if (msg.image && messageText.trim()) {
+                    // If message has both text and image, append placeholder
+                    messageText = `${messageText} [image]`;
+                    hasImagePlaceholder = true;
+                }
+                
+                return { 
+                    sender: 'user', 
+                    text: messageText,
+                    hasImagePlaceholder
+                };
             } else if ((msg.sender === 'system' || msg.sender === 'bot') && msg.text) {
                 let botText = '';
                 if (msg.type === 'history_header') {
