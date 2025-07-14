@@ -45,6 +45,56 @@ const TOSHL_ACCOUNTS_KEY = 'toshlAccounts';
 const TOSHL_CATEGORIES_KEY = 'toshlCategories';
 const TOSHL_TAGS_KEY = 'toshlTags';
 
+// Helper function to resize images before upload
+const resizeImage = (
+    file: File,
+    maxWidth: number,
+    maxHeight: number,
+    quality: number,
+    callback: (dataUrl: string) => void
+) => {
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                console.error('Could not get canvas context');
+                return;
+            }
+            
+            // Calculate new dimensions
+            let { width, height } = img;
+            
+            if (width > height) {
+                if (width > maxWidth) {
+                    height = (height * maxWidth) / width;
+                    width = maxWidth;
+                }
+            } else {
+                if (height > maxHeight) {
+                    width = (width * maxHeight) / height;
+                    height = maxHeight;
+                }
+            }
+            
+            canvas.width = width;
+            canvas.height = height;
+            
+            // Draw and compress
+            ctx.drawImage(img, 0, 0, width, height);
+            
+            // Convert to data URL with specified quality
+            const dataUrl = canvas.toDataURL('image/jpeg', quality);
+            callback(dataUrl);
+        };
+        img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+};
+
 export const useChatLogic = (): UseChatLogicReturn => {
     // Load initial messages from localStorage or set default greeting
     const [messages, setMessages] = useState<Message[]>(() => {
@@ -149,11 +199,16 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         const file = event.target.files?.[0];
         if (!file) return;
 
-        const reader = new FileReader();
-        reader.onload = () => {
-            setSelectedImage(reader.result as string);
-        };
-        reader.readAsDataURL(file);
+        // Check if file is an image
+        if (!file.type.startsWith('image/')) {
+            console.error('Selected file is not an image');
+            return;
+        }
+
+        // Resize the image before setting it
+        resizeImage(file, 1024, 1024, 0.8, (resizedDataUrl) => {
+            setSelectedImage(resizedDataUrl);
+        });
     }, []);
 
     const removeSelectedImage = useCallback(() => {
