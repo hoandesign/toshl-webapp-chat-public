@@ -270,9 +270,11 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         setMentionSuggestions([]);
 
         const text = inputValue.trim();
-        if (!text || isLoading || isLoadingHistory || isDeleting || isRetrying) return; // Prevent sending while retrying
+        if ((!text && !selectedImage) || isLoading || isLoadingHistory || isDeleting || isRetrying) return; // Prevent sending while retrying
 
             setInputValue(''); // Clear input immediately
+            const currentImage = selectedImage;
+            setSelectedImage(null); // Clear selected image
 
             if (!isOnline) {
                 // --- Offline Handling ---
@@ -281,6 +283,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 id: offlineId, // Use offlineId as the main ID for now
                 offlineId: offlineId,
                 text,
+                image: currentImage || undefined,
                 sender: 'user',
                 type: 'text',
                 status: 'pending', // Mark as pending
@@ -292,7 +295,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         } else {
             // --- Online Handling ---
             const now = new Date().toISOString();
-            const userMessage: Message = { id: `user_${Date.now()}`, text, sender: 'user', type: 'text', status: 'sent', timestamp: now }; // Mark as sent initially
+            const userMessage: Message = { id: `user_${Date.now()}`, text, image: currentImage || undefined, sender: 'user', type: 'text', status: 'sent', timestamp: now }; // Mark as sent initially
             const loadingId = `loading_${Date.now()}`;
             const loadingMessage: Message = { id: loadingId, text: STRINGS.THINKING, sender: 'system', type: 'loading', status: 'sent', timestamp: now };
 

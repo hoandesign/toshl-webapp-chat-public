@@ -385,6 +385,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             onSelect={handleMentionSelect}
           />
         )}
+        {/* Image Preview */}
+        {selectedImage && (
+          <div className="mb-3 relative inline-block">
+            <img 
+              src={selectedImage} 
+              alt="Selected image" 
+              className="max-w-xs max-h-32 rounded-lg border border-separator-gray"
+            />
+            <button
+              type="button"
+              onClick={removeSelectedImage}
+              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition duration-200"
+              title="Remove image"
+            >
+              <X size={14} />
+            </button>
+          </div>
+        )}
         <form onSubmit={handleFormSubmit} className="flex items-end space-x-2 md:space-x-3">
           <button
             type="button"
@@ -394,6 +412,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
           >
             {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />} {/* Slightly smaller icon */}
+          </button>
+          <button
+            type="button"
+            onClick={() => imageInputRef.current?.click()}
+            disabled={isLoading || isLoadingHistory || !!isDeleting}
+            className="text-secondary hover:text-primary p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
+            title="Upload photo"
+          >
+            <ImagePlus size={20} />
           </button>
           <textarea
             ref={textareaRef}
