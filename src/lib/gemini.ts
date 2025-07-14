@@ -133,7 +133,16 @@ export async function processUserRequestViaGemini( // Renamed function
 
     // Add Chat history (always included, not cached)
     chatHistory.forEach(msg => {
-        contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
+        const parts: GeminiContentPart[] = [{ text: msg.text }];
+        if (msg.image) {
+            parts.push({
+                inlineData: {
+                    mimeType: 'image/jpeg', // Default to JPEG, could be enhanced to detect actual format
+                    data: msg.image
+                }
+            });
+        }
+        contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts });
     });
     // Latest user message
     contents.push({ role: 'user', parts: [{ text: userMessage }] });

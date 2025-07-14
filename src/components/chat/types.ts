@@ -40,6 +40,7 @@ export interface Message {
   id: string;
   text?: string; // Optional for structured messages
   sender: 'user' | 'system' | 'bot';
+  image?: string; // Optional base64 encoded image
   // Added budget_card, budget_header, and context caching message types
   type?:
     | 'text'

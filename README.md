@@ -15,12 +15,13 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
     -   Add expenses and income.
     -   View entries by date, category, tags, and description.
     -   Edit and delete existing entries.
--   **Google Gemini Integration:** Understands natural language requests to extract financial details and determine actions.
+-   **Google Gemini Integration:** Understands natural language requests and images to extract financial details and determine actions.
 -   **Contextual Awareness:** Remembers recent requests and modifications for follow-up commands.
 -   **Settings Management:** Configure API keys, default currency, and Gemini model.
 -   **Local Storage:** Securely stores API keys and settings in your browser's `localStorage`.
 -   **Offline Support:** Continue composing and queuing messages even when offline; they are sent automatically when you reconnect.
 -   **Mention Suggestions:** Type `@` in the chat to quickly mention Toshl accounts, categories, or tags.
+-   **Photo Input Support:** Upload images (receipts, bills, etc.) to help Gemini understand and process financial information.
 -   **Responsive Design:** Built with React and Tailwind CSS for a clean, adaptable user interface.
 -   **Account Balance Overview:** View your Toshl account balances at a glance with interactive cards.
 -   **Budget Insights:** Visualize your budgets, including limits, spending, planned amounts, and rollover details through budget cards.
@@ -77,6 +78,7 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
         -   `Edit the last entry, change amount to $60`
         -   `Show my account balances`
         -   `Show budgets for groceries this month`
+        -   Upload a photo of a receipt and ask: `Add this expense to my account`
     -   Use the history button to view recent entries.
     -   Click on entries for more options.
     -   Type `@` to mention accounts, categories, or tags.

@@ -48,11 +48,11 @@ flowchart TD
 - **App.tsx**: The root component. Handles layout, initialization, and conditional rendering of the chat and settings interfaces. Checks for required API keys in `localStorage` and manages the visibility of the settings sidebar.
 - **ChatInterface.tsx**: The main chat UI. Renders header, messages, input, and controls. Delegates all chat-related state and logic to the `useChatLogic` hook.
 - **SettingsPage.tsx**: UI for user configuration. Lets users enter API keys, select currency/Gemini model, and clear chat history. Delegates logic and state to `useSettingsLogic`.
-- **useChatLogic.ts**: Custom React hook providing all chat state and logic, including message management, API interactions, mention handling, offline support, and history fetching.
+- **useChatLogic.ts**: Custom React hook providing all chat state and logic, including message management, API interactions, mention handling, offline support, history fetching, and image upload handling.
 - **useSettingsLogic.ts**: Custom hook for settings state and logic. Handles API key validation, metadata fetching, and persistence to `localStorage`.
 - **apiHandler.ts**: Centralizes all API calls and orchestration between Gemini and Toshl. Handles request routing, data formatting, and error handling.
 - **lib/toshl.ts**: Handles all Toshl API operations (fetch, add, edit, delete entries and metadata). Used by `apiHandler.ts`.
-- **lib/gemini.ts**: Handles all Gemini API interactions, including prompt construction and response parsing.
+- **lib/gemini.ts**: Handles all Gemini API interactions, including prompt construction, response parsing, and multimodal content support (text + images).
 - **lib/gemini/prompt.ts**: Builds dynamic prompts for Gemini using templates and runtime data.
 - **AccountBalanceCard.tsx, BudgetCard.tsx, HistoryCard.tsx**: Specialized UI components for displaying Toshl account, budget, and entry data in chat.
 - **localStorage**: Used throughout to persist API keys, settings, Toshl metadata, chat history, and user preferences.
@@ -82,15 +82,15 @@ flowchart TD
 ## 4. Chat Logic & Message Flow (ChatInterface.tsx & useChatLogic.ts)
 
 ### Sending a Message (Online)
-1. User types and submits a request.
+1. User types and submits a request (optionally with an attached image).
 2. Input is validated (non-empty, not offline, not loading).
-3. User message is added to chat state.
+3. User message is added to chat state (including image data if present).
 4. Loading indicator is shown.
 5. `handleFormSubmit` calls `handleProcessUserRequestApi` (API handler).
 6. API handler:
    - Loads all required data (API keys, settings, Toshl metadata) from `localStorage`.
-   - Prepares chat history for Gemini.
-   - Sends request to Gemini and parses action/response.
+   - Prepares chat history for Gemini (including image content in multimodal format).
+   - Sends request to Gemini with text and/or image content and parses action/response.
    - If needed, calls Toshl API (add/edit/delete entry, fetch history, accounts, budgets).
    - Formats all results into `Message` objects for display.
 7. Chat state is updated with new messages, context, and any updated entry IDs.
@@ -130,20 +130,30 @@ flowchart TD
 
 ---
 
-## 7. Data Persistence & Local Storage
+## 7. Photo Input Feature
+- Users can attach images to their messages using the image upload button in the chat interface.
+- Images are processed as base64 data URLs and stored in the message state.
+- The Gemini API receives both text and image content in multimodal format.
+- Images are sent to Gemini as `inlineData` with MIME type and base64 encoded data.
+- Chat history preserves image attachments for context in subsequent requests.
+- Users can preview selected images before sending and remove them if needed.
+
+---
+
+## 8. Data Persistence & Local Storage
 - API keys, user settings, Toshl metadata, chat history, and preferences (like `hideNumbers`) are all stored in `localStorage`.
 - State is loaded from storage on startup and updated after relevant actions.
 
 ---
 
-## 8. Error Handling & User Feedback
+## 9. Error Handling & User Feedback
 - All API operations are wrapped with error handling.
 - Errors (e.g., offline actions, failed API calls) are surfaced in the chat as system messages or UI toasts.
 - Loading, retry, and deletion states are clearly indicated in the UI.
 
 ---
 
-## 9. Extensibility
+## 10. Extensibility
 - The architecture is modular, with clear separation between UI, logic hooks, and API handlers.
 - Adding new Toshl or Gemini features typically involves updating the API handler, logic hook, and possibly new UI cards/components.
 

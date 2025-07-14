@@ -34,6 +34,10 @@ interface UseChatLogicReturn {
     mentionSuggestions: MentionSuggestion[];
     handleInputChange: (event: ChangeEvent<HTMLTextAreaElement>) => void;
     handleMentionSelect: (suggestion: MentionSuggestion) => void;
+    // Image upload functionality
+    selectedImage: string | null;
+    handleImageUpload: (event: ChangeEvent<HTMLInputElement>) => void;
+    removeSelectedImage: () => void;
 }
 
 const LOCAL_STORAGE_KEY = 'chatMessages';
@@ -74,8 +78,11 @@ export const useChatLogic = (): UseChatLogicReturn => {
     const [categories, setCategories] = useState<ToshlCategory[]>([]);
     const [tags, setTags] = useState<ToshlTag[]>([]);
 
-    // --- State for Mention Feature ---
-    const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
+// State for Image Uploads
+const [selectedImage, setSelectedImage] = useState<string | null>(null);
+
+// --- State for Mention Feature ---
+const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
     const [isMentionPopupOpen, setIsMentionPopupOpen] = useState(false);
     const [mentionQuery, setMentionQuery] = useState('');
     const [mentionTriggerIndex, setMentionTriggerIndex] = useState<number | null>(null);
@@ -137,6 +144,21 @@ export const useChatLogic = (): UseChatLogicReturn => {
             console.error("Failed to load Toshl data from localStorage for mentions:", error);
         }
     }, []); // Run only on mount
+
+    const handleImageUpload = useCallback((event: ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = () => {
+            setSelectedImage(reader.result as string);
+        };
+        reader.readAsDataURL(file);
+    }, []);
+
+    const removeSelectedImage = useCallback(() => {
+        setSelectedImage(null);
+    }, []);
 
     // --- Core Logic Functions ---
 
@@ -668,5 +690,9 @@ export const useChatLogic = (): UseChatLogicReturn => {
         mentionSuggestions,
         handleInputChange,
         handleMentionSelect,
+        // Image upload
+        selectedImage,
+        handleImageUpload,
+        removeSelectedImage,
     };
 };

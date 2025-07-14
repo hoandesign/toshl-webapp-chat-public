@@ -3,6 +3,8 @@ import Settings from 'lucide-react/dist/esm/icons/settings';
 import History from 'lucide-react/dist/esm/icons/history';
 import SendHorizonal from 'lucide-react/dist/esm/icons/send-horizonal';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
+import ImagePlus from 'lucide-react/dist/esm/icons/image-plus';
+import X from 'lucide-react/dist/esm/icons/x';
 import * as STRINGS from '../constants/strings';
 import { Message, ChatInterfaceProps } from './chat/types'; // Removed unused EntryCardData, AccountBalanceCardData
 import { useChatLogic } from './chat/useChatLogic';
@@ -55,10 +57,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
     mentionSuggestions,
     handleInputChange,
     handleMentionSelect,
+    selectedImage,
+    handleImageUpload,
+    removeSelectedImage,
   } = useChatLogic();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
 
   const debouncedResizeTextarea = useCallback(debounce(() => {
       if (textareaRef.current) {
@@ -403,6 +409,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             className="flex-1 px-4 py-2.5 border border-separator-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 ease-in-out text-sm text-black-text resize-none min-h-[44px] max-h-[200px] overflow-y-hidden" /* Use separator-gray */
             rows={1}
             disabled={isLoading || isLoadingHistory || !!isDeleting}
+          />
+          <input
+            type="file"
+            accept="image/*"
+            className="hidden"
+            id="imageUpload"
+            onChange={handleImageUpload}
+            ref={imageInputRef}
           />
           <button
             type="submit"

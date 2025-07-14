@@ -4,6 +4,7 @@ import { ToshlEntryPayload } from '../toshl'; // Import necessary base type
 export interface GeminiChatMessage {
     sender: 'user' | 'bot'; // Simplified sender types for the prompt
     text: string;
+    image?: string; // Optional base64 encoded image
 }
 
 // Define the possible structured responses from Gemini based on the new prompt
@@ -76,7 +77,11 @@ export type GeminiResponseAction = GeminiAddAction | GeminiShowAction | GeminiCl
 
 // Interfaces for raw Gemini API request/response structures
 export interface GeminiContentPart {
-    text: string;
+    text?: string;
+    inlineData?: {
+        mimeType: string;
+        data: string; // base64 encoded image data
+    };
 }
 
 export interface GeminiContentTurn {
