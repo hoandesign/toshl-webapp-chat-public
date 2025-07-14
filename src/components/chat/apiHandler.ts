@@ -103,7 +103,8 @@ export const handleProcessUserRequestApi = async (
     userInput: string,
     currentMessages: Message[], // Pass current messages for history context
     currentLastShowContext: { filters: GeminiShowFilters, headerText: string } | null,
-    currentLastSuccessfulEntryId: string | null
+    currentLastSuccessfulEntryId: string | null,
+    currentImage?: string // Add current image parameter
 ): Promise<ProcessRequestResult> => {
     const { toshlApiKey, geminiApiKey, currency, geminiModel, accounts, categories, tags } = getRequiredApiData();
 
@@ -122,7 +123,7 @@ export const handleProcessUserRequestApi = async (
         .slice(-10)
         .map((msg): GeminiChatMessage | null => {
             if (msg.sender === 'user' && msg.text) {
-                return { sender: 'user', text: msg.text };
+                return { sender: 'user', text: msg.text, image: msg.image };
             } else if ((msg.sender === 'system' || msg.sender === 'bot') && msg.text) {
                 let botText = '';
                 if (msg.type === 'history_header') {
@@ -145,10 +146,13 @@ export const handleProcessUserRequestApi = async (
     // --- End Enhanced History Construction ---
 
     // --- Call Gemini API ---
+    // Note: The current user message (userInput + currentImage) is handled inside processUserRequestViaGemini
+    // We just need to pass the current image as a parameter, not add it to history here
     const geminiResult: GeminiResponseAction = await processUserRequestViaGemini(
         geminiApiKey, geminiModel, userInput, categories, tags, accounts, currency,
         Intl.DateTimeFormat().resolvedOptions().timeZone, historyForGemini,
-        currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined
+        currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined,
+        currentImage
     );
     // --- End Gemini API Call ---
 

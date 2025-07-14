@@ -314,7 +314,8 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                     text,
                     currentMessages,
                     currentLastShowContext,
-                    currentLastSuccessfulEntryId
+                    currentLastSuccessfulEntryId,
+                    currentImage || undefined
                 );
 
                 setLastShowContext(apiResult.newLastShowContext);
@@ -590,7 +591,8 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 text,
                 messagesBeforeRetry, // Pass messages *before* the retried one for context
                 currentLastShowContext,
-                currentLastSuccessfulEntryId
+                currentLastSuccessfulEntryId,
+                messageToRetry.image || undefined
             );
 
             setLastShowContext(apiResult.newLastShowContext);

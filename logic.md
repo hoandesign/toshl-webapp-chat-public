@@ -134,9 +134,11 @@ flowchart TD
 - Users can attach images to their messages using the image upload button in the chat interface.
 - Images are processed as base64 data URLs and stored in the message state.
 - The Gemini API receives both text and image content in multimodal format.
-- Images are sent to Gemini as `inlineData` with MIME type and base64 encoded data.
+- Images are preferentially uploaded to the Gemini Files API for better performance and larger file support.
+- If Files API upload fails, the system falls back to inline base64 data with MIME type encoding.
 - Chat history preserves image attachments for context in subsequent requests.
 - Users can preview selected images before sending and remove them if needed.
+- The Files API supports larger images (up to the API limits) compared to the 20MB inline data limit.
 
 ---
 

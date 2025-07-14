@@ -82,6 +82,10 @@ export interface GeminiContentPart {
         mimeType: string;
         data: string; // base64 encoded image data
     };
+    fileData?: {
+        mimeType: string;
+        fileUri: string; // URI from Files API
+    };
 }
 
 export interface GeminiContentTurn {

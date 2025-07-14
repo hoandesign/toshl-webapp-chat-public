@@ -19,6 +19,7 @@ import * as STRINGS from '../constants/strings'; // Import constants
 
 // Base URL might vary slightly depending on the exact API version and region
 const GEMINI_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/models/';
+const GEMINI_FILES_API_BASE = 'https://generativelanguage.googleapis.com/v1beta/files';
 
 // Cache storage for static prompt content
 let promptCacheName: string | null = null;
@@ -50,7 +51,8 @@ export async function processUserRequestViaGemini( // Renamed function
     userTimezone: string,
     chatHistory: GeminiChatMessage[], // Added parameter
     lastShowContext?: { filters: GeminiShowFilters, headerText: string }, // Added parameter
-    lastSuccessfulEntryId?: string // Added parameter
+    lastSuccessfulEntryId?: string, // Added parameter
+    currentImage?: string // Added current image parameter
 ): Promise<GeminiResponseAction> { // Updated return type
     if (!apiKey || !model) {
         throw new Error(STRINGS.GEMINI_API_KEY_MODEL_REQUIRED);
@@ -132,20 +134,67 @@ export async function processUserRequestViaGemini( // Renamed function
     contents.push({ role: 'user', parts: [{ text: timeContextMessage }] });
 
     // Add Chat history (always included, not cached)
-    chatHistory.forEach(msg => {
+    for (const msg of chatHistory) {
         const parts: GeminiContentPart[] = [{ text: msg.text }];
         if (msg.image) {
-            parts.push({
-                inlineData: {
+            try {
+                // Upload image to Files API and get file URI
+                const fileUri = await uploadImageToFilesAPI(apiKey, msg.image);
+                parts.push({
+                    fileData: {
+                        mimeType: 'image/jpeg', // Default to JPEG, could be enhanced to detect actual format
+                        fileUri: fileUri
+                    }
+                });
+            } catch (error) {
+                console.warn('Failed to upload image to Files API, falling back to inline data:', error);
+                // Fallback to inline data if Files API fails
+                // Extract base64 data from data URL if present
+                let cleanBase64 = msg.image;
+                if (msg.image.startsWith('data:')) {
+                    const [, data] = msg.image.split(',');
+                    cleanBase64 = data;
+                }
+                parts.push({
+                    inlineData: {
+                        mimeType: 'image/jpeg',
+                        data: cleanBase64
+                    }
+                });
+            }
+        }
+        contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts });
+    }
+    // Latest user message with optional image
+    const userParts: GeminiContentPart[] = [{ text: userMessage }];
+    if (currentImage) {
+        try {
+            // Upload image to Files API and get file URI
+            const fileUri = await uploadImageToFilesAPI(apiKey, currentImage);
+            userParts.push({
+                fileData: {
                     mimeType: 'image/jpeg', // Default to JPEG, could be enhanced to detect actual format
-                    data: msg.image
+                    fileUri: fileUri
+                }
+            });
+        } catch (error) {
+            console.warn('Failed to upload current image to Files API, falling back to inline data:', error);
+            // Fallback to inline data if Files API fails
+            // Extract base64 data from data URL if present
+            let cleanBase64 = currentImage;
+            if (currentImage.startsWith('data:')) {
+                const [, data] = currentImage.split(',');
+                cleanBase64 = data;
+            }
+            userParts.push({
+                inlineData: {
+                    mimeType: 'image/jpeg',
+                    data: cleanBase64
                 }
             });
         }
-        contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts });
-    });
-    // Latest user message
-    contents.push({ role: 'user', parts: [{ text: userMessage }] });
+    }
+    contents.push({ role: 'user', parts: userParts });
 
     // Structure request body with optional cache reference
     const requestBody: GeminiGenerateContentRequest = {
@@ -203,7 +252,7 @@ export async function processUserRequestViaGemini( // Renamed function
                 retryContents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
                 // Add dynamic time context again for retry
                 retryContents.push({ role: 'user', parts: [{ text: timeContextMessage }] });
-                // Chat history
+                // Chat history (simplified for retry - no images to avoid complexity)
                 chatHistory.forEach(msg => {
                     retryContents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts: [{ text: msg.text }] });
                 });
@@ -466,6 +515,71 @@ async function deleteGeminiCache(
     throw new Error(`Error deleting cache: ${error.error?.message || response.status}`);
   }
   console.log(`[Cache Delete] Successfully deleted cache ${name}`);
+}
+
+/**
+ * Uploads an image to the Gemini Files API and returns the file URI.
+ * @param apiKey - The Gemini API key.
+ * @param base64Image - The base64 encoded image data (without data URL prefix).
+ * @returns Promise that resolves to the file URI.
+ */
+export async function uploadImageToFilesAPI(apiKey: string, base64Image: string): Promise<string> {
+    const uploadEndpoint = `${GEMINI_FILES_API_BASE}?key=${apiKey}`;
+    
+    // Extract base64 data from data URL if present
+    let cleanBase64 = base64Image;
+    let mimeType = 'image/jpeg'; // Default
+    
+    if (base64Image.startsWith('data:')) {
+        const [header, data] = base64Image.split(',');
+        cleanBase64 = data;
+        // Extract MIME type from header
+        const mimeMatch = header.match(/data:([^;]+)/);
+        if (mimeMatch) {
+            mimeType = mimeMatch[1];
+        }
+    }
+    
+    // Convert base64 to blob
+    const binaryString = atob(cleanBase64);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
+    
+    // Create FormData for multipart upload
+    const formData = new FormData();
+    formData.append('file', blob, 'uploaded_image.jpg');
+    
+    console.log('Uploading image to Files API...');
+    
+    try {
+        const response = await fetch(uploadEndpoint, {
+            method: 'POST',
+            body: formData,
+        });
+        
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Files API upload error response:', errorText);
+            throw new Error(`Files API upload failed: ${response.status} ${response.statusText}`);
+        }
+        
+        const data = await response.json();
+        console.log('Files API upload successful:', data);
+        
+        // The response should contain the file object with uri
+        if (data && data.file && data.file.uri) {
+            return data.file.uri;
+        } else {
+            console.error('Unexpected Files API response format:', data);
+            throw new Error('Files API response missing file URI');
+        }
+    } catch (error) {
+        console.error('Error uploading to Files API:', error);
+        throw error;
+    }
 }
 
 /**
