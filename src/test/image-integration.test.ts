@@ -322,9 +322,9 @@ describe('Image Message Integration Tests', () => {
         text: 'Receipt upload failed',
         sender: 'user',
         type: 'text',
-        image: null, // Failed to process
-        imageId: null,
-        imageDisplayUrl: null,
+        image: undefined, // Failed to process
+        imageId: undefined,
+        imageDisplayUrl: undefined,
         status: 'error',
         timestamp: new Date().toISOString(),
       }
@@ -335,9 +335,9 @@ describe('Image Message Integration Tests', () => {
       expect(imageMessage.status).toBe('error')
       
       // Should handle missing image data gracefully
-      expect(imageMessage.image).toBeNull()
-      expect(imageMessage.imageId).toBeNull()
-      expect(imageMessage.imageDisplayUrl).toBeNull()
+      expect(imageMessage.image).toBeUndefined()
+      expect(imageMessage.imageId).toBeUndefined()
+      expect(imageMessage.imageDisplayUrl).toBeUndefined()
     })
   })
 

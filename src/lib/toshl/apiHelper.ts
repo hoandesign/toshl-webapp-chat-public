@@ -52,7 +52,7 @@ export async function fetchFromToshl<T>( // Added export
            console.error('Toshl API Error:', errorData);
            throw new Error(STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status));
         }
-      } catch (parseError) {
+      } catch {
          // If parsing fails or it's not the expected format, use the status text
          console.error('Failed to parse Toshl error response or unexpected format.');
       }
@@ -135,7 +135,7 @@ export async function fetchSingleFromToshl<T>( // Added export
            console.error('Toshl API Error:', errorData);
            throw new Error(STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status));
         }
-      } catch (parseError) {
+      } catch {
          // If parsing fails or it's not the expected format, use the status text
          console.error('Failed to parse Toshl error response or unexpected format.');
       }

@@ -473,7 +473,7 @@ const resizeImage = (
                 } else {
                     callback(null, STRINGS.IMAGE_RESIZE_FAILED);
                 }
-            } catch (error) {
+            } catch {
                 callback(null, STRINGS.IMAGE_RESIZE_FAILED);
             }
         };

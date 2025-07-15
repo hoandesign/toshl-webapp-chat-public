@@ -206,8 +206,8 @@ export async function processUserRequestViaGemini( // Renamed function
         },
         ...(cacheEnabled && cacheName ? { cachedContent: cacheName } : {})
     };
-    if ((requestBody as any).cachedContent) {
-        console.log(`[Cache Usage] Using cachedContent: ${(requestBody as any).cachedContent}`);
+    if ('cachedContent' in requestBody) {
+        console.log(`[Cache Usage] Using cachedContent: ${(requestBody as { cachedContent: string }).cachedContent}`);
     } else {
         console.log('[Cache Usage] Sending full prompt (no cache).');
     }
@@ -321,7 +321,7 @@ export async function processUserRequestViaGemini( // Renamed function
 
             // Validate the parsed structure based on the action
             switch (result.action) {
-                case 'add':
+                case 'add': {
                     const payload = result.payload;
                     if (!payload ||
                         typeof payload.amount !== 'number' ||
@@ -337,6 +337,7 @@ export async function processUserRequestViaGemini( // Renamed function
                     }
                     console.log("Successfully parsed 'add' action from Gemini:", result);
                     break;
+                }
                 case 'show':
                     // Validate the 'show' action structure
                     if (!result.filters || typeof result.filters !== 'object' ||
@@ -399,11 +400,12 @@ export async function processUserRequestViaGemini( // Renamed function
                     }
                     console.log("Successfully parsed 'show_budgets' action from Gemini:", result);
                     break;
-                default:
+                default: {
                     // If action is not one of the expected types
-                    const unknownAction = (result as any)?.action || 'unknown';
+                    const unknownAction = (result as { action?: string })?.action || 'unknown';
                     console.error("Parsed JSON has unknown action:", result);
                     throw new Error(STRINGS.GEMINI_UNKNOWN_ACTION(unknownAction));
+                }
             }
 
             return result; // Return the validated action object
@@ -454,7 +456,11 @@ export async function createGeminiCache(
     const endpoint = `https://generativelanguage.googleapis.com/v1beta/cachedContents?key=${apiKey}`;
     // Normalize model name to required format
     const modelName = request.model.startsWith('models/') ? request.model : `models/${request.model}`;
-    const body: any = {
+    const body: {
+        model: string;
+        contents: unknown[];
+        systemInstruction?: { text: string };
+    } = {
         model: modelName,
         contents: request.config.contents,
     };

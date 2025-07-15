@@ -75,15 +75,15 @@ global.Image = class MockImage {
       if (this.onload) this.onload()
     }, 0)
   }
-} as any
+} as unknown as typeof Image
 
 // Mock FileReader for image upload tests
 global.FileReader = class MockFileReader {
-  onload: ((event: any) => void) | null = null
+  onload: ((event: ProgressEvent<FileReader>) => void) | null = null
   onerror: (() => void) | null = null
   result: string | ArrayBuffer | null = null
 
-  readAsDataURL(_file: File) {
+  readAsDataURL() {
     setTimeout(() => {
       this.result = `data:image/jpeg;base64,${btoa('mock-image-data')}`
       if (this.onload) {
@@ -95,7 +95,7 @@ global.FileReader = class MockFileReader {
   static readonly EMPTY = 0
   static readonly LOADING = 1
   static readonly DONE = 2
-} as any
+} as unknown as typeof FileReader
 
 // Mock canvas for image resizing tests
 const mockCanvas = {

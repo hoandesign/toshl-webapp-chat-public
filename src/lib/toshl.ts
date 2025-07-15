@@ -299,10 +299,10 @@ export async function editToshlEntry(apiKey: string, entryId: string, updatePayl
          delete finalPayload.id;
          delete finalPayload.created;
          // Also remove potentially read-only nested fields if necessary (e.g., repeat.id, transaction.id)
-         if (finalPayload.repeat) delete (finalPayload.repeat as any).id;
-         if (finalPayload.transaction) delete (finalPayload.transaction as any).id;
+         if (finalPayload.repeat) delete (finalPayload.repeat as { id?: string }).id;
+         if (finalPayload.transaction) delete (finalPayload.transaction as { id?: string }).id;
          // Remove deleted flag if present, as it's likely read-only
-         delete (finalPayload as any).deleted;
+         delete (finalPayload as { deleted?: boolean }).deleted;
 
 
          console.log(`Sending merged payload for update to entry ID ${entryId}:`, finalPayload);
@@ -326,7 +326,7 @@ export async function editToshlEntry(apiKey: string, entryId: string, updatePayl
                  if (responseBody) {
                      console.log("Update response body (unexpected):", responseBody);
                  }
-             } catch (e) { /* Ignore body parsing errors on success */ }
+             } catch { /* Ignore body parsing errors on success */ }
              return; // Success
         }
 
@@ -503,7 +503,7 @@ export async function addToshlEntry(apiKey: string, payload: ToshlEntryPayload):
                     console.log('Returning full created entry object.');
                     return createdEntry as ToshlEntry;
                 }
-            } catch (bodyParseError) {
+            } catch {
                 console.warn('Could not parse response body after creating entry, returning ID only.');
             }
 

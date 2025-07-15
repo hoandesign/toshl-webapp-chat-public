@@ -307,5 +307,6 @@ export interface ToshlUserProfile {
     country?: string; // 2-letter code
     otp_enabled?: boolean;
     flags?: string[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     extra?: Record<string, any>; // Custom JSON object
 }
