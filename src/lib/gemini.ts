@@ -460,6 +460,7 @@ export async function createGeminiCache(
         model: string;
         contents: unknown[];
         systemInstruction?: { text: string };
+        ttl?: string;
     } = {
         model: modelName,
         contents: request.config.contents,

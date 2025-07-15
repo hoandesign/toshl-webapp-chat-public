@@ -87,11 +87,11 @@ global.FileReader = class MockFileReader {
     setTimeout(() => {
       this.result = `data:image/jpeg;base64,${btoa('mock-image-data')}`
       if (this.onload) {
-        this.onload({ target: { result: this.result } })
+        this.onload({ target: this } as unknown as ProgressEvent<FileReader>)
       }
     }, 0)
   }
-  
+
   static readonly EMPTY = 0
   static readonly LOADING = 1
   static readonly DONE = 2
