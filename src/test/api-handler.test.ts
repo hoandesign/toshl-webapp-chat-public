@@ -59,8 +59,10 @@ describe('API Handler - Image Message Processing', () => {
       
       // Mock Gemini API response
       vi.mocked(processUserRequestViaGemini).mockResolvedValue({
-        action: 'info',
-        headerText: 'Processed your request',
+        result: {
+          action: 'info',
+          headerText: 'Processed your request',
+        }
       })
 
       const messagesWithImages: Message[] = [
@@ -140,7 +142,8 @@ describe('API Handler - Image Message Processing', () => {
         ]),
         undefined, // lastShowContext
         undefined, // lastSuccessfulEntryId
-        'data:image/jpeg;base64,current-image-data' // Only current image data
+        'data:image/jpeg;base64,current-image-data', // Only current image data
+        true // captureDebugInfo
       )
     })
 
@@ -148,8 +151,10 @@ describe('API Handler - Image Message Processing', () => {
       const { processUserRequestViaGemini } = await import('../lib/gemini')
       
       vi.mocked(processUserRequestViaGemini).mockResolvedValue({
-        action: 'info',
-        headerText: 'Context maintained',
+        result: {
+          action: 'info',
+          headerText: 'Context maintained',
+        }
       })
 
       const messagesWithContext: Message[] = [
@@ -227,7 +232,8 @@ describe('API Handler - Image Message Processing', () => {
         ]),
         undefined,
         'entry_1',
-        undefined // No current image
+        undefined, // No current image
+        true // captureDebugInfo
       )
     })
 
@@ -235,16 +241,18 @@ describe('API Handler - Image Message Processing', () => {
       const { processUserRequestViaGemini } = await import('../lib/gemini')
       
       vi.mocked(processUserRequestViaGemini).mockResolvedValue({
-        action: 'add',
-        headerText: 'Adding expense from receipt',
-        payload: {
-          amount: -25.50,
-          currency: { code: 'USD' },
-          category: 'cat1',
-          account: 'acc1',
-          date: '2025-01-14',
-          desc: 'Lunch from receipt',
-        },
+        result: {
+          action: 'add',
+          headerText: 'Adding expense from receipt',
+          payload: {
+            amount: -25.50,
+            currency: { code: 'USD' },
+            category: 'cat1',
+            account: 'acc1',
+            date: '2025-01-14',
+            desc: 'Lunch from receipt',
+          },
+        }
       })
 
       const mixedMessages: Message[] = [
@@ -311,7 +319,8 @@ describe('API Handler - Image Message Processing', () => {
         ]),
         undefined,
         undefined,
-        'data:image/jpeg;base64,new-receipt-image'
+        'data:image/jpeg;base64,new-receipt-image',
+        true // captureDebugInfo
       )
     })
   })
@@ -431,8 +440,10 @@ describe('API Handler - Image Message Processing', () => {
       const { processUserRequestViaGemini } = await import('../lib/gemini')
       
       vi.mocked(processUserRequestViaGemini).mockResolvedValue({
-        action: 'info',
-        headerText: 'Processed',
+        result: {
+          action: 'info',
+          headerText: 'Processed',
+        }
       })
 
       const testCases = [
@@ -506,7 +517,8 @@ describe('API Handler - Image Message Processing', () => {
           ]),
           undefined,
           undefined,
-          undefined
+          undefined,
+          true // captureDebugInfo
         )
       }
     })
