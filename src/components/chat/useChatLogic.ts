@@ -38,6 +38,11 @@ interface UseChatLogicReturn {
     selectedImage: string | null;
     handleImageUpload: (event: ChangeEvent<HTMLInputElement>) => void;
     removeSelectedImage: () => void;
+    // Audio recording functionality
+    selectedAudio: string | null;
+    selectedAudioMetadata: { duration: number; mimeType: string } | null;
+    handleAudioRecorded: (audioBlob: Blob, duration: number) => void;
+    removeSelectedAudio: () => void;
     // Image cache functionality
     getCachedDisplayImage: (imageId: string) => Promise<string | null>;
     clearImageCache: () => Promise<void>;
@@ -535,6 +540,10 @@ export const useChatLogic = (): UseChatLogicReturn => {
 // State for Image Uploads
 const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+// State for Audio Recording
+const [selectedAudio, setSelectedAudio] = useState<string | null>(null);
+const [selectedAudioMetadata, setSelectedAudioMetadata] = useState<{ duration: number; mimeType: string } | null>(null);
+
 // --- State for Mention Feature ---
 const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
     const [isMentionPopupOpen, setIsMentionPopupOpen] = useState(false);
@@ -734,6 +743,37 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         setSelectedImageMetadata(null);
     }, []);
 
+    // Audio recording handlers
+    const handleAudioRecorded = useCallback(async (audioBlob: Blob, duration: number) => {
+        try {
+            // Convert audio blob to base64
+            const { audioToBase64 } = await import('../../lib/audio');
+            const base64Audio = await audioToBase64(audioBlob);
+            
+            setSelectedAudio(base64Audio);
+            setSelectedAudioMetadata({
+                duration,
+                mimeType: audioBlob.type
+            });
+        } catch (error) {
+            console.error('Failed to process recorded audio:', error);
+            const errorMessage: Message = {
+                id: `audio_error_${Date.now()}`,
+                text: STRINGS.AUDIO_PROCESSING_FAILED,
+                sender: 'system',
+                type: 'error',
+                status: 'error',
+                timestamp: new Date().toISOString()
+            };
+            setMessages(prev => [...prev, errorMessage]);
+        }
+    }, [setMessages]);
+
+    const removeSelectedAudio = useCallback(() => {
+        setSelectedAudio(null);
+        setSelectedAudioMetadata(null);
+    }, []);
+
     // --- Core Logic Functions ---
 
     // Function to fetch and display history (Refactored for single state update)
@@ -844,14 +884,18 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         setMentionSuggestions([]);
 
         const text = inputValue.trim();
-        if ((!text && !selectedImage) || isLoading || isLoadingHistory || isDeleting || isRetrying) return; // Prevent sending while retrying
+        if ((!text && !selectedImage && !selectedAudio) || isLoading || isLoadingHistory || isDeleting || isRetrying) return; // Prevent sending while retrying
 
             setInputValue(''); // Clear input immediately
             const currentImage = selectedImage;
             const currentImageId = selectedImageId;
+            const currentAudio = selectedAudio;
+            const currentAudioMetadata = selectedAudioMetadata;
             setSelectedImage(null); // Clear selected image
             setSelectedImageId(null); // Clear selected image ID
             setSelectedImageMetadata(null); // Clear selected image metadata
+            setSelectedAudio(null); // Clear selected audio
+            setSelectedAudioMetadata(null); // Clear selected audio metadata
 
             if (!isOnline) {
                 // --- Offline Handling ---
@@ -868,6 +912,12 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                     fileSize: selectedImageMetadata?.fileSize || 0,
                     originalWidth: selectedImageMetadata?.width,
                     originalHeight: selectedImageMetadata?.height
+                } : undefined,
+                audio: currentAudio || undefined,
+                audioMetadata: currentAudio ? {
+                    duration: currentAudioMetadata?.duration || 0,
+                    mimeType: currentAudioMetadata?.mimeType || 'audio/webm',
+                    processedAt: new Date().toISOString()
                 } : undefined,
                 sender: 'user',
                 type: 'text',
@@ -891,6 +941,12 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                     fileSize: selectedImageMetadata?.fileSize || 0,
                     originalWidth: selectedImageMetadata?.width,
                     originalHeight: selectedImageMetadata?.height
+                } : undefined,
+                audio: currentAudio || undefined,
+                audioMetadata: currentAudio ? {
+                    duration: currentAudioMetadata?.duration || 0,
+                    mimeType: currentAudioMetadata?.mimeType || 'audio/webm',
+                    processedAt: new Date().toISOString()
                 } : undefined,
                 sender: 'user', 
                 type: 'text', 
@@ -916,7 +972,9 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                     currentMessages,
                     currentLastShowContext,
                     currentLastSuccessfulEntryId,
-                    currentImage || undefined
+                    currentImage || undefined,
+                    currentAudio || undefined,
+                    currentAudioMetadata?.mimeType || undefined
                 );
 
                 setLastShowContext(apiResult.newLastShowContext);
@@ -950,7 +1008,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 setIsLoading(false);
             }
         }
-    }, [inputValue, isLoading, isLoadingHistory, isDeleting, isRetrying, isOnline, messages, lastShowContext, lastSuccessfulEntryId, selectedImage, selectedImageId, selectedImageMetadata]); // Added missing selectedImage dependencies
+    }, [inputValue, isLoading, isLoadingHistory, isDeleting, isRetrying, isOnline, messages, lastShowContext, lastSuccessfulEntryId, selectedImage, selectedImageId, selectedImageMetadata, selectedAudio, selectedAudioMetadata]); // Added missing audio dependencies
 
     // Function to handle deleting a Toshl entry
     const handleDeleteEntry = useCallback(async (messageId: string, toshlEntryId: string) => {
@@ -1193,7 +1251,9 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 messagesBeforeRetry, // Pass messages *before* the retried one for context
                 currentLastShowContext,
                 currentLastSuccessfulEntryId,
-                messageToRetry.image || undefined
+                messageToRetry.image || undefined,
+                messageToRetry.audio || undefined,
+                messageToRetry.audioMetadata?.mimeType || undefined
             );
 
             setLastShowContext(apiResult.newLastShowContext);
@@ -1300,6 +1360,11 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         selectedImage,
         handleImageUpload,
         removeSelectedImage,
+        // Audio recording
+        selectedAudio,
+        selectedAudioMetadata,
+        handleAudioRecorded,
+        removeSelectedAudio,
         // Image cache
         getCachedDisplayImage: useCallback(async (imageId: string): Promise<string | null> => {
             try {

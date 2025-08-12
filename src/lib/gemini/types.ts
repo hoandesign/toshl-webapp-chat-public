@@ -6,6 +6,8 @@ export interface GeminiChatMessage {
     text: string;
     image?: string; // Optional base64 encoded image (only for current/new messages)
     hasImagePlaceholder?: boolean; // Indicates if text contains "[image]" placeholder for old images
+    audio?: string; // Optional base64 encoded audio data
+    hasAudioPlaceholder?: boolean; // Indicates if text contains "[audio]" placeholder for old audio
 }
 
 // Define the possible structured responses from Gemini based on the new prompt
@@ -81,7 +83,7 @@ export interface GeminiContentPart {
     text?: string;
     inlineData?: {
         mimeType: string;
-        data: string; // base64 encoded image data
+        data: string; // base64 encoded data (image or audio)
     };
     fileData?: {
         mimeType: string;

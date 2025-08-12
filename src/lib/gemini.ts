@@ -54,6 +54,8 @@ export async function processUserRequestViaGemini( // Renamed function
     lastShowContext?: { filters: GeminiShowFilters, headerText: string }, // Added parameter
     lastSuccessfulEntryId?: string, // Added parameter
     currentImage?: string, // Added current image parameter
+    currentAudio?: string, // Added current audio parameter
+    currentAudioMimeType?: string, // Added current audio MIME type parameter
     captureDebugInfo?: boolean // Added debug capture flag
 ): Promise<{ result: GeminiResponseAction; debugInfo?: Record<string, unknown> }> { // Updated return type to include debug info
     const startTime = Date.now();
@@ -151,6 +153,8 @@ export async function processUserRequestViaGemini( // Renamed function
     // Add Chat history (always included, not cached)
     for (const msg of chatHistory) {
         const parts: GeminiContentPart[] = [{ text: msg.text }];
+        
+        // Handle images in chat history
         if (msg.image) {
             try {
                 // Upload image to Files API and get file URI
@@ -178,10 +182,36 @@ export async function processUserRequestViaGemini( // Renamed function
                 });
             }
         }
+        
+        // Handle audio in chat history
+        if (msg.audio) {
+            try {
+                // Upload audio to Files API and get file URI
+                const fileUri = await uploadAudioToFilesAPI(apiKey, msg.audio, 'audio/webm');
+                parts.push({
+                    fileData: {
+                        mimeType: 'audio/webm',
+                        fileUri: fileUri
+                    }
+                });
+            } catch (error) {
+                console.warn('Failed to upload audio to Files API, falling back to inline data:', error);
+                // Fallback to inline data if Files API fails
+                parts.push({
+                    inlineData: {
+                        mimeType: 'audio/webm',
+                        data: msg.audio
+                    }
+                });
+            }
+        }
+        
         contents.push({ role: msg.sender === 'user' ? 'user' : 'model', parts });
     }
-    // Latest user message with optional image
+    // Latest user message with optional image and/or audio
     const userParts: GeminiContentPart[] = [{ text: userMessage }];
+    
+    // Handle current image
     if (currentImage) {
         try {
             // Upload image to Files API and get file URI
@@ -209,6 +239,31 @@ export async function processUserRequestViaGemini( // Renamed function
             });
         }
     }
+    
+    // Handle current audio
+    if (currentAudio) {
+        try {
+            // Upload audio to Files API and get file URI
+            const mimeType = currentAudioMimeType || 'audio/webm';
+            const fileUri = await uploadAudioToFilesAPI(apiKey, currentAudio, mimeType);
+            userParts.push({
+                fileData: {
+                    mimeType: mimeType,
+                    fileUri: fileUri
+                }
+            });
+        } catch (error) {
+            console.warn('Failed to upload current audio to Files API, falling back to inline data:', error);
+            // Fallback to inline data if Files API fails
+            userParts.push({
+                inlineData: {
+                    mimeType: currentAudioMimeType || 'audio/webm',
+                    data: currentAudio
+                }
+            });
+        }
+    }
+    
     contents.push({ role: 'user', parts: userParts });
 
     // Structure request body with optional cache reference
@@ -635,10 +690,63 @@ export async function uploadImageToFilesAPI(apiKey: string, base64Image: string)
             return data.file.uri;
         } else {
             console.error('Unexpected Files API response format:', data);
-            throw new Error('Files API response missing file URI');
+            throw new Error('Invalid Files API response format');
         }
     } catch (error) {
         console.error('Error uploading to Files API:', error);
+        throw error;
+    }
+}
+
+/**
+ * Uploads audio to the Gemini Files API and returns the file URI.
+ * @param apiKey - The Gemini API key.
+ * @param base64Audio - The base64 encoded audio data.
+ * @param mimeType - The MIME type of the audio (e.g., 'audio/webm', 'audio/mp4').
+ * @returns Promise that resolves to the file URI.
+ */
+export async function uploadAudioToFilesAPI(apiKey: string, base64Audio: string, mimeType: string): Promise<string> {
+    const uploadEndpoint = `${GEMINI_FILES_API_BASE}?key=${apiKey}`;
+
+    // Convert base64 to blob
+    const binaryString = atob(base64Audio);
+    const bytes = new Uint8Array(binaryString.length);
+    for (let i = 0; i < binaryString.length; i++) {
+        bytes[i] = binaryString.charCodeAt(i);
+    }
+    const blob = new Blob([bytes], { type: mimeType });
+
+    // Create FormData for multipart upload
+    const formData = new FormData();
+    const fileName = mimeType.includes('webm') ? 'audio.webm' : 'audio.mp4';
+    formData.append('file', blob, fileName);
+
+    console.log('Uploading audio to Files API...');
+
+    try {
+        const response = await fetch(uploadEndpoint, {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const errorText = await response.text();
+            console.error('Files API audio upload error response:', errorText);
+            throw new Error(`Files API audio upload failed: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+        console.log('Files API audio upload successful:', data);
+
+        // The response should contain the file object with uri
+        if (data && data.file && data.file.uri) {
+            return data.file.uri;
+        } else {
+            console.error('Unexpected Files API response format:', data);
+            throw new Error('Invalid Files API response format');
+        }
+    } catch (error) {
+        console.error('Audio upload to Files API failed:', error);
         throw error;
     }
 }

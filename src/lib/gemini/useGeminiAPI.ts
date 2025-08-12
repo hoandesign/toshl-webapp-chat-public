@@ -14,7 +14,10 @@ interface UseGeminiAPIReturn {
     accounts: ToshlAccount[],
     defaultCurrency: string,
     lastShowContext?: { filters: GeminiShowFilters, headerText: string },
-    lastSuccessfulEntryId?: string
+    lastSuccessfulEntryId?: string,
+    currentImage?: string,
+    currentAudio?: string,
+    currentAudioMimeType?: string
   ) => Promise<GeminiResponseAction>;
   isLoading: boolean;
   error: string | null;
@@ -39,7 +42,10 @@ export const useGeminiAPI = (): UseGeminiAPIReturn => {
       accounts: ToshlAccount[],
       defaultCurrency: string,
       lastShowContext?: { filters: GeminiShowFilters, headerText: string },
-      lastSuccessfulEntryId?: string
+      lastSuccessfulEntryId?: string,
+      currentImage?: string,
+      currentAudio?: string,
+      currentAudioMimeType?: string
     ): Promise<GeminiResponseAction> => {
       setIsLoading(true);
       setError(null);
@@ -60,7 +66,9 @@ export const useGeminiAPI = (): UseGeminiAPIReturn => {
           chatHistory,
           lastShowContext,
           lastSuccessfulEntryId,
-          undefined, // currentImage
+          currentImage,
+          currentAudio,
+          currentAudioMimeType,
           false // captureDebugInfo - disabled for this hook
         );
         return result;

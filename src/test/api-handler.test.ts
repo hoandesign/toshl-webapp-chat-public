@@ -124,25 +124,33 @@ describe('API Handler - Image Message Processing', () => {
           expect.objectContaining({
             sender: 'user',
             text: 'Regular message',
+            hasAudioPlaceholder: false,
+            hasImagePlaceholder: false,
           }),
           expect.objectContaining({
             sender: 'user',
             text: '[image]', // Old image-only message should become placeholder
+            hasAudioPlaceholder: false,
             hasImagePlaceholder: true,
           }),
           expect.objectContaining({
             sender: 'user',
             text: 'Message with image [image]', // Text + image should append placeholder
+            hasAudioPlaceholder: false,
             hasImagePlaceholder: true,
           }),
           expect.objectContaining({
             sender: 'user',
             text: 'Recent message',
+            hasAudioPlaceholder: false,
+            hasImagePlaceholder: false,
           }),
         ]),
         undefined, // lastShowContext
         undefined, // lastSuccessfulEntryId
         'data:image/jpeg;base64,current-image-data', // Only current image data
+        undefined, // currentAudio
+        undefined, // currentAudioMimeType
         true // captureDebugInfo
       )
     })
@@ -219,6 +227,8 @@ describe('API Handler - Image Message Processing', () => {
           expect.objectContaining({
             sender: 'user',
             text: 'Add lunch expense',
+            hasAudioPlaceholder: false,
+            hasImagePlaceholder: false,
           }),
           expect.objectContaining({
             sender: 'bot',
@@ -227,12 +237,15 @@ describe('API Handler - Image Message Processing', () => {
           expect.objectContaining({
             sender: 'user',
             text: '[image]',
+            hasAudioPlaceholder: false,
             hasImagePlaceholder: true,
           }),
         ]),
         undefined,
         'entry_1',
         undefined, // No current image
+        undefined, // currentAudio
+        undefined, // currentAudioMimeType
         true // captureDebugInfo
       )
     })
@@ -305,21 +318,27 @@ describe('API Handler - Image Message Processing', () => {
           expect.objectContaining({
             sender: 'user',
             text: 'Here is my lunch receipt [image]',
+            hasAudioPlaceholder: false,
             hasImagePlaceholder: true,
           }),
           expect.objectContaining({
             sender: 'user',
             text: 'And here is another one [image]',
+            hasAudioPlaceholder: false,
             hasImagePlaceholder: true,
           }),
           expect.objectContaining({
             sender: 'user',
             text: 'Just text message',
+            hasAudioPlaceholder: false,
+            hasImagePlaceholder: false,
           }),
         ]),
         undefined,
         undefined,
         'data:image/jpeg;base64,new-receipt-image',
+        undefined, // currentAudio
+        undefined, // currentAudioMimeType
         true // captureDebugInfo
       )
     })
@@ -510,6 +529,7 @@ describe('API Handler - Image Message Processing', () => {
             expect.objectContaining({
               sender: 'user',
               text: testCase.expectedText,
+              hasAudioPlaceholder: false,
               ...(testCase.expectedHasPlaceholder !== undefined && {
                 hasImagePlaceholder: testCase.expectedHasPlaceholder,
               }),
@@ -518,6 +538,8 @@ describe('API Handler - Image Message Processing', () => {
           undefined,
           undefined,
           undefined,
+          undefined, // currentAudio
+          undefined, // currentAudioMimeType
           true // captureDebugInfo
         )
       }

@@ -16,7 +16,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Clock from 'lucide-react/dist/esm/icons/clock';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Copy from 'lucide-react/dist/esm/icons/copy';
-import { FileImage } from 'lucide-react';
+import { FileImage, Volume2, Play, Pause } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
@@ -33,6 +33,117 @@ interface MessageRendererProps {
     hideNumbers: boolean; // Add hideNumbers prop
     // Removed handleShowMoreAccountsClick prop
 }
+
+// Audio Display Component for playing recorded audio messages
+const AudioDisplay: React.FC<{
+    audioData: string;
+    metadata?: Message['audioMetadata'];
+    messageId: string;
+}> = ({ audioData, metadata }) => {
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+    const [audioError, setAudioError] = useState(false);
+    const audioRef = React.useRef<HTMLAudioElement>(null);
+
+    // Create audio URL from base64 data
+    const audioUrl = React.useMemo(() => {
+        try {
+            const mimeType = metadata?.mimeType || 'audio/webm';
+            return `data:${mimeType};base64,${audioData}`;
+        } catch (error) {
+            console.error('Failed to create audio URL:', error);
+            setAudioError(true);
+            return null;
+        }
+    }, [audioData, metadata?.mimeType]);
+
+    // Handle play/pause
+    const togglePlayback = async () => {
+        if (!audioRef.current || audioError) return;
+
+        try {
+            if (isPlaying) {
+                audioRef.current.pause();
+            } else {
+                await audioRef.current.play();
+            }
+        } catch (error) {
+            console.error('Audio playback error:', error);
+            setAudioError(true);
+        }
+    };
+
+    // Format time for display
+    const formatTime = (seconds: number) => {
+        const mins = Math.floor(seconds / 60);
+        const secs = Math.floor(seconds % 60);
+        return `${mins}:${secs.toString().padStart(2, '0')}`;
+    };
+
+    if (audioError || !audioUrl) {
+        return (
+            <div className="flex items-center space-x-2 p-2 bg-red-50 border border-red-200 rounded-lg">
+                <Volume2 size={16} className="text-red-500" />
+                <span className="text-sm text-red-700">Audio playback error</span>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <button
+                onClick={togglePlayback}
+                className="flex-shrink-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition duration-200"
+                title={isPlaying ? "Pause audio" : "Play audio"}
+            >
+                {isPlaying ? <Pause size={14} /> : <Play size={14} />}
+            </button>
+            
+            <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between text-sm text-blue-700">
+                    <span>Voice message</span>
+                    <span>
+                        {formatTime(currentTime)} / {formatTime(duration || (metadata?.duration || 0) / 1000)}
+                    </span>
+                </div>
+                
+                {/* Progress bar */}
+                <div className="mt-1 w-full bg-blue-200 rounded-full h-1">
+                    <div 
+                        className="bg-blue-500 h-1 rounded-full transition-all duration-100"
+                        style={{ 
+                            width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' 
+                        }}
+                    />
+                </div>
+            </div>
+
+            <audio
+                ref={audioRef}
+                src={audioUrl}
+                onLoadedMetadata={() => {
+                    if (audioRef.current) {
+                        setDuration(audioRef.current.duration);
+                    }
+                }}
+                onTimeUpdate={() => {
+                    if (audioRef.current) {
+                        setCurrentTime(audioRef.current.currentTime);
+                    }
+                }}
+                onPlay={() => setIsPlaying(true)}
+                onPause={() => setIsPlaying(false)}
+                onEnded={() => {
+                    setIsPlaying(false);
+                    setCurrentTime(0);
+                }}
+                onError={() => setAudioError(true)}
+                preload="metadata"
+            />
+        </div>
+    );
+};
 
 // Enhanced Image Display Component with comprehensive error handling and fallback mechanisms
 const ImageDisplay: React.FC<{
@@ -462,18 +573,20 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 }
                 // else status is 'sent' or undefined (treat as sent), no indicator needed
 
-                // User message - allow copy/delete + show status/retry + display images
+                // User message - allow copy/delete + show status/retry + display images and audio
                 const hasImage = !!msg.image;
+                const hasAudio = !!msg.audio;
                 const hasText = !!msg.text;
-                const isImageProcessing = hasImage && msg.status === 'pending';
+                const hasMedia = hasImage || hasAudio;
+                const isMediaProcessing = hasMedia && msg.status === 'pending';
 
                 content = (
-                    <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${userStyle} ${hasImage ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isImageProcessing ? 'animate-pulse' : ''}`}>
+                    <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${userStyle} ${hasMedia ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isMediaProcessing ? 'animate-pulse' : ''}`}>
 
 
                         {/* Display image if present with enhanced loading state */}
                         {msg.image && (
-                            <div className={hasText ? "mb-3" : "mb-1"}>
+                            <div className={hasText || hasAudio ? "mb-3" : "mb-1"}>
                                 <div className="relative">
                                     {/* Image loading overlay for better UX */}
                                     <ImageDisplay
@@ -495,16 +608,34 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                             </div>
                         )}
 
+                        {/* Display audio if present */}
+                        {msg.audio && (
+                            <div className={hasText ? "mb-3" : "mb-1"}>
+                                <AudioDisplay
+                                    audioData={msg.audio}
+                                    metadata={msg.audioMetadata}
+                                    messageId={msg.id}
+                                />
+                                {/* Accessibility enhancement: Screen reader description */}
+                                <div className="sr-only">
+                                    Voice message
+                                    {msg.audioMetadata?.duration && `, duration ${Math.round(msg.audioMetadata.duration / 1000)} seconds`}
+                                    {msg.audioMetadata?.mimeType && `, format ${msg.audioMetadata.mimeType}`}
+                                </div>
+                            </div>
+                        )}
+
                         {/* Display text if present */}
                         {msg.text && <p className="text-sm">{msg.text}</p>}
 
                         {/* Enhanced status section with better visual hierarchy */}
                         <div className="flex items-center justify-between mt-2">
                             <div className="flex items-center">
-                                {/* Processing indicator for image messages */}
-                                {isImageProcessing && (
+                                {/* Processing indicator for media messages */}
+                                {isMediaProcessing && (
                                     <div className="flex items-center text-blue-300 text-xs mr-2">
                                         <Loader2 size={12} className="animate-spin mr-1" />
+                                        {hasImage && hasAudio ? 'Processing media...' : hasImage ? 'Processing image...' : 'Processing audio...'}
                                         <span>Processing image...</span>
                                     </div>
                                 )}

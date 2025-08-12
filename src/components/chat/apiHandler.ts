@@ -105,7 +105,9 @@ export const handleProcessUserRequestApi = async (
     currentMessages: Message[], // Pass current messages for history context
     currentLastShowContext: { filters: GeminiShowFilters, headerText: string } | null,
     currentLastSuccessfulEntryId: string | null,
-    currentImage?: string // Add current image parameter
+    currentImage?: string, // Add current image parameter
+    currentAudio?: string, // Add current audio parameter
+    currentAudioMimeType?: string // Add current audio MIME type parameter
 ): Promise<ProcessRequestResult> => {
     const { toshlApiKey, geminiApiKey, currency, geminiModel, accounts, categories, tags } = getRequiredApiData();
 
@@ -117,32 +119,49 @@ export const handleProcessUserRequestApi = async (
     // --- Construct Enhanced History for Gemini ---
     const historyForGemini: GeminiChatMessage[] = currentMessages
         .filter(msg =>
-            (msg.sender === 'user' && (msg.text || msg.image)) ||
+            (msg.sender === 'user' && (msg.text || msg.image || msg.audio)) ||
             (msg.sender === 'system' && (msg.type === 'system_info' || msg.type === 'history_header')) ||
             (msg.sender === 'bot' && msg.type === 'entry_success')
         )
         .slice(-10)
         .map((msg): GeminiChatMessage | null => {
-            if (msg.sender === 'user' && (msg.text || msg.image)) {
-                // Replace old image messages with "[image]" placeholder
-                // Only include actual image data for the current message (handled separately)
+            if (msg.sender === 'user' && (msg.text || msg.image || msg.audio)) {
+                // Replace old image/audio messages with placeholders
+                // Only include actual media data for the current message (handled separately)
                 let messageText = msg.text || '';
                 let hasImagePlaceholder = false;
+                let hasAudioPlaceholder = false;
                 
-                if (msg.image && !messageText.trim()) {
-                    // If message has only an image (no text), use placeholder
+                if (msg.image && !messageText.trim() && !msg.audio) {
+                    // If message has only an image (no text, no audio), use placeholder
                     messageText = '[image]';
                     hasImagePlaceholder = true;
-                } else if (msg.image && messageText.trim()) {
-                    // If message has both text and image, append placeholder
-                    messageText = `${messageText} [image]`;
+                } else if (msg.audio && !messageText.trim() && !msg.image) {
+                    // If message has only audio (no text, no image), use placeholder
+                    messageText = '[audio]';
+                    hasAudioPlaceholder = true;
+                } else if (msg.image && msg.audio && !messageText.trim()) {
+                    // If message has both image and audio but no text
+                    messageText = '[image] [audio]';
                     hasImagePlaceholder = true;
+                    hasAudioPlaceholder = true;
+                } else {
+                    // If message has text, append placeholders as needed
+                    if (msg.image) {
+                        messageText = `${messageText} [image]`;
+                        hasImagePlaceholder = true;
+                    }
+                    if (msg.audio) {
+                        messageText = `${messageText} [audio]`;
+                        hasAudioPlaceholder = true;
+                    }
                 }
                 
                 return { 
                     sender: 'user', 
                     text: messageText,
-                    hasImagePlaceholder
+                    hasImagePlaceholder,
+                    hasAudioPlaceholder
                 };
             } else if ((msg.sender === 'system' || msg.sender === 'bot') && msg.text) {
                 let botText = '';
@@ -173,6 +192,8 @@ export const handleProcessUserRequestApi = async (
         Intl.DateTimeFormat().resolvedOptions().timeZone, historyForGemini,
         currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined,
         currentImage,
+        currentAudio,
+        currentAudioMimeType,
         true // Enable debug info capture
     );
     // --- End Gemini API Call ---

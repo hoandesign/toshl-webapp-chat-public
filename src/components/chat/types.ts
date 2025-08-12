@@ -50,6 +50,13 @@ export interface Message {
     mimeType?: string;
     processedAt?: string; // ISO timestamp
   }; // Optional metadata for image display and caching
+  audio?: string; // Optional base64 encoded audio data
+  audioMetadata?: {
+    duration?: number; // Duration in milliseconds
+    fileSize?: number;
+    mimeType?: string;
+    processedAt?: string; // ISO timestamp
+  }; // Optional metadata for audio display and processing
   // Added budget_card, budget_header, and context caching message types
   type?:
     | 'text'

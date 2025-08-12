@@ -237,3 +237,21 @@ export const IMAGE_CORRUPTED = "The selected image appears to be corrupted or in
 export const IMAGE_UNSUPPORTED_FORMAT = "This image format is not supported. Please use JPEG, PNG, GIF, or WebP.";
 export const IMAGE_CACHE_STORAGE_FULL = "Image cache storage is full. Some older images may not display properly.";
 export const IMAGE_PROCESSING_TIMEOUT = "Image processing timed out. Please try with a smaller image.";
+
+// Audio Recording Error Messages
+export const AUDIO_NOT_SUPPORTED = "Audio recording is not supported in this browser.";
+export const AUDIO_PERMISSION_DENIED = "Microphone access denied. Please allow microphone access to record audio.";
+export const AUDIO_NO_MICROPHONE = "No microphone found. Please connect a microphone and try again.";
+export const AUDIO_RECORDING_FAILED = "Audio recording failed. Please try again.";
+export const AUDIO_PROCESSING_FAILED = "Failed to process the audio recording.";
+export const AUDIO_EMPTY_RECORDING = "Recording is empty. Please record some audio and try again.";
+export const AUDIO_FILE_TOO_LARGE = "Audio file is too large. Please record a shorter message.";
+export const AUDIO_UPLOAD_FAILED = "Failed to upload audio to Gemini. Please try again.";
+
+// Audio Recording UI Messages
+export const AUDIO_RECORD_BUTTON_TITLE = "Record voice message";
+export const AUDIO_STOP_RECORDING_TITLE = "Stop recording";
+export const AUDIO_CANCEL_RECORDING_TITLE = "Cancel recording";
+export const AUDIO_RECORDING_STATUS = "Recording...";
+export const AUDIO_MAX_DURATION_WARNING = "Maximum recording duration is 60 seconds.";
+export const AUDIO_PROCESSING_STATUS = "Processing audio...";

@@ -4,6 +4,7 @@ import History from 'lucide-react/dist/esm/icons/history';
 import SendHorizonal from 'lucide-react/dist/esm/icons/send-horizonal';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import { ImagePlus, X, Bug } from 'lucide-react';
+import VoiceRecorder from './chat/VoiceRecorder';
 import * as STRINGS from '../constants/strings';
 import { Message, ChatInterfaceProps } from './chat/types'; // Removed unused EntryCardData, AccountBalanceCardData
 import { useChatLogic } from './chat/useChatLogic';
@@ -61,6 +62,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
     selectedImage,
     handleImageUpload,
     removeSelectedImage,
+    selectedAudio,
+    selectedAudioMetadata,
+    handleAudioRecorded,
+    removeSelectedAudio,
   } = useChatLogic();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -416,6 +421,26 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             </button>
           </div>
         )}
+        
+        {/* Audio Preview */}
+        {selectedAudio && selectedAudioMetadata && (
+          <div className="mb-3 relative inline-block">
+            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center space-x-2">
+              <div className="w-2 h-2 bg-blue-500 rounded-full" />
+              <span className="text-sm text-blue-700">
+                Audio recorded ({Math.round(selectedAudioMetadata.duration / 1000)}s)
+              </span>
+              <button
+                type="button"
+                onClick={removeSelectedAudio}
+                className="text-blue-600 hover:text-blue-700 p-1 rounded transition duration-200"
+                title="Remove audio"
+              >
+                <X size={14} />
+              </button>
+            </div>
+          </div>
+        )}
         <form onSubmit={handleFormSubmit} className="flex items-end space-x-2 md:space-x-3">
           <button
             type="button"
@@ -435,6 +460,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           >
             <ImagePlus size={20} />
           </button>
+          <VoiceRecorder
+            onAudioRecorded={handleAudioRecorded}
+            onError={(error) => {
+              // For now, just log the error - in a real implementation, you'd want to
+              // pass a callback to handle errors or use a toast notification
+              console.error('Voice recording error:', error);
+            }}
+            disabled={isLoading || isLoadingHistory || !!isDeleting}
+          />
           <textarea
             ref={textareaRef}
             value={inputValue}
@@ -460,7 +494,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           />
           <button
             type="submit"
-            disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage)}
+            disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
             className="bg-black hover:bg-gray-700 text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black self-end mb-0.5" /* Updated bg, hover, focus */
             aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
           >
