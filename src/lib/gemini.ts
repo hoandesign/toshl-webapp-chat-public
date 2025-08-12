@@ -128,7 +128,7 @@ export async function processUserRequestViaGemini( // Renamed function
     }
 
     // Model acknowledgment (always included, not cached)
-    contents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format and user input's language." }] });
+    contents.push({ role: 'model', parts: [{ text: "OK. I will follow these instructions precisely, paying close attention to the required output format (only a single JSON, without markdown formatting) and user input's language." }] });
 
     // Add dynamic time context (always included, not cached)
     const timeContextMessage = `Current time context: ${currentTime} on ${today} (${userTimezone}).`;
