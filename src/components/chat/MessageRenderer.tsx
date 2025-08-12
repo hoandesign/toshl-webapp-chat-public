@@ -268,8 +268,8 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                         {copySuccess ? <CheckCircle size={14} className="text-accent-positive" /> : <Copy size={14} />}
                     </button>
                 )}
-                {/* Debug Info Button - Only for bot messages with debug info */}
-                {msg.sender === 'bot' && msg.debugInfo && (
+                {/* Debug Info Button - Only for bot/system messages with debug info */}
+                {(msg.sender === 'bot' || msg.sender === 'system') && msg.debugInfo && (
                     <button
                         onClick={() => setShowDebugModal(true)}
                         className="text-gray-200 hover:text-blue-400 p-1"
