@@ -355,7 +355,7 @@ export const handleProcessUserRequestApi = async (
             break; // End of 'show' case
         }
         case 'edit': {
-            messagesToAdd.push({ id: `confirm_edit_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
+            messagesToAdd.push({ id: `confirm_edit_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
             await editToshlEntry(toshlApiKey, geminiResult.entryId, geminiResult.updatePayload); // API Call
             newLastSuccessfulEntryId = geminiResult.entryId; // Update last successful ID
             newLastShowContext = null; // Reset context on edit
@@ -389,13 +389,13 @@ export const handleProcessUserRequestApi = async (
             break;
         }
         case 'info': {
-            messagesToAdd.push({ id: `info_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
+            messagesToAdd.push({ id: `info_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
             break;
         }
         case 'get_account_balances': {
             newLastShowContext = null; // Reset context
             newLastSuccessfulEntryId = null; // Reset context
-            messagesToAdd.push({ id: `balance_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
+            messagesToAdd.push({ id: `balance_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
 
             // --- Simulate MCP Call to get accounts ---
             // In a real scenario, this would involve calling the MCP server.
@@ -422,7 +422,8 @@ export const handleProcessUserRequestApi = async (
                     type: 'error',
                     text: requestedAccountName
                         ? STRINGS.BALANCE_ACCOUNT_NOT_FOUND(requestedAccountName)
-                        : STRINGS.BALANCE_NO_ACCOUNTS_FOUND
+                        : STRINGS.BALANCE_NO_ACCOUNTS_FOUND,
+                    debugInfo: debugInfo
                 });
             } else {
                  // Map all accounts to the card data structure, including new fields
@@ -486,7 +487,7 @@ export const handleProcessUserRequestApi = async (
         case 'show_budgets': { // Added case for budgets
             newLastShowContext = null; // Reset context
             newLastSuccessfulEntryId = null; // Reset context
-            messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
+            messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
 
             try {
                 // Pass from and to dates from Gemini result to the API call
@@ -497,7 +498,8 @@ export const handleProcessUserRequestApi = async (
                         id: `budgets_empty_${Date.now()}`,
                         sender: 'system',
                         type: 'system_info',
-                        text: STRINGS.BUDGETS_NO_BUDGETS_FOUND
+                        text: STRINGS.BUDGETS_NO_BUDGETS_FOUND,
+                        debugInfo: debugInfo
                     });
                 } else {
                     // Sort budgets (e.g., by name or period, adjust as needed)
@@ -517,16 +519,16 @@ export const handleProcessUserRequestApi = async (
                 }
             } catch (fetchError) {
                 console.error(STRINGS.CONSOLE_ERROR_FETCHING_BUDGETS, fetchError);
-                messagesToAdd.push({ id: `budget_fetch_error_${Date.now()}`, sender: 'system', type: 'error', text: STRINGS.BUDGETS_FETCH_ERROR });
+                messagesToAdd.push({ id: `budget_fetch_error_${Date.now()}`, sender: 'system', type: 'error', text: STRINGS.BUDGETS_FETCH_ERROR, debugInfo: debugInfo });
             }
             break;
         }
         case 'clarify': {
-            messagesToAdd.push({ id: `clarify_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.message });
+            messagesToAdd.push({ id: `clarify_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.message, debugInfo: debugInfo });
             break;
         }
         default: {
-            messagesToAdd.push({ id: `error_action_${Date.now()}`, text: STRINGS.UNEXPECTED_GEMINI_ACTION, sender: 'system', type: 'error' });
+            messagesToAdd.push({ id: `error_action_${Date.now()}`, text: STRINGS.UNEXPECTED_GEMINI_ACTION, sender: 'system', type: 'error', debugInfo: debugInfo });
             console.error(STRINGS.UNEXPECTED_GEMINI_ACTION, geminiResult);
             break;
         }
