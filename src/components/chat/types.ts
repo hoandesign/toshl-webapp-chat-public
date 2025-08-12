@@ -82,6 +82,33 @@ export interface Message {
   status?: 'sent' | 'pending' | 'error'; // Status for offline handling
   timestamp?: string; // ISO timestamp for message
   offlineId?: string; // Unique ID generated offline before sending
+  debugInfo?: DebugInfo; // Debug information for bot responses
+}
+
+// Debug information interface for troubleshooting
+export interface DebugInfo {
+  geminiRequest?: {
+    model: string;
+    userInput: string;
+    chatHistory: any[];
+    systemPrompt?: string;
+    fullRequestBody?: any;
+  };
+  geminiResponse?: {
+    rawResponse: string;
+    cleanedResponse: string;
+    parsedData: any;
+    processingTime?: number;
+  };
+  toshlRequests?: Array<{
+    endpoint: string;
+    method: string;
+    payload?: any;
+    response?: any;
+    error?: string;
+  }>;
+  errors?: string[];
+  timestamp: string;
 }
 
 export interface ChatInterfaceProps {

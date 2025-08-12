@@ -20,6 +20,7 @@ import { FileImage } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
+import DebugModal from './DebugModal';
 // Removed unused AccountBalanceCard import
 
 interface MessageRendererProps {
@@ -221,6 +222,7 @@ const ImageDisplay: React.FC<{
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDeleting, isRetrying, handleDeleteEntry, handleDeleteMessageLocally, retrySendMessage, hideNumbers }) => { // Accept hideNumbers prop
     const [showActions, setShowActions] = useState(false); // State to control action visibility on hover
     const [copySuccess, setCopySuccess] = useState(false); // State for copy feedback
+    const [showDebugModal, setShowDebugModal] = useState(false); // State for debug modal
     const secondaryTextColor = 'text-text-secondary'; // Define theme color variable
 
     // Function to handle copying text
@@ -264,6 +266,16 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                         title={STRINGS.COPY_MESSAGE_BUTTON_TITLE}
                     >
                         {copySuccess ? <CheckCircle size={14} className="text-accent-positive" /> : <Copy size={14} />}
+                    </button>
+                )}
+                {/* Debug Info Button - Only for bot messages with debug info */}
+                {msg.sender === 'bot' && msg.debugInfo && (
+                    <button
+                        onClick={() => setShowDebugModal(true)}
+                        className="text-gray-200 hover:text-blue-400 p-1"
+                        title={STRINGS.DEBUG_INFO_BUTTON_TITLE}
+                    >
+                        <Info size={14} />
                     </button>
                 )}
                 {/* Local Delete Button */}
@@ -514,14 +526,25 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     // Render the message container with alignment and hover effect for actions
     const alignment = msg.sender === 'user' ? 'justify-end' : 'justify-start';
     return (
-        <div
-            className={`flex ${alignment} mb-6 relative group`} // Increased bottom margin to mb-6
-            onMouseEnter={() => canHaveActions && setShowActions(true)}
-            onMouseLeave={() => canHaveActions && setShowActions(false)}
-        >
-            {content}
-            {/* Action buttons are rendered inside the content div now */}
-        </div>
+        <>
+            <div
+                className={`flex ${alignment} mb-6 relative group`} // Increased bottom margin to mb-6
+                onMouseEnter={() => canHaveActions && setShowActions(true)}
+                onMouseLeave={() => canHaveActions && setShowActions(false)}
+            >
+                {content}
+                {/* Action buttons are rendered inside the content div now */}
+            </div>
+            
+            {/* Debug Modal */}
+            {msg.debugInfo && (
+                <DebugModal
+                    isOpen={showDebugModal}
+                    onClose={() => setShowDebugModal(false)}
+                    debugInfo={msg.debugInfo}
+                />
+            )}
+        </>
     );
 };
 

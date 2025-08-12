@@ -97,6 +97,7 @@ interface ProcessRequestResult {
     newLastShowContext: { filters: GeminiShowFilters, headerText: string } | null;
     newLastSuccessfulEntryId: string | null;
     updatedEntryId?: string; // For edit case to mark old messages
+    debugInfo?: any; // Debug information from Gemini API
 }
 
 export const handleProcessUserRequestApi = async (
@@ -167,11 +168,12 @@ export const handleProcessUserRequestApi = async (
     // --- Call Gemini API ---
     // Note: The current user message (userInput + currentImage) is handled inside processUserRequestViaGemini
     // We just need to pass the current image as a parameter, not add it to history here
-    const geminiResult: GeminiResponseAction = await processUserRequestViaGemini(
+    const { result: geminiResult, debugInfo } = await processUserRequestViaGemini(
         geminiApiKey, geminiModel, userInput, categories, tags, accounts, currency,
         Intl.DateTimeFormat().resolvedOptions().timeZone, historyForGemini,
         currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined,
-        currentImage
+        currentImage,
+        true // Enable debug info capture
     );
     // --- End Gemini API Call ---
 
@@ -180,10 +182,41 @@ export const handleProcessUserRequestApi = async (
         case 'add': {
             newLastShowContext = null; // Reset context on add
             if (geminiResult.headerText) {
-                messagesToAdd.push({ id: `confirm_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText });
+                messagesToAdd.push({ 
+                    id: `confirm_${Date.now()}`, 
+                    sender: 'system', 
+                    type: 'system_info', 
+                    text: geminiResult.headerText,
+                    debugInfo: debugInfo 
+                });
             }
             const toshlPayload = geminiResult.payload;
-            const addResult = await addToshlEntry(toshlApiKey, toshlPayload); // API Call
+            
+            // Capture Toshl API call in debug info
+            if (debugInfo) {
+                if (!debugInfo.toshlRequests) debugInfo.toshlRequests = [];
+                debugInfo.toshlRequests.push({
+                    endpoint: '/entries',
+                    method: 'POST',
+                    payload: toshlPayload
+                });
+            }
+            
+            let addResult;
+            try {
+                addResult = await addToshlEntry(toshlApiKey, toshlPayload); // API Call
+                
+                // Capture Toshl API response in debug info
+                if (debugInfo && debugInfo.toshlRequests.length > 0) {
+                    debugInfo.toshlRequests[debugInfo.toshlRequests.length - 1].response = addResult;
+                }
+            } catch (toshlError) {
+                // Capture Toshl API error in debug info
+                if (debugInfo && debugInfo.toshlRequests.length > 0) {
+                    debugInfo.toshlRequests[debugInfo.toshlRequests.length - 1].error = toshlError instanceof Error ? toshlError.message : String(toshlError);
+                }
+                throw toshlError; // Re-throw the error
+            }
             let finalEntryId: string | undefined;
             if (typeof addResult === 'string') finalEntryId = addResult;
             else if (typeof addResult === 'object' && addResult.id) finalEntryId = addResult.id;
@@ -205,7 +238,13 @@ export const handleProcessUserRequestApi = async (
             if (finalEntryId && finalEntryId !== STRINGS.TOSHL_ENTRY_CREATED_NO_ID) newLastSuccessfulEntryId = finalEntryId;
             else newLastSuccessfulEntryId = null;
 
-            messagesToAdd.push({ id: `success_${finalEntryId || Date.now()}`, sender: 'bot', type: 'entry_success', entryData: successEntryData });
+            messagesToAdd.push({ 
+                id: `success_${finalEntryId || Date.now()}`, 
+                sender: 'bot', 
+                type: 'entry_success', 
+                entryData: successEntryData,
+                debugInfo: debugInfo 
+            });
             break;
         }
         case 'show': {
@@ -494,7 +533,7 @@ export const handleProcessUserRequestApi = async (
     }
     // --- End Gemini Result Processing ---
 
-    return { messagesToAdd, newLastShowContext, newLastSuccessfulEntryId, updatedEntryId };
+    return { messagesToAdd, newLastShowContext, newLastSuccessfulEntryId, updatedEntryId, debugInfo };
 };
 
 

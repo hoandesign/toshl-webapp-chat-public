@@ -53,8 +53,22 @@ export async function processUserRequestViaGemini( // Renamed function
     chatHistory: GeminiChatMessage[], // Added parameter
     lastShowContext?: { filters: GeminiShowFilters, headerText: string }, // Added parameter
     lastSuccessfulEntryId?: string, // Added parameter
-    currentImage?: string // Added current image parameter
-): Promise<GeminiResponseAction> { // Updated return type
+    currentImage?: string, // Added current image parameter
+    captureDebugInfo?: boolean // Added debug capture flag
+): Promise<{ result: GeminiResponseAction; debugInfo?: any }> { // Updated return type to include debug info
+    const startTime = Date.now();
+    const debugInfo: any = captureDebugInfo ? {
+        geminiRequest: {
+            model,
+            userInput: userMessage,
+            chatHistory: chatHistory.map(msg => ({ sender: msg.sender, text: msg.text, hasImage: !!msg.image }))
+        },
+        geminiResponse: {},
+        toshlRequests: [],
+        errors: [],
+        timestamp: new Date().toISOString()
+    } : undefined;
+
     if (!apiKey || !model) {
         throw new Error(STRINGS.GEMINI_API_KEY_MODEL_REQUIRED);
     }
@@ -215,6 +229,12 @@ export async function processUserRequestViaGemini( // Renamed function
     console.log('Sending request to Gemini API...');
     console.log('Gemini Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
 
+    // Capture debug info for request
+    if (debugInfo) {
+        debugInfo.geminiRequest.fullRequestBody = requestBody;
+        debugInfo.geminiRequest.systemPrompt = systemInstructions;
+    }
+
     try {
         let response = await fetch(endpoint, { // Use let for potential reassignment on retry
             method: 'POST',
@@ -311,13 +331,40 @@ export async function processUserRequestViaGemini( // Renamed function
 
         console.log('Raw Gemini Response Text:', generatedText);
 
+        // Capture debug info for response
+        if (debugInfo) {
+            debugInfo.geminiResponse.rawResponse = generatedText;
+            debugInfo.geminiResponse.processingTime = Date.now() - startTime;
+        }
+
         // Attempt to parse the text as JSON (expecting ToshlEntryPayload)
         // Clean the text in case Gemini includes markdown backticks for JSON block
-        const cleanedText = generatedText.replace(/^```json\s*|```$/g, '').trim();
+        let cleanedText = generatedText
+            .replace(/^```(?:json|javascript|js)?\s*/gm, '') // Remove opening code blocks with various language identifiers
+            .replace(/```\s*$/gm, '') // Remove closing code blocks
+            .trim();
+        
+        // If the cleaned text doesn't start with {, try to extract JSON object
+        if (!cleanedText.startsWith('{')) {
+            const jsonMatch = cleanedText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+                cleanedText = jsonMatch[0].trim();
+            }
+        }
+
+        // Capture cleaned response in debug info
+        if (debugInfo) {
+            debugInfo.geminiResponse.cleanedResponse = cleanedText;
+        }
 
         try {
             // Parse the JSON to get the action object
             const result: GeminiResponseAction = JSON.parse(cleanedText);
+
+            // Capture parsed result in debug info
+            if (debugInfo) {
+                debugInfo.geminiResponse.parsedData = result;
+            }
 
             // Validate the parsed structure based on the action
             switch (result.action) {
@@ -408,11 +455,17 @@ export async function processUserRequestViaGemini( // Renamed function
                 }
             }
 
-            return result; // Return the validated action object
+            return { result, debugInfo }; // Return the validated action object with debug info
 
         } catch (parseError) {
             console.error('Failed to parse or validate JSON from Gemini response:', parseError);
             console.error('Cleaned text that failed parsing/validation:', cleanedText);
+            
+            // Capture parse error in debug info
+            if (debugInfo) {
+                debugInfo.errors.push(`JSON Parse Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            }
+            
             // Return a clarify action as a fallback? Or throw a more specific error?
             // Throwing error seems more appropriate to signal failure upstream.
             throw new Error(STRINGS.GEMINI_JSON_PARSE_VALIDATE_FAILED(generatedText));

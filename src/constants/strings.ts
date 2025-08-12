@@ -48,6 +48,27 @@ export const ENTRY_ADDED_SUCCESSFULLY = "Entry Added Successfully";
 export const ERROR_FETCHING_ENTRIES_PREFIX = "Error fetching entries:";
 export const UNKNOWN_ERROR_FETCHING_ENTRIES = "Unknown error fetching entries.";
 export const ERROR_PROCESSING_MESSAGE_PREFIX = "Error processing message via Gemini or Toshl:";
+
+// Debug Information
+export const DEBUG_INFO_BUTTON_TITLE = "View debug information";
+export const DEBUG_MODAL_TITLE = "Debug Information";
+export const DEBUG_TAB_REQUEST = "Gemini Request";
+export const DEBUG_TAB_RESPONSE = "Gemini Response";
+export const DEBUG_TAB_TOSHL = "Toshl API Calls";
+export const DEBUG_NO_TOSHL_CALLS = "No Toshl API calls recorded for this request";
+export const DEBUG_COPY_BUTTON = "Copy";
+export const DEBUG_COPIED_SUCCESS = "Copied!";
+export const DEBUG_USER_INPUT_TITLE = "User Input";
+export const DEBUG_CHAT_HISTORY_TITLE = "Chat History";
+export const DEBUG_FULL_REQUEST_TITLE = "Full Request Body";
+export const DEBUG_RAW_RESPONSE_TITLE = "Raw Response";
+export const DEBUG_CLEANED_RESPONSE_TITLE = "Cleaned Response";
+export const DEBUG_PARSED_DATA_TITLE = "Parsed Data";
+export const DEBUG_PROCESSING_TIME_TITLE = "Processing Time";
+export const DEBUG_PAYLOAD_TITLE = "Payload";
+export const DEBUG_RESPONSE_TITLE = "Response";
+export const DEBUG_ERROR_TITLE = "Error";
+export const DEBUG_CAPTURED_AT = "Debug information captured at:";
 export const CLARIFICATION_MESSAGE_PREFIX = "I'm sorry, I couldn't understand";
 
 // Chat Bottom Sheet

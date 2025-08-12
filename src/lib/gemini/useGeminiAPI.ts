@@ -48,7 +48,7 @@ export const useGeminiAPI = (): UseGeminiAPIReturn => {
         // Get user timezone
         const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         
-        const result = await processUserRequestViaGemini(
+        const { result } = await processUserRequestViaGemini(
           geminiApiKey,
           model,
           userInput,
@@ -59,7 +59,9 @@ export const useGeminiAPI = (): UseGeminiAPIReturn => {
           userTimezone,
           chatHistory,
           lastShowContext,
-          lastSuccessfulEntryId
+          lastSuccessfulEntryId,
+          undefined, // currentImage
+          false // captureDebugInfo - disabled for this hook
         );
         return result;
       } catch (err) {
