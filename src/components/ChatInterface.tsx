@@ -1,10 +1,9 @@
-import React, { useRef, useEffect, useCallback } from 'react';
+import React, { useRef, useEffect, useCallback, useState } from 'react';
 import Settings from 'lucide-react/dist/esm/icons/settings';
 import History from 'lucide-react/dist/esm/icons/history';
 import SendHorizonal from 'lucide-react/dist/esm/icons/send-horizonal';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
-import ImagePlus from 'lucide-react/dist/esm/icons/image-plus';
-import X from 'lucide-react/dist/esm/icons/x';
+import { ImagePlus, X, Bug } from 'lucide-react';
 import * as STRINGS from '../constants/strings';
 import { Message, ChatInterfaceProps } from './chat/types'; // Removed unused EntryCardData, AccountBalanceCardData
 import { useChatLogic } from './chat/useChatLogic';
@@ -16,6 +15,7 @@ import BottomSheet from './chat/BottomSheet';
 import MentionSuggestionsPopup from './chat/MentionSuggestionsPopup';
 import AccountBalanceCard from './chat/AccountBalanceCard';
 import BudgetCard from './chat/BudgetCard'; // Import BudgetCard
+import GlobalDebugModal from './chat/GlobalDebugModal';
 
 // --- Simple Debounce Utility ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -35,6 +35,7 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (.
 // --- End Debounce Utility ---
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbers }): React.ReactElement => { // Accept hideNumbers prop
+  const [isGlobalDebugOpen, setIsGlobalDebugOpen] = useState(false);
   const {
     messages,
     inputValue,
@@ -66,15 +67,18 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
 
-  const debouncedResizeTextarea = useCallback(debounce(() => {
-      if (textareaRef.current) {
-          textareaRef.current.style.height = 'auto';
-          const maxHeight = 200;
-          const scrollHeight = textareaRef.current.scrollHeight;
-          textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
-          textareaRef.current.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
-      }
-  }, 150), []);
+  const debouncedResizeTextarea = useCallback(() => {
+      const resizeFunction = debounce(() => {
+          if (textareaRef.current) {
+              textareaRef.current.style.height = 'auto';
+              const maxHeight = 200;
+              const scrollHeight = textareaRef.current.scrollHeight;
+              textareaRef.current.style.height = `${Math.min(scrollHeight, maxHeight)}px`;
+              textareaRef.current.style.overflowY = scrollHeight > maxHeight ? 'auto' : 'hidden';
+          }
+      }, 150);
+      return resizeFunction();
+  }, []);
 
   useEffect(() => {
       debouncedResizeTextarea();
@@ -362,13 +366,22 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           />
           <h1 className="text-xl font-bold tracking-wide">{STRINGS.CHAT_TITLE}</h1>
         </div>
-        <button
-            onClick={toggleSettings}
-            className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
-            title={STRINGS.SETTINGS_BUTTON_TITLE}
-        >
-            <Settings size={20} /> {/* Slightly smaller icon */}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+              onClick={() => setIsGlobalDebugOpen(true)}
+              className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200"
+              title="View debug information for all messages"
+          >
+              <Bug size={20} />
+          </button>
+          <button
+              onClick={toggleSettings}
+              className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
+              title={STRINGS.SETTINGS_BUTTON_TITLE}
+          >
+              <Settings size={20} /> {/* Slightly smaller icon */}
+          </button>
+        </div>
       </header>
 
       {/* Message List Area */}
@@ -462,6 +475,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
         onClose={() => setIsBottomSheetOpen(false)}
         data={bottomSheetData} // Pass the data for the bottom sheet
         hideNumbers={hideNumbers} // Pass hideNumbers down
+      />
+
+      {/* Global Debug Modal */}
+      <GlobalDebugModal
+        isOpen={isGlobalDebugOpen}
+        onClose={() => setIsGlobalDebugOpen(false)}
+        messages={messages}
       />
     </div>
   );

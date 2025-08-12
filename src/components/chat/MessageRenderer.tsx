@@ -248,10 +248,13 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     let actionButtons: React.ReactNode = null;
 
     // --- Action Buttons ---
-    if (canHaveActions) {
+    const hasDebugInfo = (msg.sender === 'bot' || msg.sender === 'system') && msg.debugInfo;
+    const shouldShowActions = canHaveActions || hasDebugInfo;
+    
+    if (shouldShowActions) {
         actionButtons = (
             <div className={`absolute -top-2.5 ${msg.sender === 'user' ? 'left-1' : 'right-1'} flex space-x-1 bg-gray-700/80 backdrop-blur-sm p-1 rounded-md shadow-lg transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}> {/* Themed action buttons */}
-                {msg.timestamp && (
+                {msg.timestamp && canHaveActions && (
                     <span className="text-xs text-white p-1" title={new Date(msg.timestamp).toLocaleString()}>
                         {new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString()
                             ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
@@ -259,7 +262,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                         }
                     </span>
                 )}
-                {canCopy && (
+                {canCopy && canHaveActions && (
                     <button
                         onClick={() => handleCopy(msg.text)}
                         className="text-gray-200 hover:text-primary p-1"
@@ -269,7 +272,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                     </button>
                 )}
                 {/* Debug Info Button - Only for bot/system messages with debug info */}
-                {(msg.sender === 'bot' || msg.sender === 'system') && msg.debugInfo && (
+                {hasDebugInfo && (
                     <button
                         onClick={() => setShowDebugModal(true)}
                         className="text-gray-200 hover:text-blue-400 p-1"
@@ -278,8 +281,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                         <Info size={14} />
                     </button>
                 )}
+
                 {/* Local Delete Button */}
-                {canDeleteLocally && (
+                {canDeleteLocally && canHaveActions && (
                     <button
                         onClick={() => handleDeleteMessageLocally(msg.id)}
                         className="text-gray-200 hover:text-accent-negative p-1"

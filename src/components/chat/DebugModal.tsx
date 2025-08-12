@@ -25,7 +25,7 @@ const DebugModal: React.FC<DebugModalProps> = ({ isOpen, onClose, debugInfo }) =
     }
   };
 
-  const formatJSON = (obj: any) => {
+  const formatJSON = (obj: unknown) => {
     try {
       return JSON.stringify(obj, null, 2);
     } catch {
@@ -199,7 +199,7 @@ const DebugModal: React.FC<DebugModalProps> = ({ isOpen, onClose, debugInfo }) =
           {activeTab === 'toshl' && (
             <div className="space-y-4">
               {debugInfo.toshlRequests && debugInfo.toshlRequests.length > 0 ? (
-                debugInfo.toshlRequests.map((request: any, index: number) => (
+                debugInfo.toshlRequests.map((request: Record<string, unknown>, index: number) => (
                   <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <h3 className="font-medium text-gray-900">

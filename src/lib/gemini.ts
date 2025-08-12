@@ -55,9 +55,9 @@ export async function processUserRequestViaGemini( // Renamed function
     lastSuccessfulEntryId?: string, // Added parameter
     currentImage?: string, // Added current image parameter
     captureDebugInfo?: boolean // Added debug capture flag
-): Promise<{ result: GeminiResponseAction; debugInfo?: any }> { // Updated return type to include debug info
+): Promise<{ result: GeminiResponseAction; debugInfo?: Record<string, unknown> }> { // Updated return type to include debug info
     const startTime = Date.now();
-    const debugInfo: any = captureDebugInfo ? {
+    const debugInfo: Record<string, unknown> | undefined = captureDebugInfo ? {
         geminiRequest: {
             model,
             userInput: userMessage,

@@ -11,7 +11,7 @@ import {
 // import { useMcpTool } from '@modelcontextprotocol/react'; // Placeholder
 import { processUserRequestViaGemini } from '../../lib/gemini';
 import {
-    GeminiResponseAction, GeminiShowFilters, GeminiChatMessage,
+    GeminiShowFilters, GeminiChatMessage,
     GeminiGetAccountBalancesAction
 } from '../../lib/gemini/types';
 import * as STRINGS from '../../constants/strings';
@@ -97,7 +97,7 @@ interface ProcessRequestResult {
     newLastShowContext: { filters: GeminiShowFilters, headerText: string } | null;
     newLastSuccessfulEntryId: string | null;
     updatedEntryId?: string; // For edit case to mark old messages
-    debugInfo?: any; // Debug information from Gemini API
+    debugInfo?: Record<string, unknown>; // Debug information from Gemini API
 }
 
 export const handleProcessUserRequestApi = async (

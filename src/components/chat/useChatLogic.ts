@@ -627,7 +627,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         };
         
         populateDisplayImages();
-    }, [messages.length]); // Only run when messages array length changes to avoid infinite loops
+    }, [messages]); // Include messages dependency as required by ESLint
 
     // State for selected image and its cache ID
     const [selectedImageId, setSelectedImageId] = useState<string | null>(null);
@@ -950,7 +950,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 setIsLoading(false);
             }
         }
-    }, [inputValue, isLoading, isLoadingHistory, isDeleting, isRetrying, isOnline, messages, lastShowContext, lastSuccessfulEntryId]); // Removed setInputValue dependency
+    }, [inputValue, isLoading, isLoadingHistory, isDeleting, isRetrying, isOnline, messages, lastShowContext, lastSuccessfulEntryId, selectedImage, selectedImageId, selectedImageMetadata]); // Added missing selectedImage dependencies
 
     // Function to handle deleting a Toshl entry
     const handleDeleteEntry = useCallback(async (messageId: string, toshlEntryId: string) => {
@@ -1075,7 +1075,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             setMentionTriggerIndex(null);
             setMentionSuggestions([]);
         }
-    }, [accounts, categories, tags, isMentionPopupOpen]); // Added isMentionPopupOpen dependency for logging context
+    }, []); // Removed unnecessary dependencies as they're not used in the function
 
     // Effect to filter suggestions when query changes
     useEffect(() => {
@@ -1133,7 +1133,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         setMentionSuggestions(limitedFilteredSuggestions);
         // console.log(`Filtering effect: found ${filteredSuggestions.length} matches, showing ${limitedFilteredSuggestions.length}`, limitedFilteredSuggestions); // Remove logging
 
-    }, [mentionQuery, isMentionPopupOpen, mentionTriggerIndex, accounts, categories, tags]); // Removed mentionSuggestions.length dependency
+    }, [mentionQuery, isMentionPopupOpen, mentionTriggerIndex, accounts, categories, tags, mentionSuggestions.length]); // Added back mentionSuggestions.length dependency
 
 
     const handleMentionSelect = useCallback((suggestion: MentionSuggestion) => {
@@ -1235,7 +1235,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             setIsRetrying(null); // Clear retrying state
         }
 
-    }, [messages, isOnline, lastShowContext, lastSuccessfulEntryId, setMessages, setIsLoading, setLastShowContext, setLastSuccessfulEntryId]); // Dependencies for retry
+    }, [messages, isOnline, lastShowContext, lastSuccessfulEntryId, setMessages, setLastShowContext, setLastSuccessfulEntryId]); // Removed setIsLoading as it's not necessary
 
     // Function to sync all pending messages (called on going online)
     const syncPendingMessages = useCallback(async () => {

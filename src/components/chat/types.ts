@@ -90,21 +90,21 @@ export interface DebugInfo {
   geminiRequest?: {
     model: string;
     userInput: string;
-    chatHistory: any[];
+    chatHistory: Record<string, unknown>[];
     systemPrompt?: string;
-    fullRequestBody?: any;
+    fullRequestBody?: Record<string, unknown>;
   };
   geminiResponse?: {
     rawResponse: string;
     cleanedResponse: string;
-    parsedData: any;
+    parsedData: Record<string, unknown>;
     processingTime?: number;
   };
   toshlRequests?: Array<{
     endpoint: string;
     method: string;
-    payload?: any;
-    response?: any;
+    payload?: Record<string, unknown>;
+    response?: Record<string, unknown>;
     error?: string;
   }>;
   errors?: string[];
