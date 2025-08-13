@@ -46,6 +46,13 @@ const AudioDisplay: React.FC<{
     const [audioError, setAudioError] = useState(false);
     const audioRef = React.useRef<HTMLAudioElement>(null);
 
+    // Set initial duration from metadata if available
+    React.useEffect(() => {
+        if (metadata?.duration && duration === 0) {
+            setDuration(metadata.duration / 1000); // Convert from milliseconds to seconds
+        }
+    }, [metadata?.duration, duration]);
+
     // Create audio URL from base64 data
     const audioUrl = React.useMemo(() => {
         try {
@@ -76,6 +83,10 @@ const AudioDisplay: React.FC<{
 
     // Format time for display
     const formatTime = (seconds: number) => {
+        // Handle invalid values
+        if (!isFinite(seconds) || isNaN(seconds) || seconds < 0) {
+            return '0:00';
+        }
         const mins = Math.floor(seconds / 60);
         const secs = Math.floor(seconds % 60);
         return `${mins}:${secs.toString().padStart(2, '0')}`;
@@ -104,7 +115,7 @@ const AudioDisplay: React.FC<{
                 <div className="flex items-center justify-between text-sm text-blue-700">
                     <span>Voice message</span>
                     <span>
-                        {formatTime(currentTime)} / {formatTime(duration || (metadata?.duration || 0) / 1000)}
+                        {formatTime(currentTime)} / {formatTime(duration > 0 ? duration : (metadata?.duration ? metadata.duration / 1000 : 0))}
                     </span>
                 </div>
                 
@@ -123,12 +134,15 @@ const AudioDisplay: React.FC<{
                 ref={audioRef}
                 src={audioUrl}
                 onLoadedMetadata={() => {
-                    if (audioRef.current) {
+                    if (audioRef.current && isFinite(audioRef.current.duration)) {
                         setDuration(audioRef.current.duration);
+                    } else if (metadata?.duration) {
+                        // Fallback to metadata duration if audio duration is not available
+                        setDuration(metadata.duration / 1000);
                     }
                 }}
                 onTimeUpdate={() => {
-                    if (audioRef.current) {
+                    if (audioRef.current && isFinite(audioRef.current.currentTime)) {
                         setCurrentTime(audioRef.current.currentTime);
                     }
                 }}
@@ -138,7 +152,10 @@ const AudioDisplay: React.FC<{
                     setIsPlaying(false);
                     setCurrentTime(0);
                 }}
-                onError={() => setAudioError(true)}
+                onError={(e) => {
+                    console.error('Audio element error:', e);
+                    setAudioError(true);
+                }}
                 preload="metadata"
             />
         </div>
