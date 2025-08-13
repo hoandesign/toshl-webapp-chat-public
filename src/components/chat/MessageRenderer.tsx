@@ -549,18 +549,16 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 <div className={`${getBubbleClasses(msg)} flex items-center space-x-2 relative`}>
                     <AlertTriangle size={16} className="text-red-600" />
                     <p className="text-sm">{msg.text}</p>
-                    {actionButtons}
                 </div>
             );
             break;
         }
         case 'history_header': {
-            // History header - allow copy/delete - Themed (using indigo still)
+            // History header - allow copy/delete - Themed (using yellow like other system messages)
             content = (
-                <div className={`${getBubbleClasses(msg)} bg-indigo-100 border border-indigo-200 relative`}>
-                    <p className="text-sm font-medium text-indigo-700 mb-1">{STRINGS.HISTORY_SUMMARY_TITLE}</p>
-                    <p className="text-sm text-indigo-900">{msg.text}</p>
-                    {actionButtons}
+                <div className={`${getBubbleClasses(msg)} bg-yellow-100 border border-yellow-200 relative`}>
+                    <p className="text-sm font-medium text-yellow-700 mb-1">{STRINGS.HISTORY_SUMMARY_TITLE}</p>
+                    <p className="text-sm text-yellow-800">{msg.text}</p>
                 </div>
             );
             break;
@@ -571,7 +569,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 <div className={`${getBubbleClasses(msg)} bg-purple-100 border border-purple-300 flex items-center space-x-2 relative`}>
                     <Pencil size={16} className="text-purple-500" />
                     <p className="text-sm text-purple-900">{msg.text}</p>
-                    {actionButtons}
                 </div>
             );
             break;
@@ -585,7 +582,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
                     {icon}
                     <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm break-words">{msg.text || ''}</ReactMarkdown>
-                    {actionButtons}
                 </div>
             );
             break;
@@ -641,7 +637,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 const isMediaProcessing = hasMedia && msg.status === 'pending';
 
                 content = (
-                    <div className={`${getBubbleClasses(msg)} ${hasMedia ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isMediaProcessing ? 'animate-pulse' : ''} relative`}>
+                    <div className={`${getBubbleClasses(msg)} ${isMediaProcessing ? 'animate-pulse' : ''} relative`}>
 
 
                         {/* Display image if present with enhanced loading state */}
@@ -705,7 +701,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                                 {retryButton}
                             </div>
                         </div>
-                        {actionButtons}
                     </div>
                 );
 
@@ -714,7 +709,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 content = (
                     <div className={`${getBubbleClasses(msg)} relative`}>
                         <p className="text-sm">{msg.text}</p>
-                        {actionButtons}
                     </div>
                 );
             }
