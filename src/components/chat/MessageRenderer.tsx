@@ -21,6 +21,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
 import DebugModal from './DebugModal';
+import { formatCurrency } from '../../utils/formatting';
 // Removed unused AccountBalanceCard import
 
 interface MessageRendererProps {
@@ -481,18 +482,18 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 // Use theme colors for amount
                 // Use Toshl theme colors for amount (already done in previous step, but ensure consistency)
                 const successAmountColor = successData.type === STRINGS.INCOME_TYPE ? 'text-btn-green font-semibold' : 'text-expense-text font-semibold';
+                const amountPrefix = successData.type === STRINGS.INCOME_TYPE ? '+' : '-';
                 content = (
-                    <div className="max-w-sm w-full"> {/* Reduced max-width */}
+                    <div className="max-w-md w-full"> {/* Increased max-width to prevent ID overlap */}
                         <div className={`border border-btn-green/30 ${bgColor} rounded-lg shadow-md p-4 w-full animate-fade-in`}> {/* Use lighter border */}
                             <div className={`flex items-center mb-2 pb-2 border-b border-btn-green/30`}> {/* Use lighter border */}
                                 <CheckCircle size={18} className={`${successIconColor} mr-2`} /> {/* Use Toshl green icon */}
                                 <span className={`font-semibold text-sm ${successTextColor}`}>{STRINGS.ENTRY_ADDED_SUCCESSFULLY}</span> {/* Use Toshl green text */}
                                 {successData.id && <span className={`ml-auto text-xs text-gray-text`}>{STRINGS.ENTRY_ID_PREFIX}{successData.id}</span>} {/* Use gray-text */}
                             </div>
-                            {/* Amount Section - Adjusted font size and separated currency */}
+                            {/* Amount Section - Use formatCurrency for consistent styling */}
                             <div className="flex items-baseline justify-start my-2 py-1">
-                                <span className={`font-bold text-3xl ${successAmountColor}`}>{successData.type === STRINGS.INCOME_TYPE ? '+' : '-'} {hideNumbers ? '***' : successData.amount.toLocaleString()}</span>
-                                <span className={`text-xs text-gray-text ml-1.5`}>{hideNumbers ? '' : successData.currency}</span> {/* Hide currency too */}
+                                <span className={`font-bold text-3xl ${successAmountColor}`}>{amountPrefix}{hideNumbers ? '***' : formatCurrency(Math.abs(successData.amount), successData.currency)}</span>
                             </div>
                             {/* Metadata Section - Standardized with baseline alignment */}
                             <div className={`space-y-1.5 text-xs text-gray-text border-t border-btn-green/30 pt-2`}> {/* Use lighter border */}
