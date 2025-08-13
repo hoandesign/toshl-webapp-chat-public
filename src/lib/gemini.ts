@@ -13,6 +13,7 @@ import {
     GeminiUpdateCacheRequest,
     GeminiContentPart
 } from './gemini/types';
+import { DebugInfo } from '../components/chat/types';
 
 // Import the prompt construction function
 import { constructGeminiPrompt } from './gemini/prompt';
@@ -57,9 +58,9 @@ export async function processUserRequestViaGemini( // Renamed function
     currentAudio?: string, // Added current audio parameter
     currentAudioMimeType?: string, // Added current audio MIME type parameter
     captureDebugInfo?: boolean // Added debug capture flag
-): Promise<{ result: GeminiResponseAction; debugInfo?: Record<string, unknown> }> { // Updated return type to include debug info
+): Promise<{ result: GeminiResponseAction; debugInfo?: DebugInfo }> { // Updated return type to include debug info
     const startTime = Date.now();
-    const debugInfo: Record<string, unknown> | undefined = captureDebugInfo ? {
+    const debugInfo: DebugInfo | undefined = captureDebugInfo ? {
         geminiRequest: {
             model,
             userInput: userMessage,
@@ -285,8 +286,8 @@ export async function processUserRequestViaGemini( // Renamed function
     console.log('Gemini Request Body:', JSON.stringify(requestBody, null, 2)); // Log the request body
 
     // Capture debug info for request
-    if (debugInfo) {
-        debugInfo.geminiRequest.fullRequestBody = requestBody;
+    if (debugInfo && debugInfo.geminiRequest) {
+        debugInfo.geminiRequest.fullRequestBody = JSON.parse(JSON.stringify(requestBody));
         debugInfo.geminiRequest.systemPrompt = systemInstructions;
     }
 
@@ -387,7 +388,7 @@ export async function processUserRequestViaGemini( // Renamed function
         console.log('Raw Gemini Response Text:', generatedText);
 
         // Capture debug info for response
-        if (debugInfo) {
+        if (debugInfo && debugInfo.geminiResponse) {
             debugInfo.geminiResponse.rawResponse = generatedText;
             debugInfo.geminiResponse.processingTime = Date.now() - startTime;
         }
@@ -408,7 +409,7 @@ export async function processUserRequestViaGemini( // Renamed function
         }
 
         // Capture cleaned response in debug info
-        if (debugInfo) {
+        if (debugInfo && debugInfo.geminiResponse) {
             debugInfo.geminiResponse.cleanedResponse = cleanedText;
         }
 
@@ -417,8 +418,8 @@ export async function processUserRequestViaGemini( // Renamed function
             const result: GeminiResponseAction = JSON.parse(cleanedText);
 
             // Capture parsed result in debug info
-            if (debugInfo) {
-                debugInfo.geminiResponse.parsedData = result;
+            if (debugInfo && debugInfo.geminiResponse) {
+                debugInfo.geminiResponse.parsedData = result as Record<string, unknown>;
             }
 
             // Validate the parsed structure based on the action
@@ -517,7 +518,7 @@ export async function processUserRequestViaGemini( // Renamed function
             console.error('Cleaned text that failed parsing/validation:', cleanedText);
             
             // Capture parse error in debug info
-            if (debugInfo) {
+            if (debugInfo && debugInfo.errors) {
                 debugInfo.errors.push(`JSON Parse Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
             }
             

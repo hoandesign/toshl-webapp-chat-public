@@ -102,9 +102,9 @@ export interface DebugInfo {
     fullRequestBody?: Record<string, unknown>;
   };
   geminiResponse?: {
-    rawResponse: string;
-    cleanedResponse: string;
-    parsedData: Record<string, unknown>;
+    rawResponse?: string;
+    cleanedResponse?: string;
+    parsedData?: Record<string, unknown>;
     processingTime?: number;
   };
   toshlRequests?: Array<{
