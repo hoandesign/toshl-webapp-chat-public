@@ -15,6 +15,8 @@ vi.mock('../lib/toshl', () => ({
   editToshlEntry: vi.fn(),
   fetchEntryById: vi.fn(),
   fetchToshlBudgets: vi.fn(),
+  getToshlDebugRequests: vi.fn(() => []), // Mock debug function to return empty array
+  addDebugRequest: vi.fn(), // Mock debug function
 }))
 
 describe('API Handler - Image Message Processing', () => {

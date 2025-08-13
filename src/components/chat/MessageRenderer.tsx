@@ -350,13 +350,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     const [showActions, setShowActions] = useState(false); // State to control action visibility on hover
     const [copySuccess, setCopySuccess] = useState(false); // State for copy feedback
     const [showDebugModal, setShowDebugModal] = useState(false); // State for debug modal
-    const secondaryTextColor = 'text-text-secondary'; // Define theme color variable
 
-    // Helper function to determine if this message should have a tail
-    const shouldHaveTail = (message: Message, messages?: Message[], currentIndex?: number): boolean => {
-        // For now, always show tail - in a full implementation, you'd check if the next message is from the same sender
-        return true;
-    };
 
     // Helper function to determine bubble classes
     const getBubbleClasses = (message: Message, isConsecutive = false): string => {
@@ -584,7 +578,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             content = (
                 <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
                     {icon}
-                    <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm break-words">{msg.text || ''}</ReactMarkdown>
+                    <div className="prose prose-sm break-words">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text || ''}</ReactMarkdown>
+                    </div>
                 </div>
             );
             break;
@@ -596,7 +592,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         case 'text': // User message - Add status indicators and retry button
         default: {
             if (msg.sender === 'user') {
-                const userStyle = 'bg-navigation-bg text-navigation-text rounded-br-none'; // Use navigation theme for user messages
                 let statusIndicator: React.ReactNode = null;
                 let retryButton: React.ReactNode = null;
 

@@ -2,7 +2,8 @@ import {
     ToshlAccount, ToshlCategory, ToshlTag, ToshlBudget, // Added ToshlBudget
     addToshlEntry, fetchEntries, deleteToshlEntry, editToshlEntry, fetchEntryById, ToshlEntry,
     fetchToshlBudgets, // Added fetchToshlBudgets
-    FetchEntriesFilters // Import the specific filter type
+    FetchEntriesFilters, // Import the specific filter type
+    getToshlDebugRequests // Import debug function
 } from '../../lib/toshl';
 // Import the MCP tool hook (assuming it's exported from somewhere, adjust path if needed)
 // NOTE: We can't directly call MCP tools from here as it's not a React component.
@@ -198,6 +199,9 @@ export const handleProcessUserRequestApi = async (
     );
     // --- End Gemini API Call ---
 
+    // Clear any existing Toshl debug requests before processing
+    getToshlDebugRequests();
+
     // --- Process Gemini Result ---
     switch (geminiResult.action) {
         case 'add': {
@@ -213,31 +217,7 @@ export const handleProcessUserRequestApi = async (
             }
             const toshlPayload = geminiResult.payload;
             
-            // Capture Toshl API call in debug info
-            if (debugInfo) {
-                if (!debugInfo.toshlRequests) debugInfo.toshlRequests = [];
-                debugInfo.toshlRequests.push({
-                    endpoint: '/entries',
-                    method: 'POST',
-                    payload: toshlPayload
-                });
-            }
-            
-            let addResult;
-            try {
-                addResult = await addToshlEntry(toshlApiKey, toshlPayload); // API Call
-                
-                // Capture Toshl API response in debug info
-                if (debugInfo && debugInfo.toshlRequests.length > 0) {
-                    debugInfo.toshlRequests[debugInfo.toshlRequests.length - 1].response = addResult;
-                }
-            } catch (toshlError) {
-                // Capture Toshl API error in debug info
-                if (debugInfo && debugInfo.toshlRequests.length > 0) {
-                    debugInfo.toshlRequests[debugInfo.toshlRequests.length - 1].error = toshlError instanceof Error ? toshlError.message : String(toshlError);
-                }
-                throw toshlError; // Re-throw the error
-            }
+            const addResult = await addToshlEntry(toshlApiKey, toshlPayload); // API Call
             let finalEntryId: string | undefined;
             if (typeof addResult === 'string') finalEntryId = addResult;
             else if (typeof addResult === 'object' && addResult.id) finalEntryId = addResult.id;
@@ -555,6 +535,12 @@ export const handleProcessUserRequestApi = async (
         }
     }
     // --- End Gemini Result Processing ---
+
+    // Collect all Toshl debug requests made during this operation
+    const toshlDebugRequests = getToshlDebugRequests();
+    if (debugInfo && toshlDebugRequests.length > 0) {
+        debugInfo.toshlRequests = toshlDebugRequests;
+    }
 
     return { messagesToAdd, newLastShowContext, newLastSuccessfulEntryId, updatedEntryId, debugInfo };
 };

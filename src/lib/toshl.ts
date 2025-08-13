@@ -11,7 +11,7 @@ import {
     ToshlUserProfile // Import the new user profile type
 } from './toshl/types'; // Keep internal imports if needed
 // Import the API helper functions
-import { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets } from './toshl/apiHelper'; // Added fetchSingleFromToshl, fetchDailySums and fetchToshlBudgets
+import { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets, getToshlDebugRequests, addDebugRequest } from './toshl/apiHelper'; // Added fetchSingleFromToshl, fetchDailySums and fetchToshlBudgets
 import * as STRINGS from '../constants/strings'; // Import constants
 
 // Use the local proxy path during development to avoid CORS issues
@@ -95,6 +95,7 @@ export async function updateToshlProfile(apiKey: string, payload: Partial<ToshlU
 
     try {
         // Use fetchSingleFromToshl with PUT method and the constructed payload
+        // This will automatically include debug tracking
         const updatedProfile = await fetchSingleFromToshl<ToshlUserProfile>(
             '/me',
             apiKey,
@@ -186,7 +187,7 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
 
 // --- Export API Helper Functions ---
 // Re-export the helper functions intended for external use
-export { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets };
+export { fetchFromToshl, fetchSingleFromToshl, fetchDailySums, fetchToshlBudgets, getToshlDebugRequests, addDebugRequest };
 
 /**
  * Fetches a single Toshl entry by its ID.
@@ -212,6 +213,14 @@ export async function fetchEntryById(apiKey: string, entryId: string): Promise<T
 
     const endpoint = `${TOSHL_API_BASE}/entries/${entryId}`;
 
+    // Debug tracking
+    const debugRequest = {
+        endpoint: `/entries/${entryId}`,
+        method: 'GET',
+        timestamp: new Date().toISOString()
+    };
+    const startTime = Date.now();
+
     try {
         const response = await fetch(endpoint, {
             method: 'GET',
@@ -228,18 +237,46 @@ export async function fetchEntryById(apiKey: string, entryId: string): Promise<T
                 if (jsonError.description || jsonError.error) {
                     detailedErrorMessage = STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status);
                 }
+                
+                // Capture error in debug
+                debugRequest.error = jsonError.description || jsonError.error || detailedErrorMessage;
+                debugRequest.duration = Date.now() - startTime;
+                addDebugRequest(debugRequest);
+                
             } catch (parseError) {
                 console.error('Failed to parse Toshl error response body on fetch entry:', parseError);
+                
+                // Capture generic error in debug
+                debugRequest.error = detailedErrorMessage;
+                debugRequest.duration = Date.now() - startTime;
+                addDebugRequest(debugRequest);
             }
             throw new Error(detailedErrorMessage);
         }
 
         const entryData = await response.json();
         console.log(`Successfully fetched entry ID: ${entryId}`);
+        
+        // Capture successful response in debug
+        debugRequest.response = {
+            status: response.status,
+            data: entryData
+        };
+        debugRequest.duration = Date.now() - startTime;
+        addDebugRequest(debugRequest);
+        
         return entryData as ToshlEntry;
 
     } catch (error) {
         console.error(`Failed to fetch Toshl entry ID ${entryId}:`, error);
+        
+        // Capture unexpected error in debug if not already captured
+        if (!debugRequest.error) {
+            debugRequest.error = error instanceof Error ? error.message : String(error);
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+        }
+        
         throw error; // Re-throw
     }
 }
@@ -307,6 +344,15 @@ export async function editToshlEntry(apiKey: string, entryId: string, updatePayl
 
          console.log(`Sending merged payload for update to entry ID ${entryId}:`, finalPayload);
 
+         // Debug tracking for the PUT request
+         const debugRequest = {
+             endpoint: `/entries/${entryId}`,
+             method: 'PUT',
+             payload: finalPayload,
+             timestamp: new Date().toISOString()
+         };
+         const startTime = Date.now();
+
          // 3. Send the PUT request with the merged payload
          const response = await fetch(endpoint, {
              method: 'PUT',
@@ -326,6 +372,15 @@ export async function editToshlEntry(apiKey: string, entryId: string, updatePayl
                  if (responseBody) {
                      console.log("Update response body (unexpected):", responseBody);
                  }
+                 
+                 // Capture successful response in debug
+                 debugRequest.response = {
+                     status: response.status,
+                     body: responseBody || 'No Content'
+                 };
+                 debugRequest.duration = Date.now() - startTime;
+                 addDebugRequest(debugRequest);
+                 
              } catch { /* Ignore body parsing errors on success */ }
              return; // Success
         }
@@ -343,13 +398,32 @@ export async function editToshlEntry(apiKey: string, entryId: string, updatePayl
                  }
                  detailedErrorMessage += STRINGS.TOSHL_API_ERROR_STATUS_SUFFIX(response.status);
             }
+            
+            // Capture error in debug
+            debugRequest.error = jsonError.description || jsonError.error || detailedErrorMessage;
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+            
         } catch (parseError) {
             console.error('Failed to parse Toshl error response body on update:', parseError);
+            
+            // Capture generic error in debug
+            debugRequest.error = detailedErrorMessage;
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
         }
         throw new Error(detailedErrorMessage);
 
     } catch (error) {
         console.error(`Failed to update Toshl entry ID ${entryId}:`, error);
+        
+        // Capture unexpected error in debug if not already captured
+        if (typeof debugRequest !== 'undefined' && !debugRequest.error) {
+            debugRequest.error = error instanceof Error ? error.message : String(error);
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+        }
+        
         throw error; // Re-throw
     }
 }
@@ -379,6 +453,14 @@ export async function deleteToshlEntry(apiKey: string, entryId: string): Promise
 
     const endpoint = `${TOSHL_API_BASE}/entries/${entryId}`;
 
+    // Debug tracking
+    const debugRequest = {
+        endpoint: `/entries/${entryId}`,
+        method: 'DELETE',
+        timestamp: new Date().toISOString()
+    };
+    const startTime = Date.now();
+
     try {
         const response = await fetch(endpoint, {
             method: 'DELETE',
@@ -390,6 +472,15 @@ export async function deleteToshlEntry(apiKey: string, entryId: string): Promise
         // Toshl returns 204 No Content on successful deletion
         if (response.status === 204) {
             console.log(`Successfully deleted Toshl entry ID: ${entryId}`);
+            
+            // Capture successful response in debug
+            debugRequest.response = {
+                status: response.status,
+                message: 'Successfully deleted'
+            };
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+            
             return; // Success
         }
 
@@ -402,16 +493,42 @@ export async function deleteToshlEntry(apiKey: string, entryId: string): Promise
                 if (jsonError.description || jsonError.error) {
                     detailedErrorMessage = STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status);
                 }
+                
+                // Capture error in debug
+                debugRequest.error = jsonError.description || jsonError.error || detailedErrorMessage;
+                debugRequest.duration = Date.now() - startTime;
+                addDebugRequest(debugRequest);
+                
             } catch (parseError) {
                 console.error('Failed to parse Toshl error response body on delete:', parseError);
+                
+                // Capture generic error in debug
+                debugRequest.error = detailedErrorMessage;
+                debugRequest.duration = Date.now() - startTime;
+                addDebugRequest(debugRequest);
             }
             throw new Error(detailedErrorMessage);
         } else {
             // Should not happen if 204 and !response.ok are handled, but as a fallback
-            throw new Error(STRINGS.TOSHL_UNEXPECTED_DELETE_STATUS(response.status));
+            const unexpectedError = STRINGS.TOSHL_UNEXPECTED_DELETE_STATUS(response.status);
+            
+            // Capture unexpected error in debug
+            debugRequest.error = unexpectedError;
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+            
+            throw new Error(unexpectedError);
         }
     } catch (error) {
         console.error(`Failed to delete Toshl entry ID ${entryId}:`, error);
+        
+        // Capture unexpected error in debug if not already captured
+        if (!debugRequest.error) {
+            debugRequest.error = error instanceof Error ? error.message : String(error);
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+        }
+        
         throw error; // Re-throw
     }
 }
@@ -448,6 +565,15 @@ export async function addToshlEntry(apiKey: string, payload: ToshlEntryPayload):
   // Encode API key and password for Basic Auth
   const basicAuth = btoa(`${apiKey}:${password}`);
 
+  // Debug tracking
+  const debugRequest = {
+    endpoint: '/entries',
+    method: 'POST',
+    payload: payload,
+    timestamp: new Date().toISOString()
+  };
+  const startTime = Date.now();
+
   try {
      const response = await fetch(`${TOSHL_API_BASE}/entries`, {
         method: 'POST',
@@ -480,9 +606,20 @@ export async function addToshlEntry(apiKey: string, payload: ToshlEntryPayload):
                  }
                  detailedErrorMessage += STRINGS.TOSHL_API_ERROR_STATUS_SUFFIX(response.status);
             }
+            
+            // Capture error in debug
+            debugRequest.error = jsonError.description || jsonError.error || detailedErrorMessage;
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
+            
         } catch (parseError) {
             // If parsing the JSON fails, log that and keep the basic HTTP status error message
             console.error('Failed to parse Toshl error response body:', parseError);
+            
+            // Capture generic error in debug
+            debugRequest.error = detailedErrorMessage;
+            debugRequest.duration = Date.now() - startTime;
+            addDebugRequest(debugRequest);
         }
         // Throw the constructed error message outside the inner try...catch
         throw new Error(detailedErrorMessage);
@@ -491,39 +628,69 @@ export async function addToshlEntry(apiKey: string, payload: ToshlEntryPayload):
     // Toshl returns 201 Created with Location header pointing to the new entry
     if (response.status === 201) {
         const locationHeader = response.headers.get('Location');
-        if (locationHeader) {
-            const locationHeader = response.headers.get('Location');
-            const entryId = locationHeader ? locationHeader.split('/').pop() : null;
-            console.log('Successfully added Toshl entry. ID:', entryId || 'N/A');
+        const entryId = locationHeader ? locationHeader.split('/').pop() : null;
+        console.log('Successfully added Toshl entry. ID:', entryId || 'N/A');
 
-            // Optionally, try to parse the response body for the created entry details
-            try {
-                const createdEntry = await response.json();
-                if (createdEntry && createdEntry.id) {
-                    console.log('Returning full created entry object.');
-                    return createdEntry as ToshlEntry;
-                }
-            } catch {
-                console.warn('Could not parse response body after creating entry, returning ID only.');
+        let result: string | ToshlEntry;
+        
+        // Optionally, try to parse the response body for the created entry details
+        try {
+            const createdEntry = await response.json();
+            if (createdEntry && createdEntry.id) {
+                console.log('Returning full created entry object.');
+                result = createdEntry as ToshlEntry;
+                
+                // Capture successful response in debug
+                debugRequest.response = {
+                    status: response.status,
+                    data: createdEntry,
+                    locationHeader: locationHeader
+                };
+                debugRequest.duration = Date.now() - startTime;
+                addDebugRequest(debugRequest);
+                
+                return result;
             }
-
-            // Fallback to returning ID or placeholder
-            if (entryId) {
-                 return entryId;
-            } else {
-                 console.warn('Toshl entry created but Location header missing and body unparsable.');
-                 return STRINGS.TOSHL_ENTRY_CREATED_NO_ID; // Explicit return for this path
-            }
-        } else { // Case: Location header was missing from the 201 response
-             console.warn('Toshl entry created (201) but Location header missing.');
-             return STRINGS.TOSHL_ENTRY_CREATED_NO_ID; // Explicit return for this path
+        } catch {
+            console.warn('Could not parse response body after creating entry, returning ID only.');
         }
+
+        // Fallback to returning ID or placeholder
+        if (entryId) {
+             result = entryId;
+        } else {
+             console.warn('Toshl entry created but Location header missing and body unparsable.');
+             result = STRINGS.TOSHL_ENTRY_CREATED_NO_ID; // Explicit return for this path
+        }
+        
+        // Capture successful response in debug
+        debugRequest.response = {
+            status: response.status,
+            entryId: entryId,
+            locationHeader: locationHeader
+        };
+        debugRequest.duration = Date.now() - startTime;
+        addDebugRequest(debugRequest);
+        
+        return result;
     } else {
         // Should not happen if !response.ok is handled, but as a fallback
+        debugRequest.error = `Unexpected status: ${response.status}`;
+        debugRequest.duration = Date.now() - startTime;
+        addDebugRequest(debugRequest);
+        
         throw new Error(STRINGS.TOSHL_UNEXPECTED_STATUS(response.status));
     }
   } catch (error) {
     console.error('Failed to add Toshl entry:', error);
+    
+    // Capture unexpected error in debug if not already captured
+    if (!debugRequest.error) {
+      debugRequest.error = error instanceof Error ? error.message : String(error);
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+    }
+    
     throw error; // Re-throw
   }
 }

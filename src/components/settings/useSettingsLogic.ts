@@ -9,11 +9,8 @@ export const geminiModelOptions = [
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Advanced reasoning)' },
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Next-gen speed & reasoning)' },
     { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (Cost-effective & low latency)' },
-    { value: 'gemini-1.5-flash', label: 'Gemini 1.5 Flash (Fast & balanced)' },
-    { value: 'gemini-1.5-flash-8b', label: 'Gemini 1.5 Flash 8B (Large scale, lower intelligence)' },
-    { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro (Complex reasoning)' },
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Adaptive thinking, cost efficiency)' },
-    { value: 'gemini-2.5-flash-lite-preview-06-17', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
+    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
 ];
 
 // Define the return type of the hook
@@ -43,7 +40,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
     const [toshlApiKey, setToshlApiKey] = useState('');
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [currency, setCurrency] = useState(STRINGS.DEFAULT_CURRENCY_VALUE); // Use constant for default
-    const [geminiModel, setGeminiModel] = useState('gemini-2.0-flash'); // Keep specific default model here
+    const [geminiModel, setGeminiModel] = useState('gemini-2.5-flash'); // Keep specific default model here
     const [hideNumbers, setHideNumbers] = useState<boolean>(() => { // Add hideNumbers state
         const saved = localStorage.getItem('hideNumbers');
         return saved ? JSON.parse(saved) : false;
@@ -72,7 +69,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
             setCurrency(savedCurrency);
             initialCurrencyRef.current = savedCurrency; // Store initial currency
         } else {
-             initialCurrencyRef.current = STRINGS.DEFAULT_CURRENCY_VALUE; // Store default if nothing saved
+            initialCurrencyRef.current = STRINGS.DEFAULT_CURRENCY_VALUE; // Store default if nothing saved
         }
         if (savedHideNumbers) setHideNumbers(JSON.parse(savedHideNumbers)); // Set hideNumbers state
         if (savedUseCache) setUseCache(JSON.parse(savedUseCache)); // Set cache toggle
@@ -155,16 +152,16 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
                 // Optionally inform the user via toast if this is critical
             }
 
-             // Show success toast (updated message potentially)
-             toast.success(STRINGS.TOSHL_SETUP_SUCCESS_ALERT(accounts.length, categories.length, tags.length) + ` Default currency set to ${userProfile?.currency?.main || 'default'}. Gemini cache cleared.`);
+            // Show success toast (updated message potentially)
+            toast.success(STRINGS.TOSHL_SETUP_SUCCESS_ALERT(accounts.length, categories.length, tags.length) + ` Default currency set to ${userProfile?.currency?.main || 'default'}. Gemini cache cleared.`);
 
-         } catch (error) {
-             console.error('Toshl setup failed:', error); // Keep console error for debugging
-             const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_TOSHL_SETUP_ERROR;
-             // Show error toast
-             toast.error(STRINGS.TOSHL_SETUP_FAILED_ALERT(errorMessage));
-             localStorage.removeItem('toshlDataFetched');
-         } finally {
+        } catch (error) {
+            console.error('Toshl setup failed:', error); // Keep console error for debugging
+            const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_TOSHL_SETUP_ERROR;
+            // Show error toast
+            toast.error(STRINGS.TOSHL_SETUP_FAILED_ALERT(errorMessage));
+            localStorage.removeItem('toshlDataFetched');
+        } finally {
             setIsLoadingSetup(false);
         }
     }, [toshlApiKey, geminiApiKey]); // Add geminiApiKey to dependencies
@@ -173,16 +170,16 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
     const handleClearChatHistory = useCallback(() => {
         // Optional: Add a confirmation dialog
         // if (window.confirm(STRINGS.CLEAR_CHAT_HISTORY_CONFIRM)) {
-            try {
-                localStorage.removeItem(CHAT_MESSAGES_LOCAL_STORAGE_KEY);
-                console.log("Chat history cleared from localStorage.");
-                // Reload the page to reflect the cleared state
-                window.location.reload();
-            } catch (error) {
-                console.error("Failed to clear chat history:", error);
-                // Optionally alert the user
-                // alert("Failed to clear chat history.");
-            }
+        try {
+            localStorage.removeItem(CHAT_MESSAGES_LOCAL_STORAGE_KEY);
+            console.log("Chat history cleared from localStorage.");
+            // Reload the page to reflect the cleared state
+            window.location.reload();
+        } catch (error) {
+            console.error("Failed to clear chat history:", error);
+            // Optionally alert the user
+            // alert("Failed to clear chat history.");
+        }
         // }
     }, []); // No dependencies needed
 

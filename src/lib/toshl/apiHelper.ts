@@ -4,6 +4,34 @@ import * as STRINGS from '../../constants/strings'; // Import constants
 // Use the local proxy path during development to avoid CORS issues
 const TOSHL_API_BASE = '/api/toshl';
 
+// Global debug tracker for Toshl API calls
+interface ToshlDebugRequest {
+  endpoint: string;
+  method: string;
+  payload?: Record<string, unknown>;
+  response?: unknown;
+  error?: string;
+  timestamp: string;
+  duration?: number;
+}
+
+let currentDebugRequests: ToshlDebugRequest[] = [];
+
+// Function to get current debug requests and clear the array
+export function getToshlDebugRequests(): ToshlDebugRequest[] {
+  const requests = [...currentDebugRequests];
+  currentDebugRequests = [];
+  return requests;
+}
+
+// Function to add a debug request
+function addDebugRequest(request: ToshlDebugRequest) {
+  currentDebugRequests.push(request);
+}
+
+// Export the addDebugRequest function for use in other Toshl API functions
+export { addDebugRequest };
+
 /**
  * Helper function to make authenticated requests to Toshl API, handling pagination.
  * Uses Basic Authentication (API Key as username, password from storage).
@@ -39,6 +67,15 @@ export async function fetchFromToshl<T>( // Added export
     ...options.headers,
   });
 
+  // Debug tracking
+  const debugRequest: ToshlDebugRequest = {
+    endpoint: endpoint,
+    method: options.method || 'GET',
+    payload: options.body ? JSON.parse(options.body as string) : undefined,
+    timestamp: new Date().toISOString()
+  };
+  const startTime = Date.now();
+
   try {
     const response = await fetch(url.toString(), { ...options, headers });
 
@@ -50,24 +87,54 @@ export async function fetchFromToshl<T>( // Added export
         if (jsonError && (jsonError.error || jsonError.description)) {
            errorData = jsonError;
            console.error('Toshl API Error:', errorData);
+           
+           // Capture error in debug
+           debugRequest.error = jsonError.description || jsonError.error;
+           debugRequest.duration = Date.now() - startTime;
+           addDebugRequest(debugRequest);
+           
            throw new Error(STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status));
         }
       } catch {
          // If parsing fails or it's not the expected format, use the status text
          console.error('Failed to parse Toshl error response or unexpected format.');
       }
+      
+      // Capture generic error in debug
+      const errorMessage = typeof errorData === 'string' ? errorData : STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching page ${page}`;
+      debugRequest.error = errorMessage;
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+      
       // Throw generic error if specific one wasn't parsed/thrown
-      throw new Error(typeof errorData === 'string' ? errorData : STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching page ${page}`); // Added page info
+      throw new Error(errorMessage); // Added page info
     }
 
     // Handle 204 No Content - should not happen for list endpoints, but good practice
     if (response.status === 204) {
         console.warn(`Received 204 No Content for ${url.toString()}, returning accumulated data.`);
+        
+        // Capture 204 response in debug
+        debugRequest.response = { status: 204, message: 'No Content' };
+        debugRequest.duration = Date.now() - startTime;
+        addDebugRequest(debugRequest);
+        
         return accumulatedData;
     }
 
     const currentPageData = await response.json() as T[];
     const allData = accumulatedData.concat(currentPageData);
+
+    // Capture successful response in debug (only for the first page to avoid spam)
+    if (page === 0) {
+      debugRequest.response = {
+        status: response.status,
+        data: currentPageData,
+        totalItems: allData.length
+      };
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+    }
 
     // Check for next page link in the Link header
     const linkHeader = response.headers.get('Link');
@@ -89,6 +156,14 @@ export async function fetchFromToshl<T>( // Added export
 
   } catch (error) {
     console.error(`Error fetching ${url.toString()}:`, error);
+    
+    // Capture unexpected error in debug if not already captured
+    if (!debugRequest.error) {
+      debugRequest.error = error instanceof Error ? error.message : String(error);
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+    }
+    
     // Re-throw the error so the caller can handle it
     throw error;
   }
@@ -122,6 +197,15 @@ export async function fetchSingleFromToshl<T>( // Added export
     ...options.headers,
   });
 
+  // Debug tracking
+  const debugRequest: ToshlDebugRequest = {
+    endpoint: endpoint,
+    method: options.method || 'GET',
+    payload: options.body ? JSON.parse(options.body as string) : undefined,
+    timestamp: new Date().toISOString()
+  };
+  const startTime = Date.now();
+
   try {
     const response = await fetch(url.toString(), { ...options, headers });
 
@@ -133,19 +217,38 @@ export async function fetchSingleFromToshl<T>( // Added export
         if (jsonError && (jsonError.error || jsonError.description)) {
            errorData = jsonError;
            console.error('Toshl API Error:', errorData);
+           
+           // Capture error in debug
+           debugRequest.error = jsonError.description || jsonError.error;
+           debugRequest.duration = Date.now() - startTime;
+           addDebugRequest(debugRequest);
+           
            throw new Error(STRINGS.TOSHL_API_ERROR_DESC(jsonError.description || jsonError.error, response.status));
         }
       } catch {
          // If parsing fails or it's not the expected format, use the status text
          console.error('Failed to parse Toshl error response or unexpected format.');
       }
+      
+      // Capture generic error in debug
+      const errorMessage = typeof errorData === 'string' ? errorData : STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching ${endpoint}`;
+      debugRequest.error = errorMessage;
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+      
       // Throw generic error if specific one wasn't parsed/thrown
-      throw new Error(typeof errorData === 'string' ? errorData : STRINGS.TOSHL_HTTP_ERROR(response.status) + ` fetching ${endpoint}`);
+      throw new Error(errorMessage);
     }
 
     // Handle 204 No Content - might happen on PUT/DELETE, return undefined or handle appropriately
     if (response.status === 204) {
         console.warn(`Received 204 No Content for ${url.toString()}, returning undefined.`);
+        
+        // Capture 204 response in debug
+        debugRequest.response = { status: 204, message: 'No Content' };
+        debugRequest.duration = Date.now() - startTime;
+        addDebugRequest(debugRequest);
+        
         // For a GET request expecting an object, 204 is unusual. Might indicate an error or empty resource.
         // Throwing an error might be more appropriate depending on context.
         // For now, returning undefined as T might cause issues if T isn't Promise<T | undefined>.
@@ -162,10 +265,27 @@ export async function fetchSingleFromToshl<T>( // Added export
 
     // Parse the JSON response body
     const data = await response.json() as T;
+    
+    // Capture successful response in debug
+    debugRequest.response = {
+      status: response.status,
+      data: data
+    };
+    debugRequest.duration = Date.now() - startTime;
+    addDebugRequest(debugRequest);
+    
     return data;
 
   } catch (error) {
     console.error(`Error fetching ${url.toString()}:`, error);
+    
+    // Capture unexpected error in debug if not already captured
+    if (!debugRequest.error) {
+      debugRequest.error = error instanceof Error ? error.message : String(error);
+      debugRequest.duration = Date.now() - startTime;
+      addDebugRequest(debugRequest);
+    }
+    
     // Re-throw the error so the caller can handle it
     throw error;
   }
