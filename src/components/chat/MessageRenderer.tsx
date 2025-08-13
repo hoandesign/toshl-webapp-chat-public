@@ -484,12 +484,14 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 const successAmountColor = successData.type === STRINGS.INCOME_TYPE ? 'text-btn-green font-semibold' : 'text-expense-text font-semibold';
                 const amountPrefix = successData.type === STRINGS.INCOME_TYPE ? '+' : '-';
                 content = (
-                    <div className="max-w-md w-full"> {/* Increased max-width to prevent ID overlap */}
+                    <div className="max-w-lg w-full"> {/* Further increased max-width to prevent ID overlap */}
                         <div className={`border border-btn-green/30 ${bgColor} rounded-lg shadow-md p-4 w-full animate-fade-in`}> {/* Use lighter border */}
-                            <div className={`flex items-center mb-2 pb-2 border-b border-btn-green/30`}> {/* Use lighter border */}
-                                <CheckCircle size={18} className={`${successIconColor} mr-2`} /> {/* Use Toshl green icon */}
-                                <span className={`font-semibold text-sm ${successTextColor}`}>{STRINGS.ENTRY_ADDED_SUCCESSFULLY}</span> {/* Use Toshl green text */}
-                                {successData.id && <span className={`ml-auto text-xs text-gray-text`}>{STRINGS.ENTRY_ID_PREFIX}{successData.id}</span>} {/* Use gray-text */}
+                            <div className={`flex items-center justify-between mb-2 pb-2 border-b border-btn-green/30`}> {/* Use justify-between and lighter border */}
+                                <div className="flex items-center flex-shrink-0"> {/* Prevent shrinking of left side */}
+                                    <CheckCircle size={18} className={`${successIconColor} mr-2`} /> {/* Use Toshl green icon */}
+                                    <span className={`font-semibold text-sm ${successTextColor}`}>{STRINGS.ENTRY_ADDED_SUCCESSFULLY}</span> {/* Use Toshl green text */}
+                                </div>
+                                {successData.id && <span className={`text-xs text-gray-text flex-shrink-0 ml-2`}>{STRINGS.ENTRY_ID_PREFIX}{successData.id}</span>} {/* Prevent shrinking and add margin */}
                             </div>
                             {/* Amount Section - Use formatCurrency for consistent styling */}
                             <div className="flex items-baseline justify-start my-2 py-1">
