@@ -112,8 +112,7 @@ const AudioDisplay: React.FC<{
             </button>
             
             <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between text-sm text-navigation-text">
-                    <span>Voice message</span>
+                <div className="flex items-center justify-end text-sm text-navigation-text">
                     <span>
                         {formatTime(currentTime)} / {formatTime(duration > 0 ? duration : (metadata?.duration ? metadata.duration / 1000 : 0))}
                     </span>
@@ -554,11 +553,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             break;
         }
         case 'history_header': {
-            // History header - allow copy/delete - Themed (using yellow like other system messages)
+            // History header - match system_info style with icon
             content = (
-                <div className={`${getBubbleClasses(msg)} bg-yellow-100 border border-yellow-200 relative`}>
-                    <p className="text-sm font-medium text-yellow-700 mb-1">{STRINGS.HISTORY_SUMMARY_TITLE}</p>
-                    <p className="text-sm text-yellow-800">{msg.text}</p>
+                <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
+                    <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm">{msg.text}</p>
                 </div>
             );
             break;
