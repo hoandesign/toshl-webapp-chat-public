@@ -102,7 +102,7 @@ const AudioDisplay: React.FC<{
     }
 
     return (
-        <div className="flex items-center space-x-3 p-3 bg-navigation-bg border border-btn-red/30 rounded-lg min-w-[200px]">
+        <div className="flex items-center space-x-3 p-3 bg-navigation-bg border border-btn-red/30 rounded-lg min-w-[160px]">
             <button
                 onClick={togglePlayback}
                 className="flex-shrink-0 w-8 h-8 bg-btn-red hover:bg-btn-red-highlight text-white rounded-full flex items-center justify-center transition duration-200"
@@ -384,7 +384,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text.trim()) && message.text.trim().length <= 10;
         const emojiClass = isEmojiOnly ? 'emoji-only' : '';
 
-        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass].filter(Boolean).join(' ');
+        // Check if message is audio-only (has audio but no text)
+        const isAudioOnly = message.audio && !message.text;
+        const audioOnlyClass = isAudioOnly ? 'audio-only' : '';
+
+        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass].filter(Boolean).join(' ');
     };
 
     // Function to handle copying text

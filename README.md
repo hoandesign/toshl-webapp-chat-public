@@ -15,13 +15,15 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
     -   Add expenses and income.
     -   View entries by date, category, tags, and description.
     -   Edit and delete existing entries.
--   **Google Gemini Integration:** Understands natural language requests and images to extract financial details and determine actions.
+-   **Google Gemini Integration:** Understands natural language requests, images, and audio to extract financial details and determine actions.
+-   **Voice Recording:** Record voice messages for hands-free expense logging with real-time feedback and audio validation.
 -   **Contextual Awareness:** Remembers recent requests and modifications for follow-up commands.
 -   **Settings Management:** Configure API keys, default currency, and Gemini model.
 -   **Local Storage:** Securely stores API keys and settings in your browser's `localStorage`.
 -   **Offline Support:** Continue composing and queuing messages even when offline; they are sent automatically when you reconnect.
 -   **Mention Suggestions:** Type `@` in the chat to quickly mention Toshl accounts, categories, or tags.
 -   **Photo Input Support:** Upload images (receipts, bills, etc.) to help Gemini understand and process financial information.
+-   **Debug Tools:** Comprehensive debugging interface for development and troubleshooting API interactions.
 -   **Responsive Design:** Built with React and Tailwind CSS for a clean, adaptable user interface.
 -   **Account Balance Overview:** View your Toshl account balances at a glance with interactive cards.
 -   **Budget Insights:** Visualize your budgets, including limits, spending, planned amounts, and rollover details through budget cards.
@@ -39,6 +41,7 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
     -   lucide-react: A library of beautiful SVG icons for React.
     -   currency-symbol-map: Get currency symbols by code.
     -   react-hot-toast: For displaying toast notifications.
+    -   react-markdown + remark-gfm: For rendering markdown content in chat.
     -   @vercel/speed-insights: Collect web performance metrics.
 
 ## Quick Start
@@ -79,9 +82,11 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
         -   `Show my account balances`
         -   `Show budgets for groceries this month`
         -   Upload a photo of a receipt and ask: `Add this expense to my account`
+        -   Record a voice message: "Add fifty dollars for groceries yesterday"
     -   Use the history button to view recent entries.
     -   Click on entries for more options.
     -   Type `@` to mention accounts, categories, or tags.
+    -   Record voice messages using the microphone button for hands-free expense logging.
     -   You can continue composing messages while offline; they will be sent when you reconnect.
 
 ## Logic
@@ -124,18 +129,25 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ### Dev Dependencies
 - @eslint/js
 - @tailwindcss/typography
+- @testing-library/jest-dom
+- @testing-library/react
+- @testing-library/user-event
 - @types/react
 - @types/react-dom
 - @vitejs/plugin-react
+- @vitest/ui
 - autoprefixer
 - eslint
 - eslint-plugin-react-hooks
 - eslint-plugin-react-refresh
 - globals
+- jsdom
 - postcss
 - tailwind-scrollbar
 - tailwindcss
 - terser
+- ts-node
 - typescript
 - typescript-eslint
 - vite
+- vitest

@@ -29,6 +29,14 @@
 - **Base64 encoding** for image data transmission
 - **Multimodal content** support for text + image AI processing
 
+## Audio Processing & Recording
+- **MediaRecorder API** for browser-based audio recording
+- **Web Audio API** for audio processing and validation
+- **Opus codec** (WebM container) for optimal Gemini compatibility
+- **Real-time recording** with duration tracking and auto-stop
+- **Audio validation** with file size and format checks
+- **Base64 encoding** for audio data transmission to Gemini API
+
 ## Key Libraries
 - `react-hot-toast` - Toast notifications
 - `react-markdown` + `remark-gfm` - Markdown rendering in chat
@@ -44,9 +52,11 @@
 
 ## Development Tools
 - **ESLint** with TypeScript and React plugins
-- **TypeScript 5.7** with strict configuration
+- **TypeScript 5.9** with strict configuration
 - **PostCSS** with Autoprefixer
 - **Terser** for production minification
+- **Debug Modals** for development with request/response inspection
+- **Global Debug View** for comprehensive API call analysis
 
 ## Build Configuration
 - Code splitting with lazy loading (React.lazy)

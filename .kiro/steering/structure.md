@@ -33,6 +33,9 @@ src/
 │   │   ├── MessageRenderer.tsx    # Message display logic
 │   │   ├── MentionSuggestionsPopup.tsx
 │   │   ├── BottomSheet.tsx        # Modal overlay
+│   │   ├── VoiceRecorder.tsx      # Audio recording component
+│   │   ├── DebugModal.tsx         # Individual message debug info
+│   │   ├── GlobalDebugModal.tsx   # Global debug information view
 │   │   ├── *Card.tsx              # Specialized display cards
 │   │   └── SeeMore*Card.tsx       # Expandable content cards
 │   └── settings/              # Settings-specific components
@@ -41,6 +44,7 @@ src/
 │   ├── toshl.ts               # Toshl API operations
 │   ├── gemini.ts              # Gemini API operations
 │   ├── prompts.ts             # Prompt templates
+│   ├── audio.ts               # Audio recording and processing
 │   ├── gemini/                # Gemini-specific helpers
 │   │   ├── prompt.ts              # Dynamic prompt construction
 │   │   ├── types.ts               # Gemini type definitions
@@ -96,6 +100,21 @@ src/
 - **AI history optimization**: Old images replaced with "[image]" placeholders in prompts
 - **Metadata tracking**: Image dimensions, file size, and format information
 - **Error handling**: Graceful degradation for image processing failures
+
+### Audio Message Architecture
+- **Voice recording**: Browser-based audio recording with MediaRecorder API
+- **Real-time feedback**: Live duration tracking and recording status indicators
+- **Audio validation**: File size, format, and duration validation before processing
+- **Gemini integration**: Direct audio upload to Gemini API for speech-to-text processing
+- **Format optimization**: Opus codec in WebM container for best Gemini compatibility
+- **Error handling**: Comprehensive error handling for permissions, hardware, and processing failures
+
+### Debug System Architecture
+- **Individual message debug**: Per-message debug information with request/response details
+- **Global debug view**: Comprehensive debug interface for all messages with debug data
+- **API call tracking**: Detailed logging of Gemini and Toshl API interactions
+- **Copy functionality**: Easy copying of debug data for troubleshooting
+- **Tabbed interface**: Organized view of request, response, and API call data
 
 ### Configuration Files
 - **Tailwind**: Custom Toshl color system and typography

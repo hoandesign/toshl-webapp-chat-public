@@ -186,3 +186,8 @@
 .message-bubble.emoji-only::after {
   display: none;
 }
+
+/* Audio-only messages */
+.message-bubble.audio-only {
+  @apply min-w-[180px];
+}
