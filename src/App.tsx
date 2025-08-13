@@ -32,7 +32,7 @@ function App() {
   }, []);
 
   return (
-    <div className="App min-h-screen relative overflow-hidden bg-background text-text-primary font-sans"> {/* Added theme defaults */}
+    <div className="App h-screen relative overflow-hidden bg-app-bg text-black-text font-sans"> {/* Fixed height and use proper theme colors */}
       <Toaster position="top-center" reverseOrder={false} /> {/* Add Toaster component */}
       {/* Main Chat Interface */}
       <Suspense fallback={<LoadingFallback />}>

@@ -357,9 +357,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   // --- End helper function ---
 
   return (
-    <div className="flex flex-col h-screen"> {/* Removed gradient background */}
+    <div className="chat-container flex flex-col h-screen max-h-screen overflow-hidden"> {/* Fixed height and overflow */}
       {/* Header - Navigation Theme */}
-      <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
+      <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between flex-shrink-0"> {/* Use navigation theme */}
           <div className="flex items-center space-x-3 flex-1">
           <img
             src="/logo.webp"
@@ -390,13 +390,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
       </header>
 
       {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-primary/50 hover:scrollbar-thumb-primary/70 scrollbar-track-border-color/50"> {/* Increased spacing */}
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-btn-red/50 hover:scrollbar-thumb-btn-red/70 scrollbar-track-separator-gray/50 min-h-0"> {/* Fixed scrollbar colors and added min-h-0 */}
         {renderProcessedMessages()} {/* Call the helper function */}
         <div ref={messagesEndRef} className="h-1" />
       </div>
 
       {/* Input Area */}
-      <div className="relative p-3 md:p-4 bg-card-bg border-t border-separator-gray shadow-inner z-5"> {/* Use separator-gray */}
+      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0"> {/* Use input-area class */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}

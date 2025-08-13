@@ -191,3 +191,72 @@
 .message-bubble.audio-only {
   @apply min-w-[180px];
 }
+
+/* Fix mobile viewport issues and prevent empty touch areas */
+.App {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height on supported browsers */
+  overflow: hidden;
+}
+
+/* Prevent any unwanted spacing or touch areas */
+body, html {
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+/* Ensure no extra space at bottom on mobile */
+@supports (-webkit-touch-callout: none) {
+  .App {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Prevent unwanted touch interactions and scrolling */
+.chat-container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Ensure input area doesn't create extra space */
+.input-area {
+  position: relative;
+  flex-shrink: 0;
+  border-top: 1px solid theme('colors.separator-gray');
+  background-color: theme('colors.card-bg');
+}
+
+/* Prevent any phantom touch areas */
+.input-area::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Mobile Safari specific fixes */
+@supports (-webkit-appearance: none) {
+  .chat-container {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+}
+
+/* Prevent bounce scrolling on iOS */
+.chat-container,
+.input-area {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+
+/* Ensure no extra padding/margin on mobile */
+@media (max-width: 768px) {
+  .input-area {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+}
