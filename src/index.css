@@ -46,3 +46,143 @@
 .animate-fade-in-dimmer {
   animation: fade-in-dimmer 0.3s ease-out forwards;
 }
+
+/* iOS iMessage-style bubble chat */
+.message-bubble {
+  @apply relative max-w-[75%] px-3 py-2 break-words;
+  border-radius: 18px;
+  line-height: 1.25;
+  word-wrap: break-word;
+}
+
+.message-bubble::before,
+.message-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -0.1rem;
+  height: 1rem;
+}
+
+/* User messages (right side, using Toshl brand colors) */
+.message-bubble.from-user {
+  @apply bg-navigation-bg text-navigation-text ml-auto;
+  align-self: flex-end;
+}
+
+.message-bubble.from-user::before {
+  border-bottom-left-radius: 0.8rem 0.7rem;
+  border-right: 1rem solid theme('colors.navigation-bg');
+  right: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+
+.message-bubble.from-user::after {
+  background-color: theme('colors.app-bg');
+  border-bottom-left-radius: 0.5rem;
+  right: -40px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}
+
+/* Bot/System messages (left side, using Toshl brand colors) */
+.message-bubble.from-bot {
+  @apply bg-card-bg text-black-text;
+  align-self: flex-start;
+}
+
+.message-bubble.from-bot::before {
+  border-bottom-right-radius: 0.8rem 0.7rem;
+  border-left: 1rem solid theme('colors.card-bg');
+  left: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+
+.message-bubble.from-bot::after {
+  background-color: theme('colors.app-bg');
+  border-bottom-right-radius: 0.5rem;
+  left: 20px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}
+
+/* Remove tail for consecutive messages */
+.message-bubble.no-tail::before {
+  display: none;
+}
+
+/* Consecutive message spacing */
+.message-bubble.consecutive {
+  @apply mt-1;
+}
+
+.message-bubble:not(.consecutive) {
+  @apply mt-3;
+}
+
+/* Margin adjustments for message containers */
+.message-container {
+  @apply mb-2;
+}
+
+.message-container.consecutive {
+  @apply mb-1;
+}
+
+/* Special styling for different message types */
+.message-bubble.error {
+  @apply bg-red-100 text-red-800;
+}
+
+.message-bubble.error.from-bot::before {
+  border-left-color: theme('colors.red.100');
+}
+
+.message-bubble.error.from-user {
+  @apply bg-btn-red text-white;
+}
+
+.message-bubble.error.from-user::before {
+  border-right-color: theme('colors.btn-red');
+}
+
+.message-bubble.success {
+  @apply bg-green-100 text-green-800;
+}
+
+.message-bubble.success.from-bot::before {
+  border-left-color: theme('colors.green.100');
+}
+
+.message-bubble.success.from-user {
+  @apply bg-btn-green text-white;
+}
+
+.message-bubble.success.from-user::before {
+  border-right-color: theme('colors.btn-green');
+}
+
+.message-bubble.system {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.message-bubble.system.from-bot::before {
+  border-left-color: theme('colors.yellow.100');
+}
+
+.message-bubble.system.from-user {
+  @apply bg-navigation-bg text-navigation-text;
+}
+
+.message-bubble.system.from-user::before {
+  border-right-color: theme('colors.navigation-bg');
+}
+
+/* Emoji-only messages */
+.message-bubble.emoji-only {
+  @apply bg-transparent text-4xl p-1;
+}
+
+.message-bubble.emoji-only::before,
+.message-bubble.emoji-only::after {
+  display: none;
+}

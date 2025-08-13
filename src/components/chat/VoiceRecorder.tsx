@@ -127,21 +127,21 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           type="button"
           onClick={startRecording}
           disabled={disabled}
-          className="text-secondary hover:text-primary p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed self-end mb-1"
+          className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed self-end mb-1"
           title={STRINGS.AUDIO_RECORD_BUTTON_TITLE}
         >
           <Mic size={20} />
         </button>
       ) : (
         // Recording controls
-        <div className="flex items-center space-x-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+        <div className="flex items-center space-x-2 bg-navigation-bg border border-btn-red rounded-lg px-3 py-2">
           {/* Recording indicator */}
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-            <span className="text-sm text-red-700 font-medium">
+            <div className="w-2 h-2 bg-btn-red rounded-full animate-pulse" />
+            <span className="text-sm text-navigation-text font-medium">
               {STRINGS.AUDIO_RECORDING_STATUS}
             </span>
-            <span className="text-sm text-red-600 font-mono">
+            <span className="text-sm text-btn-red font-mono">
               {formatDuration(duration)}
             </span>
           </div>
@@ -151,7 +151,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             <button
               type="button"
               onClick={stopRecording}
-              className="text-red-600 hover:text-red-700 p-1 rounded transition duration-200"
+              className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
               title={STRINGS.AUDIO_STOP_RECORDING_TITLE}
             >
               <Square size={16} fill="currentColor" />
@@ -159,7 +159,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
             <button
               type="button"
               onClick={cancelRecording}
-              className="text-red-600 hover:text-red-700 p-1 rounded transition duration-200"
+              className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
               title={STRINGS.AUDIO_CANCEL_RECORDING_TITLE}
             >
               <X size={16} />

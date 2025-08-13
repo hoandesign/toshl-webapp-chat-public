@@ -409,12 +409,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             <img 
               src={selectedImage} 
               alt="Selected image" 
-              className="max-w-xs max-h-32 rounded-lg border border-separator-gray"
+              className="max-w-xs max-h-32 rounded-lg border border-btn-red/30"
             />
             <button
               type="button"
               onClick={removeSelectedImage}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition duration-200"
+              className="absolute -top-2 -right-2 bg-btn-red text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-btn-red-highlight transition duration-200"
               title="Remove image"
             >
               <X size={14} />
@@ -425,15 +425,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
         {/* Audio Preview */}
         {selectedAudio && selectedAudioMetadata && (
           <div className="mb-3 relative inline-block">
-            <div className="bg-blue-50 border border-blue-200 rounded-lg px-3 py-2 flex items-center space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full" />
-              <span className="text-sm text-blue-700">
+            <div className="bg-navigation-bg border border-btn-red rounded-lg px-3 py-2 flex items-center space-x-2">
+              <div className="w-2 h-2 bg-btn-red rounded-full" />
+              <span className="text-sm text-navigation-text">
                 Audio recorded ({Math.round(selectedAudioMetadata.duration / 1000)}s)
               </span>
               <button
                 type="button"
                 onClick={removeSelectedAudio}
-                className="text-blue-600 hover:text-blue-700 p-1 rounded transition duration-200"
+                className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
                 title="Remove audio"
               >
                 <X size={14} />
@@ -446,16 +446,16 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             type="button"
             onClick={() => handleFetchDateRange(undefined, undefined, 7)}
             disabled={isLoadingHistory || isLoading || !!isDeleting}
-            className="text-secondary hover:text-primary p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1" /* Updated colors */
+            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
             title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
           >
-            {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />} {/* Slightly smaller icon */}
+            {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />}
           </button>
           <button
             type="button"
             onClick={() => imageInputRef.current?.click()}
             disabled={isLoading || isLoadingHistory || !!isDeleting}
-            className="text-secondary hover:text-primary p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
+            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
             title="Upload photo"
           >
             <ImagePlus size={20} />
@@ -495,10 +495,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           <button
             type="submit"
             disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
-            className="bg-black hover:bg-gray-700 text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-black self-end mb-0.5" /* Updated bg, hover, focus */
+            className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red self-end mb-0.5"
             aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
           >
-            {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />} {/* Consistent icon size */}
+            {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
           </button>
         </form>
       </div>

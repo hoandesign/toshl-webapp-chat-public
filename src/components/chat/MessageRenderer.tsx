@@ -94,25 +94,25 @@ const AudioDisplay: React.FC<{
 
     if (audioError || !audioUrl) {
         return (
-            <div className="flex items-center space-x-2 p-2 bg-red-50 border border-red-200 rounded-lg">
-                <Volume2 size={16} className="text-red-500" />
-                <span className="text-sm text-red-700">Audio playback error</span>
+            <div className="flex items-center space-x-2 p-2 bg-btn-red/10 border border-btn-red/30 rounded-lg">
+                <Volume2 size={16} className="text-btn-red" />
+                <span className="text-sm text-btn-red">Audio playback error</span>
             </div>
         );
     }
 
     return (
-        <div className="flex items-center space-x-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+        <div className="flex items-center space-x-3 p-3 bg-navigation-bg border border-btn-red/30 rounded-lg">
             <button
                 onClick={togglePlayback}
-                className="flex-shrink-0 w-8 h-8 bg-blue-500 hover:bg-blue-600 text-white rounded-full flex items-center justify-center transition duration-200"
+                className="flex-shrink-0 w-8 h-8 bg-btn-red hover:bg-btn-red-highlight text-white rounded-full flex items-center justify-center transition duration-200"
                 title={isPlaying ? "Pause audio" : "Play audio"}
             >
                 {isPlaying ? <Pause size={14} /> : <Play size={14} />}
             </button>
             
             <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between text-sm text-blue-700">
+                <div className="flex items-center justify-between text-sm text-navigation-text">
                     <span>Voice message</span>
                     <span>
                         {formatTime(currentTime)} / {formatTime(duration > 0 ? duration : (metadata?.duration ? metadata.duration / 1000 : 0))}
@@ -120,9 +120,9 @@ const AudioDisplay: React.FC<{
                 </div>
                 
                 {/* Progress bar */}
-                <div className="mt-1 w-full bg-blue-200 rounded-full h-1">
+                <div className="mt-1 w-full bg-gray-text/30 rounded-full h-1">
                     <div 
-                        className="bg-blue-500 h-1 rounded-full transition-all duration-100"
+                        className="bg-btn-red h-1 rounded-full transition-all duration-100"
                         style={{ 
                             width: duration > 0 ? `${(currentTime / duration) * 100}%` : '0%' 
                         }}
@@ -235,20 +235,20 @@ const ImageDisplay: React.FC<{
     if (imageLoading && !imageError) {
         return (
             <div
-                className="flex items-center justify-center h-32 bg-gradient-to-br from-blue-50 to-blue-100/50 rounded-lg border-2 border-dashed border-blue-200 animate-pulse"
+                className="flex items-center justify-center h-32 bg-gradient-to-br from-navigation-bg to-navigation-lighter rounded-lg border-2 border-dashed border-gray-text/30 animate-pulse"
                 role="status"
                 aria-label="Loading image"
             >
                 <div className="flex flex-col items-center space-y-3">
                     <div className="relative">
-                        <Loader2 size={24} className="animate-spin text-blue-500" />
+                        <Loader2 size={24} className="animate-spin text-btn-red" />
                         <div className="absolute inset-0 animate-ping">
-                            <Loader2 size={24} className="text-blue-300 opacity-75" />
+                            <Loader2 size={24} className="text-btn-red/50 opacity-75" />
                         </div>
                     </div>
-                    <span className="text-sm font-medium text-blue-700">Loading image...</span>
+                    <span className="text-sm font-medium text-navigation-text">Loading image...</span>
                     {metadata && (
-                        <span className="text-xs text-blue-600/70">
+                        <span className="text-xs text-gray-text">
                             {metadata.mimeType?.split('/')[1]?.toUpperCase() || 'IMG'} • {Math.round((metadata.fileSize || 0) / 1024)}KB
                         </span>
                     )}
@@ -261,26 +261,26 @@ const ImageDisplay: React.FC<{
     if (imageError || !cachedImageUrl) {
         return (
             <div
-                className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-red-50 to-orange-50 rounded-lg border-2 border-dashed border-red-200 p-4"
+                className="flex flex-col items-center justify-center h-32 bg-gradient-to-br from-btn-red/10 to-btn-red/5 rounded-lg border-2 border-dashed border-btn-red/30 p-4"
                 role="alert"
                 aria-label="Image failed to load"
             >
                 <div className="flex flex-col items-center space-y-2">
-                    <div className="p-2 bg-red-100 rounded-full">
-                        <FileImage size={24} className="text-red-500" />
+                    <div className="p-2 bg-btn-red/20 rounded-full">
+                        <FileImage size={24} className="text-btn-red" />
                     </div>
-                    <span className="text-sm font-medium text-red-700 text-center">
+                    <span className="text-sm font-medium text-btn-red text-center">
                         {STRINGS.IMAGE_DISPLAY_ERROR}
                     </span>
                     {metadata && (
-                        <span className="text-xs text-red-600/70 text-center">
+                        <span className="text-xs text-gray-text text-center">
                             {metadata.mimeType} • {Math.round((metadata.fileSize || 0) / 1024)}KB
                         </span>
                     )}
                     {retryCount < MAX_RETRY_ATTEMPTS && (
                         <button
                             onClick={handleRetryClick}
-                            className="flex items-center gap-1 px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 text-xs font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-1"
+                            className="flex items-center gap-1 px-3 py-1.5 bg-btn-red/20 hover:bg-btn-red/30 text-btn-red text-xs font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-btn-red focus:ring-offset-1"
                             title="Retry loading image"
                             aria-label="Retry loading image"
                         >
@@ -297,17 +297,17 @@ const ImageDisplay: React.FC<{
     return (
         <div className="relative group">
             {imageLoading && (
-                <div className="absolute inset-0 flex items-center justify-center bg-blue-50/80 rounded-lg backdrop-blur-sm z-10">
+                <div className="absolute inset-0 flex items-center justify-center bg-navigation-bg/80 rounded-lg backdrop-blur-sm z-10">
                     <div className="flex flex-col items-center space-y-2">
-                        <Loader2 size={20} className="animate-spin text-blue-500" />
-                        <span className="text-xs text-blue-700 font-medium">Loading...</span>
+                        <Loader2 size={20} className="animate-spin text-btn-red" />
+                        <span className="text-xs text-navigation-text font-medium">Loading...</span>
                     </div>
                 </div>
             )}
             <img
                 src={cachedImageUrl}
                 alt={alt}
-                className="max-w-full h-auto rounded-lg shadow-md border-2 border-blue-200/50 transition-all duration-300 hover:shadow-lg hover:border-blue-300/70 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                className="max-w-full h-auto rounded-lg shadow-md border-2 border-gray-text/20 transition-all duration-300 hover:shadow-lg hover:border-btn-red/50 focus:outline-none focus:ring-2 focus:ring-btn-red focus:ring-offset-2"
                 style={{
                     maxHeight: '300px',
                     objectFit: 'contain',
@@ -321,16 +321,16 @@ const ImageDisplay: React.FC<{
             />
             {/* Enhanced metadata overlay with better visibility */}
             {metadata && !imageLoading && (
-                <div className="absolute bottom-2 right-2 bg-gradient-to-r from-black/70 to-black/50 text-white text-xs px-3 py-1.5 rounded-full backdrop-blur-sm border border-white/20 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute bottom-2 right-2 bg-gradient-to-r from-navigation-bg/90 to-navigation-bg/70 text-navigation-text text-xs px-3 py-1.5 rounded-full backdrop-blur-sm border border-btn-red/30 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <div className="flex items-center space-x-2">
                         <span className="font-medium">
                             {metadata.mimeType?.split('/')[1]?.toUpperCase() || 'IMG'}
                         </span>
-                        <span className="text-white/80">•</span>
+                        <span className="text-gray-text">•</span>
                         <span>{Math.round((metadata.fileSize || 0) / 1024)}KB</span>
                         {metadata.originalWidth && metadata.originalHeight && (
                             <>
-                                <span className="text-white/80">•</span>
+                                <span className="text-gray-text">•</span>
                                 <span>{metadata.originalWidth}×{metadata.originalHeight}</span>
                             </>
                         )}
@@ -339,7 +339,7 @@ const ImageDisplay: React.FC<{
             )}
             {/* Success indicator for loaded images */}
             {!imageLoading && !imageError && (
-                <div className="absolute top-2 left-2 bg-green-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="absolute top-2 left-2 bg-btn-green text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <CheckCircle size={12} />
                 </div>
             )}
@@ -352,6 +352,41 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     const [copySuccess, setCopySuccess] = useState(false); // State for copy feedback
     const [showDebugModal, setShowDebugModal] = useState(false); // State for debug modal
     const secondaryTextColor = 'text-text-secondary'; // Define theme color variable
+
+    // Helper function to determine if this message should have a tail
+    const shouldHaveTail = (message: Message, messages?: Message[], currentIndex?: number): boolean => {
+        // For now, always show tail - in a full implementation, you'd check if the next message is from the same sender
+        return true;
+    };
+
+    // Helper function to determine bubble classes
+    const getBubbleClasses = (message: Message, isConsecutive = false): string => {
+        const baseClasses = 'message-bubble';
+        const senderClass = message.sender === 'user' ? 'from-user' : 'from-bot';
+        const consecutiveClass = isConsecutive ? 'consecutive' : '';
+        const noTailClass = isConsecutive ? 'no-tail' : '';
+        
+        // Special type classes
+        let typeClass = '';
+        switch (message.type) {
+            case 'error':
+                typeClass = 'error';
+                break;
+            case 'entry_success':
+            case 'entry_edit_success':
+                typeClass = 'success';
+                break;
+            case 'system_info':
+                typeClass = 'system';
+                break;
+        }
+
+        // Check if message is emoji-only
+        const isEmojiOnly = message.text && /^[\p{Emoji}\s]+$/u.test(message.text.trim()) && message.text.trim().length <= 10;
+        const emojiClass = isEmojiOnly ? 'emoji-only' : '';
+
+        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass].filter(Boolean).join(' ');
+    };
 
     // Function to handle copying text
     const handleCopy = async (textToCopy: string | undefined) => {
@@ -381,9 +416,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     
     if (shouldShowActions) {
         actionButtons = (
-            <div className={`absolute -top-2.5 ${msg.sender === 'user' ? 'left-1' : 'right-1'} flex space-x-1 bg-gray-700/80 backdrop-blur-sm p-1 rounded-md shadow-lg transition-opacity duration-200 ${showActions ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}> {/* Themed action buttons */}
+            <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 ${showActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
                 {msg.timestamp && canHaveActions && (
-                    <span className="text-xs text-white p-1" title={new Date(msg.timestamp).toLocaleString()}>
+                    <span className="text-xs text-gray-300 whitespace-nowrap" title={new Date(msg.timestamp).toLocaleString()}>
                         {new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString()
                             ? new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
                             : new Date(msg.timestamp).toLocaleString()
@@ -393,17 +428,17 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 {canCopy && canHaveActions && (
                     <button
                         onClick={() => handleCopy(msg.text)}
-                        className="text-gray-200 hover:text-primary p-1"
+                        className="text-gray-300 hover:text-white p-1 rounded transition-colors"
                         title={STRINGS.COPY_MESSAGE_BUTTON_TITLE}
                     >
-                        {copySuccess ? <CheckCircle size={14} className="text-accent-positive" /> : <Copy size={14} />}
+                        {copySuccess ? <CheckCircle size={14} className="text-green-400" /> : <Copy size={14} />}
                     </button>
                 )}
                 {/* Debug Info Button - Only for bot/system messages with debug info */}
                 {hasDebugInfo && (
                     <button
                         onClick={() => setShowDebugModal(true)}
-                        className="text-gray-200 hover:text-blue-400 p-1"
+                        className="text-gray-300 hover:text-blue-400 p-1 rounded transition-colors"
                         title={STRINGS.DEBUG_INFO_BUTTON_TITLE}
                     >
                         <Info size={14} />
@@ -414,10 +449,10 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 {canDeleteLocally && canHaveActions && (
                     <button
                         onClick={() => handleDeleteMessageLocally(msg.id)}
-                        className="text-gray-200 hover:text-accent-negative p-1"
+                        className="text-gray-300 hover:text-red-400 p-1 rounded transition-colors"
                         title={STRINGS.DELETE_MESSAGE_BUTTON_TITLE}
                     >
-                        <Trash2 size={14} /> {/* Consistent icon size */}
+                        <Trash2 size={14} />
                     </button>
                 )}
             </div>
@@ -500,20 +535,31 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         }
         case 'loading': {
             // Loading message - no actions - Themed
-            content = (<div className={`px-4 py-2.5 rounded-xl shadow-md bg-gray-100 ${secondaryTextColor} italic text-sm rounded-bl-none flex items-center space-x-2 animate-pulse relative`}> <Loader2 size={16} className="animate-spin" /> <span>{msg.text || STRINGS.PROCESSING}</span> </div>);
+            content = (
+                <div className={`${getBubbleClasses(msg)} flex items-center space-x-2 animate-pulse relative italic`}>
+                    <Loader2 size={16} className="animate-spin" />
+                    <span className="text-sm">{msg.text || STRINGS.PROCESSING}</span>
+                </div>
+            );
             break;
         }
         case 'error': {
             // Error message - allow copy/delete - Themed
-            content = (<div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-accent-negative/10 text-text-primary border border-accent-negative/30 rounded-bl-none flex items-center space-x-2 relative`}> <AlertTriangle size={16} className="text-accent-negative" /> <p className="text-sm">{msg.text}</p> {actionButtons} </div>);
+            content = (
+                <div className={`${getBubbleClasses(msg)} flex items-center space-x-2 relative`}>
+                    <AlertTriangle size={16} className="text-red-600" />
+                    <p className="text-sm">{msg.text}</p>
+                    {actionButtons}
+                </div>
+            );
             break;
         }
         case 'history_header': {
             // History header - allow copy/delete - Themed (using indigo still)
             content = (
-                <div className="max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-indigo-100 text-text-primary border border-indigo-200 rounded-bl-none relative">
+                <div className={`${getBubbleClasses(msg)} bg-indigo-100 border border-indigo-200 relative`}>
                     <p className="text-sm font-medium text-indigo-700 mb-1">{STRINGS.HISTORY_SUMMARY_TITLE}</p>
-                    <p className="text-sm">{msg.text}</p>
+                    <p className="text-sm text-indigo-900">{msg.text}</p>
                     {actionButtons}
                 </div>
             );
@@ -522,9 +568,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         case 'entry_edit_success': {
             // Edit success message - allow copy/delete - Themed (using purple still)
             content = (
-                <div className="max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words bg-purple-100 text-text-primary border border-purple-300 rounded-bl-none flex items-center space-x-2 relative">
+                <div className={`${getBubbleClasses(msg)} bg-purple-100 border border-purple-300 flex items-center space-x-2 relative`}>
                     <Pencil size={16} className="text-purple-500" />
-                    <p className="text-sm">{msg.text}</p>
+                    <p className="text-sm text-purple-900">{msg.text}</p>
                     {actionButtons}
                 </div>
             );
@@ -532,14 +578,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         }
         case 'system_info': {
             const isClarification = msg.text?.startsWith(STRINGS.CLARIFICATION_MESSAGE_PREFIX);
-            // Keep existing colors for differentiation, but use primary text
-            const bgColor = isClarification ? 'bg-yellow-100 border-yellow-300' : 'bg-blue-100 border-blue-300';
-            const textColor = 'text-text-primary';
             const icon = isClarification ? <MessageCircleQuestion size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" /> : <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />;
 
             // System info/clarification - allow copy/delete - Themed text
             content = (
-                <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words border rounded-bl-none flex items-start space-x-2 relative ${bgColor} ${textColor}`}>
+                <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
                     {icon}
                     <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose prose-sm break-words">{msg.text || ''}</ReactMarkdown>
                     {actionButtons}
@@ -598,7 +641,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 const isMediaProcessing = hasMedia && msg.status === 'pending';
 
                 content = (
-                    <div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${userStyle} ${hasMedia ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isMediaProcessing ? 'animate-pulse' : ''}`}>
+                    <div className={`${getBubbleClasses(msg)} ${hasMedia ? 'border-l-4 border-l-blue-400 bg-gradient-to-r from-blue-50/20 to-transparent shadow-lg' : ''} ${isMediaProcessing ? 'animate-pulse' : ''} relative`}>
 
 
                         {/* Display image if present with enhanced loading state */}
@@ -668,8 +711,12 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
 
             } else {
                 // Default Bot/System messages - allow copy/delete - Themed
-                const otherStyle = 'bg-card-bg text-black-text rounded-bl-none border border-separator-gray'; // Use separator-gray
-                content = (<div className={`max-w-[80%] md:max-w-[70%] px-4 py-2.5 rounded-xl shadow-md break-words relative ${otherStyle}`} > <p className="text-sm">{msg.text}</p> {actionButtons} </div>);
+                content = (
+                    <div className={`${getBubbleClasses(msg)} relative`}>
+                        <p className="text-sm">{msg.text}</p>
+                        {actionButtons}
+                    </div>
+                );
             }
             break;
         }
@@ -680,12 +727,14 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     return (
         <>
             <div
-                className={`flex ${alignment} mb-6 relative group`} // Increased bottom margin to mb-6
-                onMouseEnter={() => canHaveActions && setShowActions(true)}
-                onMouseLeave={() => canHaveActions && setShowActions(false)}
+                className={`flex ${alignment} message-container relative group`}
+                onMouseEnter={() => shouldShowActions && setShowActions(true)}
+                onMouseLeave={() => shouldShowActions && setShowActions(false)}
             >
-                {content}
-                {/* Action buttons are rendered inside the content div now */}
+                <div className="relative">
+                    {content}
+                    {actionButtons}
+                </div>
             </div>
             
             {/* Debug Modal */}
