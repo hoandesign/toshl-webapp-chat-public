@@ -102,7 +102,7 @@ const AudioDisplay: React.FC<{
     }
 
     return (
-        <div className="flex items-center space-x-3 p-3 bg-navigation-bg border border-btn-red/30 rounded-lg">
+        <div className="flex items-center space-x-3 p-3 bg-navigation-bg border border-btn-red/30 rounded-lg min-w-[200px]">
             <button
                 onClick={togglePlayback}
                 className="flex-shrink-0 w-8 h-8 bg-btn-red hover:bg-btn-red-highlight text-white rounded-full flex items-center justify-center transition duration-200"
