@@ -396,7 +396,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
       </div>
 
       {/* Input Area */}
-      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0"> {/* Use input-area class */}
+      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0 safe-area-bottom"> {/* Use input-area class with safe area */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}

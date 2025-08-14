@@ -8,32 +8,32 @@ import type {
 
 // Define structure for entry data to be used in cards
 export interface EntryCardData {
-    date: string;
-    type: 'Expense' | 'Income';
-    amount: number; // Absolute value
-    currency: string;
-    category: string; // Name
-    account?: string; // Name (for success message)
-    tags?: string[]; // Names
-    description?: string;
-    id?: string; // Toshl Entry ID (for success message)
+  date: string;
+  type: 'Expense' | 'Income';
+  amount: number; // Absolute value
+  currency: string;
+  category: string; // Name
+  account?: string; // Name (for success message)
+  tags?: string[]; // Names
+  description?: string;
+  id?: string; // Toshl Entry ID (for success message)
 }
 
 // Define structure for account balance data
 export interface AccountBalanceCardData {
-    name: string;
-    balance: number;
-    currency: string;
-    type: string; // e.g., 'custom', 'cash'
-    status?: string; // e.g., 'active'
-    modified?: string; // ISO date string
-    id: string; // Toshl Account ID
-    initial_balance?: number;
-    limit?: number;
-    count?: number; // Number of entries
-    order?: number; // Display order
-    daily_sum_median?: { expenses?: number; incomes?: number }; // Added
-    avg?: { expenses?: number; incomes?: number }; // Added
+  name: string;
+  balance: number;
+  currency: string;
+  type: string; // e.g., 'custom', 'cash'
+  status?: string; // e.g., 'active'
+  modified?: string; // ISO date string
+  id: string; // Toshl Account ID
+  initial_balance?: number;
+  limit?: number;
+  count?: number; // Number of entries
+  order?: number; // Display order
+  daily_sum_median?: { expenses?: number; incomes?: number }; // Added
+  avg?: { expenses?: number; incomes?: number }; // Added
 }
 
 export interface Message {
@@ -59,23 +59,23 @@ export interface Message {
   }; // Optional metadata for audio display and processing
   // Added budget_card, budget_header, and context caching message types
   type?:
-    | 'text'
-    | 'entry_success'
-    | 'entry_edit_success'
-    | 'history_entry'
-    | 'history_header'
-    | 'error'
-    | 'loading'
-    | 'system_info'
-    | 'history_see_more'
-    | 'account_balance'
-    | 'account_balance_see_more'
-    | 'budget_card'
-    | 'budget_header'
-    | 'cache_list'
-    | 'cache_created'
-    | 'cache_updated'
-    | 'cache_deleted';
+  | 'text'
+  | 'entry_success'
+  | 'entry_edit_success'
+  | 'history_entry'
+  | 'history_header'
+  | 'error'
+  | 'loading'
+  | 'system_info'
+  | 'history_see_more'
+  | 'account_balance'
+  | 'account_balance_see_more'
+  | 'budget_card'
+  | 'budget_header'
+  | 'cache_list'
+  | 'cache_created'
+  | 'cache_updated'
+  | 'cache_deleted';
   entryData?: EntryCardData; // Structured data for single entry cards
   accountBalanceData?: AccountBalanceCardData; // Re-added single card data field
   budgetData?: ToshlBudget; // Data for a single budget card
@@ -131,41 +131,41 @@ export interface ChatInterfaceProps {
 
 // Define structure for mention suggestions
 export interface MentionSuggestion {
-    id: string; // Toshl ID of the item
-    name: string; // Display name
-    type: 'category' | 'tag' | 'account'; // Type of item
+  id: string; // Toshl ID of the item
+  name: string; // Display name
+  type: 'category' | 'tag' | 'account'; // Type of item
 }
 
 // Define structure for image processing and caching
 export interface ImageCacheEntry {
-    id: string; // Unique cache ID
-    displayUrl: string; // Cached display-optimized image URL
-    originalUrl?: string; // Original image URL if different
-    metadata: {
-        width: number;
-        height: number;
-        fileSize: number;
-        mimeType: string;
-        cachedAt: string; // ISO timestamp
-    };
+  id: string; // Unique cache ID
+  displayUrl: string; // Cached display-optimized image URL
+  originalUrl?: string; // Original image URL if different
+  metadata: {
+    width: number;
+    height: number;
+    fileSize: number;
+    mimeType: string;
+    cachedAt: string; // ISO timestamp
+  };
 }
 
 // Define interface for image processing utilities
 export interface ImageProcessor {
-    resizeImage(file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string>;
-    cacheImage(imageData: string, messageId: string, metadata: Partial<ImageCacheEntry['metadata']>): Promise<string>;
-    getCachedImage(cacheId: string): Promise<string | null>;
-    clearCache(): Promise<void>;
+  resizeImage(file: File, maxWidth: number, maxHeight: number, quality: number): Promise<string>;
+  cacheImage(imageData: string, messageId: string, metadata: Partial<ImageCacheEntry['metadata']>): Promise<string>;
+  getCachedImage(cacheId: string): Promise<string | null>;
+  clearCache(): Promise<void>;
 }
 
 // Define structure for image validation
 export interface ImageValidationResult {
-    isValid: boolean;
-    error?: string;
-    metadata?: {
-        width: number;
-        height: number;
-        fileSize: number;
-        mimeType: string;
-    };
+  isValid: boolean;
+  error?: string;
+  metadata?: {
+    width: number;
+    height: number;
+    fileSize: number;
+    mimeType: string;
+  };
 }

@@ -192,6 +192,11 @@
   @apply min-w-[180px];
 }
 
+/* Messages with audio content (with or without text) */
+.message-bubble.has-audio {
+  @apply min-w-[180px];
+}
+
 /* Fix mobile viewport issues and prevent empty touch areas */
 .App {
   height: 100vh;
@@ -254,9 +259,61 @@ body, html {
   overscroll-behavior: none;
 }
 
-/* Ensure no extra padding/margin on mobile */
+/* Additional mobile viewport fixes */
+@supports (padding: max(0px)) {
+  .input-area {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Ensure proper touch targets on mobile */
+@media (max-width: 768px) {
+  .input-area button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+  
+  .input-area textarea {
+    min-height: 44px;
+  }
+}
+
+/* Safe area utility class */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}
+
+/* Enhanced mobile safe area handling */
+@media (max-width: 768px) {
+  .safe-area-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom, 0), 1rem);
+  }
+  
+  /* Prevent content from being hidden behind mobile browser UI */
+  .chat-container {
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for modern browsers */
+  }
+  
+  /* Fallback for older browsers */
+  @supports not (height: 100dvh) {
+    .chat-container {
+      height: calc(var(--vh, 1vh) * 100);
+    }
+  }
+}
+
+/* Ensure proper spacing on mobile devices */
 @media (max-width: 768px) {
   .input-area {
-    padding-bottom: env(safe-area-inset-bottom, 0);
+    padding-bottom: max(env(safe-area-inset-bottom, 0), 1rem);
+  }
+  
+  /* Additional spacing for very small screens */
+  @media (max-height: 700px) {
+    .input-area {
+      padding-bottom: max(env(safe-area-inset-bottom, 0), 1.5rem);
+    }
   }
 }

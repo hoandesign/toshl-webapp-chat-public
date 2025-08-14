@@ -383,7 +383,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         const isAudioOnly = message.audio && !message.text;
         const audioOnlyClass = isAudioOnly ? 'audio-only' : '';
 
-        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass].filter(Boolean).join(' ');
+        // Check if message has audio content (with or without text)
+        const hasAudio = !!message.audio;
+        const hasAudioClass = hasAudio ? 'has-audio' : '';
+
+        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass, hasAudioClass].filter(Boolean).join(' ');
     };
 
     // Function to handle copying text
