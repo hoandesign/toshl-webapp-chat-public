@@ -488,7 +488,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 const successAmountColor = successData.type === STRINGS.INCOME_TYPE ? 'text-btn-green font-semibold' : 'text-expense-text font-semibold';
                 const amountPrefix = successData.type === STRINGS.INCOME_TYPE ? '+' : '-';
                 content = (
-                    <div className="max-w-lg w-full"> {/* Further increased max-width to prevent ID overlap */}
+                    <div className="max-w-lg w-full min-w-[280px]"> {/* Further increased max-width to prevent ID overlap, added min-width */}
                         <div className={`border border-btn-green/30 ${bgColor} rounded-lg shadow-md p-4 w-full animate-fade-in`}> {/* Use lighter border */}
                             <div className={`flex items-center justify-between mb-2 pb-2 border-b border-btn-green/30`}> {/* Use justify-between and lighter border */}
                                 <div className="flex items-center flex-shrink-0"> {/* Prevent shrinking of left side */}

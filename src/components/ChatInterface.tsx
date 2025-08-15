@@ -71,6 +71,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   const debouncedResizeTextarea = useCallback(() => {
       const resizeFunction = debounce(() => {
@@ -98,6 +99,47 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   useEffect(() => {
       scrollToBottom();
   }, [messages, scrollToBottom]);
+
+  // Handle paste events for images
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      // Only handle paste if we're focused on the chat interface
+      if (!chatContainerRef.current?.contains(document.activeElement)) {
+        return;
+      }
+
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      // Look for image items in clipboard
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          e.preventDefault(); // Prevent default paste behavior
+          
+          const file = item.getAsFile();
+          if (file) {
+            // Create a synthetic event to reuse existing image upload logic
+            const syntheticEvent = {
+              target: {
+                files: [file]
+              }
+            } as React.ChangeEvent<HTMLInputElement>;
+            
+            handleImageUpload(syntheticEvent);
+          }
+          break; // Only handle the first image found
+        }
+      }
+    };
+
+    // Add paste event listener to document
+    document.addEventListener('paste', handlePaste);
+    
+    return () => {
+      document.removeEventListener('paste', handlePaste);
+    };
+  }, [handleImageUpload]);
 
   // --- Helper function to process and render messages ---
   const renderProcessedMessages = () => {
@@ -357,7 +399,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   // --- End helper function ---
 
   return (
-    <div className="chat-container flex flex-col h-screen max-h-screen overflow-hidden"> {/* Fixed height and overflow */}
+    <div ref={chatContainerRef} className="chat-container flex flex-col h-screen max-h-screen overflow-hidden"> {/* Fixed height and overflow */}
       {/* Header - Navigation Theme */}
       <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between flex-shrink-0"> {/* Use navigation theme */}
           <div className="flex items-center space-x-3 flex-1">
@@ -478,6 +520,32 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
                 e.preventDefault();
                 handleFormSubmit();
               }
+            }}
+            onPaste={(e) => {
+              // Handle image paste in textarea
+              const items = e.clipboardData?.items;
+              if (!items) return;
+
+              for (let i = 0; i < items.length; i++) {
+                const item = items[i];
+                if (item.type.startsWith('image/')) {
+                  e.preventDefault(); // Prevent default paste behavior
+                  
+                  const file = item.getAsFile();
+                  if (file) {
+                    // Create a synthetic event to reuse existing image upload logic
+                    const syntheticEvent = {
+                      target: {
+                        files: [file]
+                      }
+                    } as React.ChangeEvent<HTMLInputElement>;
+                    
+                    handleImageUpload(syntheticEvent);
+                  }
+                  return; // Exit after handling first image
+                }
+              }
+              // If no image found, allow default paste behavior for text
             }}
             placeholder={STRINGS.MESSAGE_PLACEHOLDER}
             className="flex-1 px-4 py-2.5 border border-separator-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 ease-in-out text-sm text-black-text resize-none min-h-[44px] max-h-[200px] overflow-y-hidden" /* Use separator-gray */

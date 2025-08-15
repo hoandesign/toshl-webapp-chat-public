@@ -67,6 +67,7 @@
 .message-bubble.from-user {
   @apply bg-navigation-bg text-navigation-text ml-auto;
   align-self: flex-end;
+  min-width: 120px; /* Increased minimum width for user messages */
 }
 
 .message-bubble.from-user::before {
