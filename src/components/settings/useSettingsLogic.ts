@@ -1,3 +1,4 @@
+import bcrypt from 'bcryptjs';
 import CryptoJS from 'crypto-js';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
@@ -40,17 +41,16 @@ const CHAT_MESSAGES_LOCAL_STORAGE_KEY = 'chatMessages'; // Define key constant
 // Secret key for encryption/decryption (should be managed securely in production)
 const TOSHL_API_KEY_SECRET = 'your-strong-secret-key';
 
-// Helper functions for encryption/decryption
+// Helper functions for hashing and verifying API keys using bcryptjs
 function encryptApiKey(apiKey: string): string {
-    return CryptoJS.AES.encrypt(apiKey, TOSHL_API_KEY_SECRET).toString();
+    // Use bcryptjs to hash the API key with a reasonable cost factor (e.g., 12)
+    const salt = bcrypt.genSaltSync(12);
+    return bcrypt.hashSync(apiKey, salt);
 }
-function decryptApiKey(ciphertext: string): string {
-    try {
-        const bytes = CryptoJS.AES.decrypt(ciphertext, TOSHL_API_KEY_SECRET);
-        return bytes.toString(CryptoJS.enc.Utf8);
-    } catch (e) {
-        return '';
-    }
+
+function decryptApiKey(ciphertext: string, apiKey: string): boolean {
+    // Compare the provided apiKey with the stored hash
+    return bcrypt.compareSync(apiKey, ciphertext);
 }
 
 export const useSettingsLogic = (): UseSettingsLogicReturn => {
