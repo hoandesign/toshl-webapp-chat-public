@@ -103,7 +103,7 @@ interface ProcessRequestResult {
     newLastShowContext: { filters: GeminiShowFilters, headerText: string } | null;
     newLastSuccessfulEntryId: string | null;
     updatedEntryId?: string; // For edit case to mark old messages
-    debugInfo?: Record<string, unknown>; // Debug information from Gemini API
+    debugInfo?: DebugInfo; // Debug information from Gemini API
 }
 
 export const handleProcessUserRequestApi = async (
