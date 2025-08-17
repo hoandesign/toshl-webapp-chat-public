@@ -399,46 +399,48 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   // --- End helper function ---
 
   return (
-    <div ref={chatContainerRef} className="chat-container flex flex-col h-screen max-h-screen overflow-hidden"> {/* Fixed height and overflow */}
-      {/* Header - Navigation Theme */}
-      <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between flex-shrink-0"> {/* Use navigation theme */}
+    <div ref={chatContainerRef} className="toshl-main-container relative h-full overflow-hidden"> {/* Main container like chatscope */}
+      <div className="toshl-chat-container flex flex-col h-full"> {/* Chat container with flex layout */}
+        
+        {/* Header - Fixed at top */}
+        <header className="toshl-conversation-header flex-shrink-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
           <div className="flex items-center space-x-3 flex-1">
-          <img
-            src="/logo.webp"
-            alt={STRINGS.TOSHL_LOGO_ALT}
-            className="h-8 w-8"
-            width="32"
-            height="32"
-            loading="eager"
-          />
-          <h1 className="text-xl font-bold tracking-wide">{STRINGS.CHAT_TITLE}</h1>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-              onClick={() => setIsGlobalDebugOpen(true)}
-              className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200"
-              title="View debug information for all messages"
-          >
-              <Bug size={20} />
-          </button>
-          <button
-              onClick={toggleSettings}
-              className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
-              title={STRINGS.SETTINGS_BUTTON_TITLE}
-          >
-              <Settings size={20} /> {/* Slightly smaller icon */}
-          </button>
-        </div>
-      </header>
+            <img
+              src="/logo.webp"
+              alt={STRINGS.TOSHL_LOGO_ALT}
+              className="h-8 w-8"
+              width="32"
+              height="32"
+              loading="eager"
+            />
+            <h1 className="text-xl font-bold tracking-wide">{STRINGS.CHAT_TITLE}</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+                onClick={() => setIsGlobalDebugOpen(true)}
+                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200"
+                title="View debug information for all messages"
+            >
+                <Bug size={20} />
+            </button>
+            <button
+                onClick={toggleSettings}
+                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
+                title={STRINGS.SETTINGS_BUTTON_TITLE}
+            >
+                <Settings size={20} /> {/* Slightly smaller icon */}
+            </button>
+          </div>
+        </header>
 
-      {/* Message List Area */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-btn-red/50 hover:scrollbar-thumb-btn-red/70 scrollbar-track-separator-gray/50 min-h-0"> {/* Fixed scrollbar colors and added min-h-0 */}
-        {renderProcessedMessages()} {/* Call the helper function */}
-        <div ref={messagesEndRef} className="h-1" />
-      </div>
+        {/* Message List Area - Takes remaining space */}
+        <div className="toshl-message-list flex-1 overflow-y-auto p-4 md:p-6 space-y-6 scrollbar-thin scrollbar-thumb-btn-red/50 hover:scrollbar-thumb-btn-red/70 scrollbar-track-separator-gray/50 min-h-0"> {/* Flexible message area */}
+          {renderProcessedMessages()} {/* Call the helper function */}
+          <div ref={messagesEndRef} className="h-1" />
+        </div>
 
-      {/* Input Area */}
-      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0"> {/* Back to simple input area */}
+        {/* Input Area - Fixed at bottom */}
+        <div className="toshl-message-input flex-shrink-0 relative p-3 md:p-4 bg-card-bg shadow-inner z-[5]"> {/* Fixed input area */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}
@@ -569,8 +571,10 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
           </button>
         </form>
+        </div>
+        
       </div>
-
+      
       {/* Bottom Sheet */}
       <BottomSheet
         isOpen={isBottomSheetOpen}
