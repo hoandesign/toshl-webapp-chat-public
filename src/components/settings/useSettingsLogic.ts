@@ -1,3 +1,4 @@
+import CryptoJS from 'crypto-js';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { fetchToshlSetupData, updateToshlProfile } from '../../lib/toshl';
@@ -36,6 +37,22 @@ interface UseSettingsLogicReturn {
 
 const CHAT_MESSAGES_LOCAL_STORAGE_KEY = 'chatMessages'; // Define key constant
 
+// Secret key for encryption/decryption (should be managed securely in production)
+const TOSHL_API_KEY_SECRET = 'your-strong-secret-key';
+
+// Helper functions for encryption/decryption
+function encryptApiKey(apiKey: string): string {
+    return CryptoJS.AES.encrypt(apiKey, TOSHL_API_KEY_SECRET).toString();
+}
+function decryptApiKey(ciphertext: string): string {
+    try {
+        const bytes = CryptoJS.AES.decrypt(ciphertext, TOSHL_API_KEY_SECRET);
+        return bytes.toString(CryptoJS.enc.Utf8);
+    } catch (e) {
+        return '';
+    }
+}
+
 export const useSettingsLogic = (): UseSettingsLogicReturn => {
     const [toshlApiKey, setToshlApiKey] = useState('');
     const [geminiApiKey, setGeminiApiKey] = useState('');
@@ -55,7 +72,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
 
     // Load settings from localStorage on mount
     useEffect(() => {
-        const savedToshlKey = localStorage.getItem('toshlApiKey');
+        const savedToshlKeyEncrypted = localStorage.getItem('toshlApiKey');
         const savedGeminiKey = localStorage.getItem('geminiApiKey');
         const savedCurrency = localStorage.getItem('currency');
         const savedGeminiModel = localStorage.getItem('geminiModel');
@@ -63,7 +80,10 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         const savedUseCache = localStorage.getItem('useGeminiCache'); // Load cache toggle
         const isValidSavedModel = geminiModelOptions.some(option => option.value === savedGeminiModel);
 
-        if (savedToshlKey) setToshlApiKey(savedToshlKey);
+        if (savedToshlKeyEncrypted) {
+            const decryptedKey = decryptApiKey(savedToshlKeyEncrypted);
+            setToshlApiKey(decryptedKey);
+        }
         if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
         if (savedCurrency) {
             setCurrency(savedCurrency);
@@ -103,7 +123,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
 
         // Only save locally and reload if the profile update was successful (or not needed)
         if (profileUpdateSuccess) {
-            localStorage.setItem('toshlApiKey', toshlApiKey);
+            localStorage.setItem('toshlApiKey', encryptApiKey(toshlApiKey));
             localStorage.setItem('geminiApiKey', geminiApiKey);
             localStorage.setItem('currency', currency); // Save potentially updated currency
             localStorage.setItem('geminiModel', geminiModel);
