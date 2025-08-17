@@ -93,6 +93,21 @@ Toshl WebApp Chat provides a natural language interface for interacting with you
 
 For a detailed explanation of the application's logic, refer to [logic.md](./logic.md).
 
+## SEO & Social Media
+
+The application includes comprehensive SEO and social media optimization:
+
+- **Open Graph** tags for Facebook, LinkedIn, and other platforms
+- **Twitter Cards** for enhanced Twitter sharing
+- **Structured Data** (JSON-LD) for search engines
+- **Progressive Web App** manifest for mobile installation
+- **Sitemap** and **robots.txt** for search engine crawling
+
+For detailed information, see [SEO Implementation Guide](docs/SEO_IMPLEMENTATION.md).
+
+### Testing Social Media Previews
+Visit `/test-og.html` after deployment to test how your app appears when shared on social media platforms.
+
 ## Deployment
 
 Deploy to Vercel:
@@ -102,6 +117,13 @@ Deploy to Vercel:
 3.  Vercel will automatically build and deploy the application.
 
 No environment variables are needed on Vercel as API keys are managed client-side.
+
+### Post-Deployment SEO Checklist
+- [ ] Test Open Graph preview with Facebook Sharing Debugger
+- [ ] Validate Twitter Cards with Twitter Card Validator
+- [ ] Check structured data with Google Rich Results Test
+- [ ] Verify sitemap accessibility at `/sitemap.xml`
+- [ ] Test PWA installation on mobile devices
 
 ## API Key Security
 
