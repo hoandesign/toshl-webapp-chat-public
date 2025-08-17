@@ -247,7 +247,7 @@ Output *only* a single valid JSON object based on the determined intent. **MUST 
         ```json
         {
           "action": "info",
-          "headerText": "Your expense categories include: [List derived from {{expenseCategoryList}}]"
+          "headerText": "Your expense categories include: [List derived from Expense Category List]"
         }
         ```
 *   **Example 7: Clarification Needed**
