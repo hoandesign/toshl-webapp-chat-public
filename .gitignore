@@ -22,3 +22,6 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Kiro MCP configuration (contains API keys)
+.kiro/settings/mcp.json
