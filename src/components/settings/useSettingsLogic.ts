@@ -8,8 +8,8 @@ import * as STRINGS from '../../constants/strings';
 // Define all model options (copied from SettingsPage)
 export const geminiModelOptions = [
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Advanced reasoning)' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Next-gen speed & reasoning)' },
-    { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (Cost-effective & low latency)' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Old fast model)' },
+    { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (Old cheap and fast model)' },
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Adaptive thinking, cost efficiency)' },
     { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
 ];
@@ -93,7 +93,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         if (savedGeminiModel && isValidSavedModel) {
             setGeminiModel(savedGeminiModel);
         } else {
-            setGeminiModel('gemini-2.0-flash'); // Fallback to default if invalid/not set
+            setGeminiModel('gemini-2.5-flash'); // Fallback to default if invalid/not set
         }
     }, []); // Empty dependency array ensures this runs only once on mount
 
@@ -128,7 +128,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
                 localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
                 localStorage.setItem('useGeminiCache', JSON.stringify(useCache)); // Save cache toggle
                 toast.success(STRINGS.SETTINGS_SAVED_SUCCESS); // Use toast for general save success
-                
+
                 // Instead of reloading, just update the initial currency ref to prevent re-updating
                 initialCurrencyRef.current = currency;
             } catch (error) {

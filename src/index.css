@@ -205,6 +205,11 @@
   overflow: hidden;
 }
 
+/* CSS custom property for JavaScript fallback */
+:root {
+  --viewport-height: 100vh;
+}
+
 /* Prevent any unwanted spacing or touch areas */
 body, html {
   touch-action: manipulation;
@@ -229,6 +234,7 @@ body, html {
 .input-area {
   position: relative;
   flex-shrink: 0;
+  border-top: 1px solid theme('colors.separator-gray');
   background-color: theme('colors.card-bg');
 }
 
@@ -252,11 +258,40 @@ body, html {
   }
 }
 
-/* Prevent bounce scrolling on iOS */
+/* Prevent bounce scrolling on iOS and improve mobile experience */
 .chat-container,
 .input-area {
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: none;
+}
+
+/* Ensure proper stacking and positioning for mobile navigation bars */
+@media (max-width: 768px) {
+  /* Prevent content from being hidden behind system UI */
+  .chat-container {
+    /* Ensure content respects safe areas */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  
+  /* Input area positioning improvements */
+  .input-area {
+    /* Ensure it's always above navigation bars */
+    position: relative;
+    z-index: 1000;
+    
+    /* Prevent keyboard from pushing content up too much */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Handle virtual keyboard appearance */
+  @media (max-height: 500px) {
+    .input-area {
+      /* Reduce padding when keyboard is likely visible */
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+  }
 }
 
 /* Additional mobile viewport fixes */
@@ -267,7 +302,7 @@ body, html {
   }
 }
 
-/* Ensure proper touch targets on mobile */
+/* Ensure proper touch targets on mobile with navigation bar considerations */
 @media (max-width: 768px) {
   .input-area button {
     min-height: 44px;
@@ -281,105 +316,97 @@ body, html {
     min-height: 44px;
   }
   
-  /* Ensure form elements stay aligned */
+  /* Ensure form elements stay centered */
   .input-area form {
-    align-items: end;
+    align-items: center;
   }
   
-  /* Keep icons centered with text input */
-  .input-area form > button {
-    margin-bottom: 2px; /* Fine-tune alignment with textarea */
+  /* Additional spacing for devices with prominent navigation bars */
+  @media (max-height: 700px) {
+    .input-area {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    }
+  }
+  
+  /* Extra spacing for very small screens (older Android phones) */
+  @media (max-height: 600px) {
+    .input-area {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+    }
+  }
+  
+  /* Landscape orientation handling */
+  @media (orientation: landscape) {
+    .input-area {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
   }
 }
 
-/* Mobile chatbar with proper Android navigation bar handling */
-.mobile-chatbar-container {
-  position: relative;
-  background-color: theme('colors.card-bg');
-  border-top: 1px solid theme('colors.separator-gray');
-}
-
-/* The actual input area with icons - keeps normal padding */
-.mobile-chatbar-content {
-  position: relative;
-  z-index: 10;
-  background-color: theme('colors.card-bg');
-}
-
-/* Spacer div that pushes the chatbar above Android navigation bar */
-.mobile-bottom-spacer {
-  height: 0;
-  background-color: theme('colors.card-bg');
-  pointer-events: none;
-  flex-shrink: 0;
-  transition: height 0.2s ease-in-out; /* Smooth transition when height changes */
-}
-
-/* Mobile-specific styling */
+/* Mobile viewport and safe area handling with Android navigation bar support */
 @media (max-width: 768px) {
-  /* Add bottom spacer for Android navigation bar */
-  .mobile-bottom-spacer {
-    /* Use a combination of safe area insets and minimum spacing - increased base height */
-    height: max(env(safe-area-inset-bottom, 0), 32px);
-    background-color: theme('colors.card-bg');
-  }
-  
-  /* Ensure chatbar content maintains proper spacing */
-  .mobile-chatbar-content {
-    padding-bottom: 0.75rem; /* 12px - normal padding */
-  }
-  
-  /* Prevent content from being hidden behind mobile browser UI */
+  /* Modern solution using dynamic viewport height */
   .chat-container {
-    height: 100vh;
-    height: 100dvh; /* Dynamic viewport height for modern browsers */
+    height: 100dvh; /* Dynamic viewport height - adjusts automatically */
+    height: 100vh; /* Fallback for older browsers */
   }
   
-  /* Fallback for older browsers */
-  @supports not (height: 100dvh) {
+  /* Input area with comprehensive Android navigation bar handling */
+  .input-area {
+    /* Safe area insets for devices that support it */
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    
+    /* Ensure proper positioning above navigation bars */
+    position: relative;
+    z-index: 10;
+  }
+  
+  /* Progressive enhancement for modern browsers with dvh support */
+  @supports (height: 100dvh) {
+    .chat-container {
+      height: 100dvh;
+    }
+  }
+  
+  /* iOS Safari specific fix for older versions */
+  @supports (-webkit-touch-callout: none) and (not (height: 100dvh)) {
+    .chat-container {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Android Chrome specific handling */
+  @supports (height: -webkit-fill-available) and (not (height: 100dvh)) {
+    .chat-container {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Fallback for very old browsers using JavaScript-set custom properties */
+  @supports not (height: 100dvh) and not (height: -webkit-fill-available) {
     .chat-container {
       height: calc(var(--vh, 1vh) * 100);
+      height: var(--viewport-height, 100vh);
     }
   }
   
-  /* Additional spacing for devices with larger navigation bars */
-  @media (max-height: 700px) {
-    .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), 36px);
-    }
+  /* Additional fallback class for JavaScript-enhanced elements */
+  .js-viewport-height {
+    height: var(--viewport-height, 100vh);
   }
   
-  /* Specific handling for Android devices with gesture navigation */
-  @media (max-width: 768px) and (orientation: portrait) {
-    .mobile-bottom-spacer {
-      /* Increase minimum height for portrait mode where nav bars are more prominent */
-      height: max(env(safe-area-inset-bottom, 0), 36px);
-    }
-  }
-  
-  /* For very small screens (like older Android phones) */
-  @media (max-height: 600px) {
-    .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), 40px);
-    }
-  }
-  
-  /* For devices with very prominent navigation bars (like some Android phones) */
-  @supports (padding: max(0px)) {
-    .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), max(32px, env(keyboard-inset-height, 0)));
-    }
-  }
-}
-
-/* Desktop - no bottom spacer needed */
-@media (min-width: 769px) {
-  .mobile-bottom-spacer {
-    display: none;
-  }
-  
-  .mobile-chatbar-content {
-    padding-bottom: 1rem; /* Normal desktop padding */
+  /* Debug utility classes (remove in production) */
+  .debug-viewport-info::after {
+    content: 'VH: ' var(--vh, 'N/A') ' | DVH: ' attr(data-dvh) ' | Fill: ' attr(data-fill);
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    z-index: 9999;
+    border-radius: 4px;
   }
 }
 

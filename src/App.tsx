@@ -3,6 +3,7 @@ import { Toaster } from 'react-hot-toast'; // Import Toaster
 import LoadingFallback from './components/LoadingFallback';
 import './index.css'; // Ensure Tailwind styles are imported
 import { SpeedInsights } from '@vercel/speed-insights/react';
+import { initializeViewportHeight, cleanupViewportHeight } from './utils/viewport';
 
 // Lazy load components for code splitting
 const ChatInterface = lazy(() => import('./components/ChatInterface'));
@@ -25,6 +26,14 @@ function App() {
     if (savedHideNumbers) {
       setHideNumbers(JSON.parse(savedHideNumbers));
     }
+
+    // Initialize viewport height handling for mobile navigation bars
+    initializeViewportHeight();
+
+    // Cleanup on unmount
+    return () => {
+      cleanupViewportHeight();
+    };
   }, []);
 
   const toggleSettings = useCallback(() => {

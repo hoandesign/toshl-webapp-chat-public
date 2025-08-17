@@ -438,8 +438,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
       </div>
 
       {/* Input Area */}
-      <div className="mobile-chatbar-container flex-shrink-0">
-        <div className="mobile-chatbar-content input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5]"> {/* Removed safe-area-bottom */}
+      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0"> {/* Back to simple input area */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}
@@ -484,12 +483,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             </div>
           </div>
         )}
-        <form onSubmit={handleFormSubmit} className="flex items-end space-x-2 md:space-x-3">
+        <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
           <button
             type="button"
             onClick={() => handleFetchDateRange(undefined, undefined, 7)}
             disabled={isLoadingHistory || isLoading || !!isDeleting}
-            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
+            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
             title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
           >
             {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />}
@@ -498,7 +497,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             type="button"
             onClick={() => imageInputRef.current?.click()}
             disabled={isLoading || isLoadingHistory || !!isDeleting}
-            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait self-end mb-1"
+            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
             title="Upload photo"
           >
             <ImagePlus size={20} />
@@ -564,15 +563,12 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           <button
             type="submit"
             disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
-            className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red self-end mb-0.5"
+            className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red flex items-center justify-center"
             aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
           >
             {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
           </button>
         </form>
-        </div>
-        {/* Mobile bottom spacer to push chatbar above Android navigation bar */}
-        <div className="mobile-bottom-spacer"></div>
       </div>
 
       {/* Bottom Sheet */}
