@@ -5,7 +5,6 @@ import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import AlertTriangle from 'lucide-react/dist/esm/icons/alert-triangle';
 import Pencil from 'lucide-react/dist/esm/icons/pencil';
-import MessageCircleQuestion from 'lucide-react/dist/esm/icons/message-circle-question';
 import Info from 'lucide-react/dist/esm/icons/info';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
 import CalendarDays from 'lucide-react/dist/esm/icons/calendar-days';
@@ -387,6 +386,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         const hasAudio = !!message.audio;
         const hasAudioClass = hasAudio ? 'has-audio' : '';
 
+        // Remove dynamic width classes - use natural width for all messages
         return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass, hasAudioClass].filter(Boolean).join(' ');
     };
 
@@ -558,10 +558,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             break;
         }
         case 'history_header': {
-            // History header - match system_info style with icon
+            // History header - clean text without icon
             content = (
-                <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
-                    <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />
+                <div className={`${getBubbleClasses(msg)} relative`}>
                     <p className="text-sm">{msg.text}</p>
                 </div>
             );
@@ -578,14 +577,10 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             break;
         }
         case 'system_info': {
-            const isClarification = msg.text?.startsWith(STRINGS.CLARIFICATION_MESSAGE_PREFIX);
-            const icon = isClarification ? <MessageCircleQuestion size={16} className="text-yellow-600 mt-0.5 flex-shrink-0" /> : <Info size={16} className="text-blue-500 mt-0.5 flex-shrink-0" />;
-
-            // System info/clarification - allow copy/delete - Themed text
+            // System info/clarification - clean text without icon
             content = (
-                <div className={`${getBubbleClasses(msg)} flex items-start space-x-2 relative`}>
-                    {icon}
-                    <div className="prose prose-sm break-words">
+                <div className={`${getBubbleClasses(msg)} relative`}>
+                    <div className="prose-chat">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{msg.text || ''}</ReactMarkdown>
                     </div>
                 </div>

@@ -25,6 +25,135 @@
   }
 }
 @tailwind components;
+
+@layer components {
+  /* Custom prose styling for chat messages to match regular message spacing */
+  .prose-chat {
+    @apply prose prose-sm break-words;
+  }
+  
+  /* Paragraph spacing to match regular chat messages */
+  .prose-chat p {
+    @apply text-sm my-2 leading-5;
+  }
+  
+  .prose-chat p:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat p:last-child {
+    @apply mb-0;
+  }
+  
+  /* List spacing - compact for chat */
+  .prose-chat ul, .prose-chat ol {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat ul:first-child, .prose-chat ol:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat ul:last-child, .prose-chat ol:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat li {
+    @apply text-sm my-0.5;
+  }
+  
+  /* Table spacing - compact for chat */
+  .prose-chat table {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat table:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat table:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat th, .prose-chat td {
+    @apply text-sm py-1 px-2;
+  }
+  
+  .prose-chat th {
+    @apply font-semibold;
+  }
+  
+  /* Heading spacing */
+  .prose-chat h1, .prose-chat h2, .prose-chat h3, .prose-chat h4, .prose-chat h5, .prose-chat h6 {
+    @apply text-sm font-semibold my-2;
+  }
+  
+  .prose-chat h1:first-child, .prose-chat h2:first-child, .prose-chat h3:first-child, 
+  .prose-chat h4:first-child, .prose-chat h5:first-child, .prose-chat h6:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat h1:last-child, .prose-chat h2:last-child, .prose-chat h3:last-child, 
+  .prose-chat h4:last-child, .prose-chat h5:last-child, .prose-chat h6:last-child {
+    @apply mb-0;
+  }
+  
+  /* Code and blockquote spacing */
+  .prose-chat code {
+    @apply text-xs;
+  }
+  
+  .prose-chat pre {
+    @apply my-2 text-xs;
+  }
+  
+  .prose-chat pre:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat pre:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat blockquote {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat blockquote:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat blockquote:last-child {
+    @apply mb-0;
+  }
+  
+  /* Horizontal rule spacing */
+  .prose-chat hr {
+    @apply my-2;
+  }
+  
+  .prose-chat hr:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat hr:last-child {
+    @apply mb-0;
+  }
+  
+  /* Image spacing */
+  .prose-chat img {
+    @apply my-2;
+  }
+  
+  .prose-chat img:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat img:last-child {
+    @apply mb-0;
+  }
+}
+
 @tailwind utilities;
 
 /* Basic slide-up animation for bottom sheet */
@@ -47,12 +176,19 @@
   animation: fade-in-dimmer 0.3s ease-out forwards;
 }
 
-/* iOS iMessage-style bubble chat */
+/* Chatscope-inspired bubble chat with natural width handling */
 .message-bubble {
-  @apply relative max-w-[75%] px-3 py-2 break-words;
+  @apply relative px-3 py-2;
   border-radius: 18px;
   line-height: 1.25;
-  word-wrap: break-word;
+  /* Natural content-based width - works with flex container */
+  display: block;
+  width: fit-content;
+  /* Proper text wrapping following chatscope approach */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word; /* break-word value is deprecated, but necessary for Safari */
+  /* Remove artificial width constraints - let content determine width */
 }
 
 .message-bubble::before,
@@ -65,9 +201,8 @@
 
 /* User messages (right side, using Toshl brand colors) */
 .message-bubble.from-user {
-  @apply bg-navigation-bg text-navigation-text ml-auto;
-  align-self: flex-end;
-  min-width: 120px; /* Increased minimum width for user messages */
+  @apply bg-navigation-bg text-navigation-text;
+  /* Natural width with flex container alignment */
 }
 
 .message-bubble.from-user::before {
@@ -88,7 +223,7 @@
 /* Bot/System messages (left side, using Toshl brand colors) */
 .message-bubble.from-bot {
   @apply bg-card-bg text-black-text;
-  align-self: flex-start;
+  /* Natural width with flex container alignment */
 }
 
 .message-bubble.from-bot::before {
@@ -181,6 +316,8 @@
 /* Emoji-only messages */
 .message-bubble.emoji-only {
   @apply bg-transparent text-4xl p-1;
+  width: auto;
+  min-width: auto;
 }
 
 .message-bubble.emoji-only::before,
@@ -190,13 +327,17 @@
 
 /* Audio-only messages */
 .message-bubble.audio-only {
-  @apply min-w-[180px];
+  min-width: 180px;
+  width: auto;
 }
 
 /* Messages with audio content (with or without text) */
 .message-bubble.has-audio {
-  @apply min-w-[180px];
+  min-width: 180px;
+  width: auto;
 }
+
+/* Remove artificial width constraints - let all messages use natural width */
 
 /* Fix mobile viewport issues and prevent empty touch areas */
 .App {
@@ -411,6 +552,12 @@ body, html {
     z-index: 10;
   }
   
+  /* Mobile-optimized chat bubbles */
+  .message-bubble {
+    font-size: 16px; /* Ensure minimum 16px for iOS zoom prevention */
+    /* Remove width constraints - use natural width on mobile too */
+  }
+  
   /* Progressive enhancement for modern browsers with dvh support */
   @supports (height: 100dvh) {
     .toshl-main-container {
@@ -459,6 +606,8 @@ body, html {
     border-radius: 4px;
   }
 }
+
+/* Remove all responsive width constraints - use natural width on all screen sizes */
 
 /* Safe area utility class - deprecated, keeping for compatibility */
 .safe-area-bottom {
