@@ -257,7 +257,7 @@ const DebugModal: React.FC<DebugModalProps> = ({ isOpen, onClose, debugInfo }) =
           {activeTab === 'toshl' && (
             <div className="space-y-4">
               {debugInfo.toshlRequests && debugInfo.toshlRequests.length > 0 ? (
-                debugInfo.toshlRequests.map((request: any, index: number) => (
+                debugInfo.toshlRequests.map((request, index) => (
                   <div key={index} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
@@ -268,14 +268,14 @@ const DebugModal: React.FC<DebugModalProps> = ({ isOpen, onClose, debugInfo }) =
                           request.method === 'DELETE' ? 'bg-red-100 text-red-800' :
                           'bg-gray-100 text-gray-800'
                         }`}>
-                          {String(request.method)}
+                          {request.method}
                         </span>
                         <h3 className="font-medium text-gray-900">
-                          {String(request.endpoint)}
+                          {request.endpoint}
                         </h3>
                         {request.duration && (
                           <span className="text-xs text-gray-500">
-                            ({String(request.duration)}ms)
+                            ({request.duration}ms)
                           </span>
                         )}
                       </div>

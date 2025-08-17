@@ -120,7 +120,7 @@ export interface DebugInfo {
     endpoint: string;
     method: string;
     payload?: Record<string, unknown>;
-    response?: Record<string, unknown>;
+    response?: unknown;
     error?: string;
     httpStatus?: number;
     duration?: number;

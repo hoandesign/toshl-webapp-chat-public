@@ -7,7 +7,7 @@ import { GeminiShowFilters } from '../../lib/gemini/types';
 import { handleFetchEntriesApi, handleProcessUserRequestApi, handleDeleteEntryApi } from './apiHandler';
 import { getDecryptedApiKey } from '../../utils/encryption';
 import * as STRINGS from '../../constants/strings';
-import { EntryCardData, Message, MentionSuggestion, AccountBalanceCardData } from './types'; // Added AccountBalanceCardData
+import { EntryCardData, Message, MentionSuggestion, AccountBalanceCardData, DebugInfo } from './types'; // Added AccountBalanceCardData
 // Removed vietnamese-search import
 
 // Define the return type of the hook, adding retry function and mention logic
@@ -1000,9 +1000,9 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
                 const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_ERROR;
                 
                 // Try to extract debug info from the error if it's available
-                let debugInfo: any = undefined;
+                let debugInfo: DebugInfo | undefined = undefined;
                 if (error && typeof error === 'object' && 'debugInfo' in error) {
-                    debugInfo = (error as any).debugInfo;
+                    debugInfo = (error as { debugInfo: DebugInfo }).debugInfo;
                 }
                 
                 // Mark error message with 'error' status and include debug info if available
@@ -1303,9 +1303,9 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_ERROR;
             
             // Try to extract debug info from the error if it's available
-            let debugInfo: any = undefined;
+            let debugInfo: DebugInfo | undefined = undefined;
             if (error && typeof error === 'object' && 'debugInfo' in error) {
-                debugInfo = (error as any).debugInfo;
+                debugInfo = (error as { debugInfo: DebugInfo }).debugInfo;
             }
             
             // Update the original message status to 'error'

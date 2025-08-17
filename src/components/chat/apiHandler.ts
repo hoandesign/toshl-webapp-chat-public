@@ -573,7 +573,7 @@ export const handleProcessUserRequestApi = async (
         
         // Create an enhanced error that includes debug info
         const enhancedError = new Error(error instanceof Error ? error.message : String(error));
-        (enhancedError as any).debugInfo = debugInfo;
+        (enhancedError as unknown as { debugInfo: DebugInfo | undefined }).debugInfo = debugInfo;
         
         throw enhancedError;
     }

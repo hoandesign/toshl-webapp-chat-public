@@ -39,28 +39,28 @@ class Logger {
     return `${timestamp} [${level.toUpperCase()}] ${componentPrefix}${message}`;
   }
 
-  debug(message: string, data?: any, component?: string): void {
+  debug(message: string, data?: unknown, component?: string): void {
     if (this.shouldLog('debug')) {
       const formatted = this.formatMessage('debug', message, component);
       console.log(formatted, data || '');
     }
   }
 
-  info(message: string, data?: any, component?: string): void {
+  info(message: string, data?: unknown, component?: string): void {
     if (this.shouldLog('info')) {
       const formatted = this.formatMessage('info', message, component);
       console.info(formatted, data || '');
     }
   }
 
-  warn(message: string, data?: any, component?: string): void {
+  warn(message: string, data?: unknown, component?: string): void {
     if (this.shouldLog('warn')) {
       const formatted = this.formatMessage('warn', message, component);
       console.warn(formatted, data || '');
     }
   }
 
-  error(message: string, error?: any, component?: string): void {
+  error(message: string, error?: unknown, component?: string): void {
     if (this.shouldLog('error')) {
       const formatted = this.formatMessage('error', message, component);
       console.error(formatted, error || '');
@@ -77,7 +77,7 @@ class Logger {
     this.debug(`API Response: ${method} ${endpoint} - ${status}${durationText}`, undefined, component);
   }
 
-  apiError(method: string, endpoint: string, error: any, component?: string): void {
+  apiError(method: string, endpoint: string, error: unknown, component?: string): void {
     this.error(`API Error: ${method} ${endpoint}`, error, component);
   }
 
@@ -105,5 +105,5 @@ export const logApiRequest = (method: string, endpoint: string, component: strin
 export const logApiResponse = (method: string, endpoint: string, status: number, duration?: number, component?: string) => 
   logger.apiResponse(method, endpoint, status, duration, component);
 
-export const logApiError = (method: string, endpoint: string, error: any, component?: string) => 
+export const logApiError = (method: string, endpoint: string, error: unknown, component?: string) => 
   logger.apiError(method, endpoint, error, component);

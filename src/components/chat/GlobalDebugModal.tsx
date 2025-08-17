@@ -166,7 +166,7 @@ const GlobalDebugModal: React.FC<GlobalDebugModalProps> = ({ isOpen, onClose, me
                   <div className="mb-6">
                     <h4 className="font-medium text-gray-900 mb-2">Toshl API Calls ({selectedMessage.debugInfo?.toshlRequests?.length})</h4>
                     <div className="space-y-3">
-                      {selectedMessage.debugInfo?.toshlRequests?.map((request: any, index: number) => (
+                      {selectedMessage.debugInfo?.toshlRequests?.map((request, index) => (
                         <div key={index} className="border rounded-lg p-3 bg-gray-50">
                           <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
@@ -177,14 +177,14 @@ const GlobalDebugModal: React.FC<GlobalDebugModalProps> = ({ isOpen, onClose, me
                                 request.method === 'DELETE' ? 'bg-red-100 text-red-800' :
                                 'bg-gray-100 text-gray-800'
                               }`}>
-                                {String(request.method)}
+                                {request.method}
                               </span>
                               <span className="font-medium text-sm">
-                                {String(request.endpoint)}
+                                {request.endpoint}
                               </span>
                               {request.duration && (
                                 <span className="text-xs text-gray-500">
-                                  ({String(request.duration)}ms)
+                                  ({request.duration}ms)
                                 </span>
                               )}
                             </div>
