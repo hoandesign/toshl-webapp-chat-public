@@ -1,3 +1,4 @@
+import { getDecryptedApiKey } from '../../utils/encryption';
 import {
     ToshlAccount, ToshlCategory, ToshlTag, ToshlBudget, // Added ToshlBudget
     addToshlEntry, fetchEntries, deleteToshlEntry, editToshlEntry, fetchEntryById, ToshlEntry,
@@ -20,13 +21,17 @@ import { EntryCardData, Message, AccountBalanceCardData, DebugInfo } from './typ
 
 // --- Helper to get required data from localStorage ---
 const getRequiredApiData = () => {
-    const toshlApiKey = localStorage.getItem('toshlApiKey');
-    const geminiApiKey = localStorage.getItem('geminiApiKey');
     const currency = localStorage.getItem('currency') || STRINGS.DEFAULT_CURRENCY_VALUE;
     const geminiModel = localStorage.getItem('geminiModel') || STRINGS.DEFAULT_GEMINI_MODEL_VALUE;
     const toshlDataFetched = localStorage.getItem('toshlDataFetched');
 
-    if (!toshlApiKey || !geminiApiKey) throw new Error(STRINGS.API_KEYS_NOT_CONFIGURED);
+    // Decrypt the API keys
+    const toshlApiKey = getDecryptedApiKey('toshlApiKey');
+    const geminiApiKey = getDecryptedApiKey('geminiApiKey');
+    
+    if (!toshlApiKey || !geminiApiKey) {
+        throw new Error(STRINGS.API_KEYS_NOT_CONFIGURED);
+    }
     if (!toshlDataFetched) throw new Error(STRINGS.TOSHL_DATA_NOT_FETCHED);
 
     const accountsStr = localStorage.getItem('toshlAccounts');

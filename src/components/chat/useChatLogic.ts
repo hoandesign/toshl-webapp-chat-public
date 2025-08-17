@@ -5,6 +5,7 @@ import { ToshlAccount, ToshlCategory, ToshlTag } from '../../lib/toshl';
 import { GeminiShowFilters } from '../../lib/gemini/types';
 // Import the new API handlers
 import { handleFetchEntriesApi, handleProcessUserRequestApi, handleDeleteEntryApi } from './apiHandler';
+import { getDecryptedApiKey } from '../../utils/encryption';
 import * as STRINGS from '../../constants/strings';
 import { EntryCardData, Message, MentionSuggestion, AccountBalanceCardData } from './types'; // Added AccountBalanceCardData
 // Removed vietnamese-search import
@@ -790,7 +791,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
 
         try {
             // Get API key and data needed for the API call (still needed here to pass to handler)
-            const toshlApiKey = localStorage.getItem('toshlApiKey');
+            const toshlApiKey = getDecryptedApiKey('toshlApiKey');
             if (!toshlApiKey) throw new Error(STRINGS.TOSHL_API_KEY_NOT_CONFIGURED);
 
             // Fetch categories/tags locally to format results (API handler doesn't need them for fetch)

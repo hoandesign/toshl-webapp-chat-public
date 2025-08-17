@@ -1,9 +1,8 @@
-import bcrypt from 'bcryptjs';
-import CryptoJS from 'crypto-js';
 import { useState, useEffect, useCallback, useRef } from 'react';
 import toast from 'react-hot-toast';
 import { fetchToshlSetupData, updateToshlProfile } from '../../lib/toshl';
 import { clearGeminiPromptCache } from '../../lib/gemini'; // Import the cache clearing function
+import { encryptApiKey, decryptApiKey } from '../../utils/encryption';
 import * as STRINGS from '../../constants/strings';
 
 // Define all model options (copied from SettingsPage)
@@ -38,21 +37,6 @@ interface UseSettingsLogicReturn {
 
 const CHAT_MESSAGES_LOCAL_STORAGE_KEY = 'chatMessages'; // Define key constant
 
-// Secret key for encryption/decryption (should be managed securely in production)
-const TOSHL_API_KEY_SECRET = 'your-strong-secret-key';
-
-// Helper functions for hashing and verifying API keys using bcryptjs
-function encryptApiKey(apiKey: string): string {
-    // Use bcryptjs to hash the API key with a reasonable cost factor (e.g., 12)
-    const salt = bcrypt.genSaltSync(12);
-    return bcrypt.hashSync(apiKey, salt);
-}
-
-function decryptApiKey(ciphertext: string, apiKey: string): boolean {
-    // Compare the provided apiKey with the stored hash
-    return bcrypt.compareSync(apiKey, ciphertext);
-}
-
 export const useSettingsLogic = (): UseSettingsLogicReturn => {
     const [toshlApiKey, setToshlApiKey] = useState('');
     const [geminiApiKey, setGeminiApiKey] = useState('');
@@ -81,12 +65,22 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         const isValidSavedModel = geminiModelOptions.some(option => option.value === savedGeminiModel);
 
         if (savedToshlKeyEncrypted) {
-            const decryptedKey = decryptApiKey(savedToshlKeyEncrypted);
-            setToshlApiKey(decryptedKey);
+            try {
+                const decryptedKey = decryptApiKey(savedToshlKeyEncrypted);
+                setToshlApiKey(decryptedKey);
+            } catch (error) {
+                console.warn('Failed to decrypt Toshl API key, clearing stored key:', error);
+                localStorage.removeItem('toshlApiKey');
+            }
         }
         if (savedGeminiKeyEncrypted) {
-            const decryptedGeminiKey = decryptApiKey(savedGeminiKeyEncrypted);
-            setGeminiApiKey(decryptedGeminiKey);
+            try {
+                const decryptedGeminiKey = decryptApiKey(savedGeminiKeyEncrypted);
+                setGeminiApiKey(decryptedGeminiKey);
+            } catch (error) {
+                console.warn('Failed to decrypt Gemini API key, clearing stored key:', error);
+                localStorage.removeItem('geminiApiKey');
+            }
         }
         if (savedCurrency) {
             setCurrency(savedCurrency);
@@ -124,17 +118,23 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
             }
         }
 
-        // Only save locally and reload if the profile update was successful (or not needed)
+        // Only save locally if the profile update was successful (or not needed)
         if (profileUpdateSuccess) {
-            localStorage.setItem('toshlApiKey', encryptApiKey(toshlApiKey));
-            localStorage.setItem('geminiApiKey', encryptApiKey(geminiApiKey));
-            localStorage.setItem('currency', currency); // Save potentially updated currency
-            localStorage.setItem('geminiModel', geminiModel);
-            localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
-            localStorage.setItem('useGeminiCache', JSON.stringify(useCache)); // Save cache toggle
-            toast.success(STRINGS.SETTINGS_SAVED_SUCCESS); // Use toast for general save success
-            // Consider delaying reload slightly to allow toast to be seen
-            setTimeout(() => window.location.reload(), 1000); // Refresh the page after 1s
+            try {
+                localStorage.setItem('toshlApiKey', encryptApiKey(toshlApiKey));
+                localStorage.setItem('geminiApiKey', encryptApiKey(geminiApiKey));
+                localStorage.setItem('currency', currency); // Save potentially updated currency
+                localStorage.setItem('geminiModel', geminiModel);
+                localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
+                localStorage.setItem('useGeminiCache', JSON.stringify(useCache)); // Save cache toggle
+                toast.success(STRINGS.SETTINGS_SAVED_SUCCESS); // Use toast for general save success
+                
+                // Instead of reloading, just update the initial currency ref to prevent re-updating
+                initialCurrencyRef.current = currency;
+            } catch (error) {
+                console.error('Failed to save settings:', error);
+                toast.error('Failed to save settings. Please try again.');
+            }
         }
 
         setIsSaving(false);

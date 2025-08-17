@@ -79,7 +79,7 @@ export const NO_ENTRIES_TO_DISPLAY = "No entries to display.";
 export const NO_ACCOUNTS_TO_DISPLAY = "No accounts to display."; // Added
 
 // useChatLogic Hook
-export const INITIAL_GREETING = "Hello! How can I help you log your expenses today?";
+export const INITIAL_GREETING = "Hi! How can I help you today 🫡?";
 export const THINKING = "Thinking...";
 export const TOSHL_API_KEY_NOT_CONFIGURED = "Toshl API key not configured.";
 export const API_KEYS_NOT_CONFIGURED = "API keys not configured. Please go to Settings.";
