@@ -2,7 +2,7 @@ import { ToshlAccount, ToshlCategory, ToshlTag } from '../toshl';
 import { GeminiShowFilters } from './types'; // Import types from the same directory - Removed GeminiChatMessage
 import * as STRINGS from '../../constants/strings'; // Import constants
 // Import the prompt template as a raw string
-import promptTemplateRaw from '../gemini_prompt.txt?raw';
+import promptTemplateRaw from '../gemini_prompt.md?raw';
 
 /**
  * Generates a prompt for Gemini to extract Toshl entry details from user text.
