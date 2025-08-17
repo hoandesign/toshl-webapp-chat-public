@@ -229,7 +229,6 @@ body, html {
 .input-area {
   position: relative;
   flex-shrink: 0;
-  border-top: 1px solid theme('colors.separator-gray');
   background-color: theme('colors.card-bg');
 }
 
@@ -273,22 +272,61 @@ body, html {
   .input-area button {
     min-height: 44px;
     min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   
   .input-area textarea {
     min-height: 44px;
   }
+  
+  /* Ensure form elements stay aligned */
+  .input-area form {
+    align-items: end;
+  }
+  
+  /* Keep icons centered with text input */
+  .input-area form > button {
+    margin-bottom: 2px; /* Fine-tune alignment with textarea */
+  }
 }
 
-/* Safe area utility class */
-.safe-area-bottom {
-  padding-bottom: env(safe-area-inset-bottom, 0);
+/* Mobile chatbar with proper Android navigation bar handling */
+.mobile-chatbar-container {
+  position: relative;
+  background-color: theme('colors.card-bg');
+  border-top: 1px solid theme('colors.separator-gray');
 }
 
-/* Enhanced mobile safe area handling */
+/* The actual input area with icons - keeps normal padding */
+.mobile-chatbar-content {
+  position: relative;
+  z-index: 10;
+  background-color: theme('colors.card-bg');
+}
+
+/* Spacer div that pushes the chatbar above Android navigation bar */
+.mobile-bottom-spacer {
+  height: 0;
+  background-color: theme('colors.card-bg');
+  pointer-events: none;
+  flex-shrink: 0;
+  transition: height 0.2s ease-in-out; /* Smooth transition when height changes */
+}
+
+/* Mobile-specific styling */
 @media (max-width: 768px) {
-  .safe-area-bottom {
-    padding-bottom: max(env(safe-area-inset-bottom, 0), 1rem);
+  /* Add bottom spacer for Android navigation bar */
+  .mobile-bottom-spacer {
+    /* Use a combination of safe area insets and minimum spacing */
+    height: max(env(safe-area-inset-bottom, 0), 20px);
+    background-color: theme('colors.card-bg');
+  }
+  
+  /* Ensure chatbar content maintains proper spacing */
+  .mobile-chatbar-content {
+    padding-bottom: 0.75rem; /* 12px - normal padding */
   }
   
   /* Prevent content from being hidden behind mobile browser UI */
@@ -303,18 +341,49 @@ body, html {
       height: calc(var(--vh, 1vh) * 100);
     }
   }
-}
-
-/* Ensure proper spacing on mobile devices */
-@media (max-width: 768px) {
-  .input-area {
-    padding-bottom: max(env(safe-area-inset-bottom, 0), 1rem);
-  }
   
-  /* Additional spacing for very small screens */
+  /* Additional spacing for devices with larger navigation bars */
   @media (max-height: 700px) {
-    .input-area {
-      padding-bottom: max(env(safe-area-inset-bottom, 0), 1.5rem);
+    .mobile-bottom-spacer {
+      height: max(env(safe-area-inset-bottom, 0), 24px);
     }
   }
+  
+  /* Specific handling for Android devices with gesture navigation */
+  @media (max-width: 768px) and (orientation: portrait) {
+    .mobile-bottom-spacer {
+      /* Increase minimum height for portrait mode where nav bars are more prominent */
+      height: max(env(safe-area-inset-bottom, 0), 24px);
+    }
+  }
+  
+  /* For very small screens (like older Android phones) */
+  @media (max-height: 600px) {
+    .mobile-bottom-spacer {
+      height: max(env(safe-area-inset-bottom, 0), 28px);
+    }
+  }
+  
+  /* For devices with very prominent navigation bars (like some Android phones) */
+  @supports (padding: max(0px)) {
+    .mobile-bottom-spacer {
+      height: max(env(safe-area-inset-bottom, 0), max(20px, env(keyboard-inset-height, 0)));
+    }
+  }
+}
+
+/* Desktop - no bottom spacer needed */
+@media (min-width: 769px) {
+  .mobile-bottom-spacer {
+    display: none;
+  }
+  
+  .mobile-chatbar-content {
+    padding-bottom: 1rem; /* Normal desktop padding */
+  }
+}
+
+/* Safe area utility class - deprecated, keeping for compatibility */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }

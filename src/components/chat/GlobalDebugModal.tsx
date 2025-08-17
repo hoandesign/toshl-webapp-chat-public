@@ -237,10 +237,56 @@ const GlobalDebugModal: React.FC<GlobalDebugModalProps> = ({ isOpen, onClose, me
                   </div>
                 )}
 
-                {/* Errors */}
+                {/* Gemini Errors */}
+                {selectedMessage.debugInfo?.geminiErrors && selectedMessage.debugInfo.geminiErrors.length > 0 && (
+                  <div className="mb-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-900">Gemini Errors ({selectedMessage.debugInfo.geminiErrors.length})</h4>
+                      <button
+                        onClick={() => handleCopy(formatJSON(selectedMessage.debugInfo?.geminiErrors), 'Gemini Errors')}
+                        className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                      >
+                        {copySuccess === 'Gemini Errors' ? <CheckCircle size={12} /> : <Copy size={12} />}
+                        Copy
+                      </button>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedMessage.debugInfo.geminiErrors.map((error, index) => (
+                        <div key={index} className={`p-3 rounded border ${
+                          error.type === 'api_error' ? 'bg-red-50 border-red-200' :
+                          error.type === 'parse_error' ? 'bg-orange-50 border-orange-200' :
+                          error.type === 'validation_error' ? 'bg-yellow-50 border-yellow-200' :
+                          'bg-gray-50 border-gray-200'
+                        }`}>
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`px-2 py-1 text-xs font-medium rounded ${
+                              error.type === 'api_error' ? 'bg-red-100 text-red-800' :
+                              error.type === 'parse_error' ? 'bg-orange-100 text-orange-800' :
+                              error.type === 'validation_error' ? 'bg-yellow-100 text-yellow-800' :
+                              'bg-gray-100 text-gray-800'
+                            }`}>
+                              {error.type.replace('_', ' ').toUpperCase()}
+                            </span>
+                            {error.httpStatus && (
+                              <span className="text-xs text-gray-500">HTTP {error.httpStatus}</span>
+                            )}
+                          </div>
+                          <div className="text-sm font-medium mb-1">{error.message}</div>
+                          {error.details && (
+                            <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-24">
+                              {error.details}
+                            </pre>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Legacy Errors */}
                 {selectedMessage.debugInfo?.errors && selectedMessage.debugInfo.errors.length > 0 && (
                   <div className="mb-6">
-                    <h4 className="font-medium text-gray-900 mb-2">Errors</h4>
+                    <h4 className="font-medium text-gray-900 mb-2">Legacy Errors</h4>
                     <div className="space-y-2">
                       {selectedMessage.debugInfo?.errors?.map((error: string, index: number) => (
                         <div key={index} className="bg-red-50 p-3 rounded border border-red-200">

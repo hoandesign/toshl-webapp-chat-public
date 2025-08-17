@@ -16,7 +16,7 @@ import {
     GeminiGetAccountBalancesAction
 } from '../../lib/gemini/types';
 import * as STRINGS from '../../constants/strings';
-import { EntryCardData, Message, AccountBalanceCardData } from './types'; // Added AccountBalanceCardData
+import { EntryCardData, Message, AccountBalanceCardData, DebugInfo } from './types'; // Added AccountBalanceCardData and DebugInfo
 
 // --- Helper to get required data from localStorage ---
 const getRequiredApiData = () => {
@@ -110,12 +110,15 @@ export const handleProcessUserRequestApi = async (
     currentAudio?: string, // Add current audio parameter
     currentAudioMimeType?: string // Add current audio MIME type parameter
 ): Promise<ProcessRequestResult> => {
-    const { toshlApiKey, geminiApiKey, currency, geminiModel, accounts, categories, tags } = getRequiredApiData();
+    let debugInfo: DebugInfo | undefined = undefined;
+    
+    try {
+        const { toshlApiKey, geminiApiKey, currency, geminiModel, accounts, categories, tags } = getRequiredApiData();
 
-    const messagesToAdd: Message[] = []; // Use const as variable reference doesn't change
-    let newLastShowContext = currentLastShowContext;
-    let newLastSuccessfulEntryId = currentLastSuccessfulEntryId;
-    let updatedEntryId: string | undefined = undefined;
+        const messagesToAdd: Message[] = []; // Use const as variable reference doesn't change
+        let newLastShowContext = currentLastShowContext;
+        let newLastSuccessfulEntryId = currentLastSuccessfulEntryId;
+        let updatedEntryId: string | undefined = undefined;
 
     // --- Construct Enhanced History for Gemini ---
     const historyForGemini: GeminiChatMessage[] = currentMessages
@@ -185,19 +188,20 @@ export const handleProcessUserRequestApi = async (
         .filter((msg): msg is GeminiChatMessage => msg !== null && typeof msg.text === 'string');
     // --- End Enhanced History Construction ---
 
-    // --- Call Gemini API ---
-    // Note: The current user message (userInput + currentImage) is handled inside processUserRequestViaGemini
-    // We just need to pass the current image as a parameter, not add it to history here
-    const { result: geminiResult, debugInfo } = await processUserRequestViaGemini(
-        geminiApiKey, geminiModel, userInput, categories, tags, accounts, currency,
-        Intl.DateTimeFormat().resolvedOptions().timeZone, historyForGemini,
-        currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined,
-        currentImage,
-        currentAudio,
-        currentAudioMimeType,
-        true // Enable debug info capture
-    );
-    // --- End Gemini API Call ---
+        // --- Call Gemini API ---
+        // Note: The current user message (userInput + currentImage) is handled inside processUserRequestViaGemini
+        // We just need to pass the current image as a parameter, not add it to history here
+        const { result: geminiResult, debugInfo: geminiDebugInfo } = await processUserRequestViaGemini(
+            geminiApiKey, geminiModel, userInput, categories, tags, accounts, currency,
+            Intl.DateTimeFormat().resolvedOptions().timeZone, historyForGemini,
+            currentLastShowContext || undefined, currentLastSuccessfulEntryId || undefined,
+            currentImage,
+            currentAudio,
+            currentAudioMimeType,
+            true // Enable debug info capture
+        );
+        debugInfo = geminiDebugInfo; // Capture debug info for error handling
+        // --- End Gemini API Call ---
 
     // Clear any existing Toshl debug requests before processing
     getToshlDebugRequests();
@@ -212,7 +216,7 @@ export const handleProcessUserRequestApi = async (
                     sender: 'system', 
                     type: 'system_info', 
                     text: geminiResult.headerText,
-                    debugInfo: debugInfo 
+                    debugInfo: geminiDebugInfo 
                 });
             }
             const toshlPayload = geminiResult.payload;
@@ -244,7 +248,7 @@ export const handleProcessUserRequestApi = async (
                 sender: 'bot', 
                 type: 'entry_success', 
                 entryData: successEntryData,
-                debugInfo: debugInfo 
+                debugInfo: geminiDebugInfo 
             });
             break;
         }
@@ -356,7 +360,7 @@ export const handleProcessUserRequestApi = async (
             break; // End of 'show' case
         }
         case 'edit': {
-            messagesToAdd.push({ id: `confirm_edit_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
+            messagesToAdd.push({ id: `confirm_edit_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
             await editToshlEntry(toshlApiKey, geminiResult.entryId, geminiResult.updatePayload); // API Call
             newLastSuccessfulEntryId = geminiResult.entryId; // Update last successful ID
             newLastShowContext = null; // Reset context on edit
@@ -390,13 +394,13 @@ export const handleProcessUserRequestApi = async (
             break;
         }
         case 'info': {
-            messagesToAdd.push({ id: `info_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
+            messagesToAdd.push({ id: `info_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
             break;
         }
         case 'get_account_balances': {
             newLastShowContext = null; // Reset context
             newLastSuccessfulEntryId = null; // Reset context
-            messagesToAdd.push({ id: `balance_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
+            messagesToAdd.push({ id: `balance_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
 
             // --- Simulate MCP Call to get accounts ---
             // In a real scenario, this would involve calling the MCP server.
@@ -424,7 +428,7 @@ export const handleProcessUserRequestApi = async (
                     text: requestedAccountName
                         ? STRINGS.BALANCE_ACCOUNT_NOT_FOUND(requestedAccountName)
                         : STRINGS.BALANCE_NO_ACCOUNTS_FOUND,
-                    debugInfo: debugInfo
+                    debugInfo: geminiDebugInfo
                 });
             } else {
                  // Map all accounts to the card data structure, including new fields
@@ -488,7 +492,7 @@ export const handleProcessUserRequestApi = async (
         case 'show_budgets': { // Added case for budgets
             newLastShowContext = null; // Reset context
             newLastSuccessfulEntryId = null; // Reset context
-            messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: debugInfo });
+            messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
 
             try {
                 // Pass from and to dates from Gemini result to the API call
@@ -500,7 +504,7 @@ export const handleProcessUserRequestApi = async (
                         sender: 'system',
                         type: 'system_info',
                         text: STRINGS.BUDGETS_NO_BUDGETS_FOUND,
-                        debugInfo: debugInfo
+                        debugInfo: geminiDebugInfo
                     });
                 } else {
                     // Sort budgets (e.g., by name or period, adjust as needed)
@@ -520,16 +524,16 @@ export const handleProcessUserRequestApi = async (
                 }
             } catch (fetchError) {
                 console.error(STRINGS.CONSOLE_ERROR_FETCHING_BUDGETS, fetchError);
-                messagesToAdd.push({ id: `budget_fetch_error_${Date.now()}`, sender: 'system', type: 'error', text: STRINGS.BUDGETS_FETCH_ERROR, debugInfo: debugInfo });
+                messagesToAdd.push({ id: `budget_fetch_error_${Date.now()}`, sender: 'system', type: 'error', text: STRINGS.BUDGETS_FETCH_ERROR, debugInfo: geminiDebugInfo });
             }
             break;
         }
         case 'clarify': {
-            messagesToAdd.push({ id: `clarify_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.message, debugInfo: debugInfo });
+            messagesToAdd.push({ id: `clarify_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.message, debugInfo: geminiDebugInfo });
             break;
         }
         default: {
-            messagesToAdd.push({ id: `error_action_${Date.now()}`, text: STRINGS.UNEXPECTED_GEMINI_ACTION, sender: 'system', type: 'error', debugInfo: debugInfo });
+            messagesToAdd.push({ id: `error_action_${Date.now()}`, text: STRINGS.UNEXPECTED_GEMINI_ACTION, sender: 'system', type: 'error', debugInfo: geminiDebugInfo });
             console.error(STRINGS.UNEXPECTED_GEMINI_ACTION, geminiResult);
             break;
         }
@@ -542,7 +546,32 @@ export const handleProcessUserRequestApi = async (
         debugInfo.toshlRequests = toshlDebugRequests;
     }
 
-    return { messagesToAdd, newLastShowContext, newLastSuccessfulEntryId, updatedEntryId, debugInfo };
+        // Capture Toshl debug requests before returning
+        if (debugInfo) {
+            const toshlDebugRequests = getToshlDebugRequests();
+            if (toshlDebugRequests.length > 0) {
+                debugInfo.toshlRequests = toshlDebugRequests;
+            }
+        }
+
+        return { messagesToAdd, newLastShowContext, newLastSuccessfulEntryId, updatedEntryId, debugInfo };
+    } catch (error) {
+        console.error('Error in handleProcessUserRequestApi:', error);
+        
+        // Capture Toshl debug requests even on error
+        if (debugInfo) {
+            const toshlDebugRequests = getToshlDebugRequests();
+            if (toshlDebugRequests.length > 0) {
+                debugInfo.toshlRequests = toshlDebugRequests;
+            }
+        }
+        
+        // Create an enhanced error that includes debug info
+        const enhancedError = new Error(error instanceof Error ? error.message : String(error));
+        (enhancedError as any).debugInfo = debugInfo;
+        
+        throw enhancedError;
+    }
 };
 
 

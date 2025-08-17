@@ -193,6 +193,64 @@ const DebugModal: React.FC<DebugModalProps> = ({ isOpen, onClose, debugInfo }) =
                   </div>
                 </div>
               )}
+
+              {debugInfo.geminiResponse?.httpStatus && (
+                <div>
+                  <h3 className="font-medium text-gray-900 mb-2">HTTP Status</h3>
+                  <div className={`p-3 rounded text-sm ${
+                    debugInfo.geminiResponse.httpStatus >= 200 && debugInfo.geminiResponse.httpStatus < 300
+                      ? 'bg-green-50 text-green-800'
+                      : 'bg-red-50 text-red-800'
+                  }`}>
+                    {debugInfo.geminiResponse.httpStatus} {debugInfo.geminiResponse.httpStatusText}
+                  </div>
+                </div>
+              )}
+
+              {debugInfo.geminiErrors && debugInfo.geminiErrors.length > 0 && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-900">Gemini Errors ({debugInfo.geminiErrors.length})</h3>
+                    <button
+                      onClick={() => handleCopy(formatJSON(debugInfo.geminiErrors), 'Gemini Errors')}
+                      className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 rounded transition-colors"
+                    >
+                      {copySuccess === 'Gemini Errors' ? <CheckCircle size={12} /> : <Copy size={12} />}
+                      Copy
+                    </button>
+                  </div>
+                  <div className="space-y-2">
+                    {debugInfo.geminiErrors.map((error, index) => (
+                      <div key={index} className={`p-3 rounded border ${
+                        error.type === 'api_error' ? 'bg-red-50 border-red-200' :
+                        error.type === 'parse_error' ? 'bg-orange-50 border-orange-200' :
+                        error.type === 'validation_error' ? 'bg-yellow-50 border-yellow-200' :
+                        'bg-gray-50 border-gray-200'
+                      }`}>
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className={`px-2 py-1 text-xs font-medium rounded ${
+                            error.type === 'api_error' ? 'bg-red-100 text-red-800' :
+                            error.type === 'parse_error' ? 'bg-orange-100 text-orange-800' :
+                            error.type === 'validation_error' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {error.type.replace('_', ' ').toUpperCase()}
+                          </span>
+                          {error.httpStatus && (
+                            <span className="text-xs text-gray-500">HTTP {error.httpStatus}</span>
+                          )}
+                        </div>
+                        <div className="text-sm font-medium mb-1">{error.message}</div>
+                        {error.details && (
+                          <pre className="text-xs bg-white p-2 rounded border overflow-auto max-h-32">
+                            {error.details}
+                          </pre>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -997,8 +997,23 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             } catch (error) {
                 console.error(STRINGS.ERROR_PROCESSING_MESSAGE_PREFIX, error);
                 const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_ERROR;
-                // Mark error message with 'error' status
-                resultMessages = [{ id: `error_${Date.now()}`, text: `${STRINGS.GENERIC_ERROR_PREFIX}${errorMessage}`, sender: 'system', type: 'error', status: 'error', timestamp: new Date().toISOString() }];
+                
+                // Try to extract debug info from the error if it's available
+                let debugInfo: any = undefined;
+                if (error && typeof error === 'object' && 'debugInfo' in error) {
+                    debugInfo = (error as any).debugInfo;
+                }
+                
+                // Mark error message with 'error' status and include debug info if available
+                resultMessages = [{ 
+                    id: `error_${Date.now()}`, 
+                    text: `${STRINGS.GENERIC_ERROR_PREFIX}${errorMessage}`, 
+                    sender: 'system', 
+                    type: 'error', 
+                    status: 'error', 
+                    timestamp: new Date().toISOString(),
+                    debugInfo: debugInfo
+                }];
             } finally {
                 setMessages((prev) => {
                     const filtered = prev.filter(msg => msg.id !== loadingId);
@@ -1285,10 +1300,22 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         } catch (error) {
             console.error(`Error retrying message ${offlineId}:`, error);
             const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_ERROR;
+            
+            // Try to extract debug info from the error if it's available
+            let debugInfo: any = undefined;
+            if (error && typeof error === 'object' && 'debugInfo' in error) {
+                debugInfo = (error as any).debugInfo;
+            }
+            
             // Update the original message status to 'error'
             setMessages(prev => prev.map(msg =>
                 msg.offlineId === offlineId
-                    ? { ...msg, status: 'error', text: `${msg.text}\n${STRINGS.ERROR_RETRY_FAILED} ${errorMessage}` } // Append error info
+                    ? { 
+                        ...msg, 
+                        status: 'error', 
+                        text: `${msg.text}\n${STRINGS.ERROR_RETRY_FAILED} ${errorMessage}`,
+                        debugInfo: debugInfo
+                    } // Append error info
                     : msg
             ));
         } finally {

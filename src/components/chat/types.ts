@@ -106,13 +106,25 @@ export interface DebugInfo {
     cleanedResponse?: string;
     parsedData?: Record<string, unknown>;
     processingTime?: number;
+    httpStatus?: number;
+    httpStatusText?: string;
   };
+  geminiErrors?: Array<{
+    type: 'api_error' | 'parse_error' | 'validation_error' | 'network_error';
+    message: string;
+    details?: string;
+    httpStatus?: number;
+    originalError?: string;
+  }>;
   toshlRequests?: Array<{
     endpoint: string;
     method: string;
     payload?: Record<string, unknown>;
     response?: Record<string, unknown>;
     error?: string;
+    httpStatus?: number;
+    duration?: number;
+    timestamp?: string;
   }>;
   errors?: string[];
   timestamp: string;

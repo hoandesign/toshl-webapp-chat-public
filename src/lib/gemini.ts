@@ -302,10 +302,28 @@ export async function processUserRequestViaGemini( // Renamed function
 
         let responseData = await response.json(); // Use let for potential reassignment on retry
 
+        // Capture response info in debug
+        if (debugInfo && debugInfo.geminiResponse) {
+            debugInfo.geminiResponse.httpStatus = response.status;
+            debugInfo.geminiResponse.httpStatusText = response.statusText;
+        }
+
         if (!response.ok) {
             const errorResponse = responseData as GeminiErrorResponse;
             const errorMessage = errorResponse?.error?.message || `HTTP error! status: ${response.status}`;
             console.error('Gemini API Error Response:', JSON.stringify(errorResponse, null, 2));
+
+            // Capture API error in debug info
+            if (debugInfo) {
+                if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                debugInfo.geminiErrors.push({
+                    type: 'api_error',
+                    message: errorMessage,
+                    details: JSON.stringify(errorResponse, null, 2),
+                    httpStatus: response.status,
+                    originalError: errorResponse?.error?.message
+                });
+            }
 
             // Check if it's a cache-related error AND if we actually tried to use the cache
             // Using a simple regex check - adjust keywords based on actual Gemini error messages if needed
@@ -355,11 +373,30 @@ export async function processUserRequestViaGemini( // Renamed function
                 });
                 responseData = await response.json(); // Reassign responseData
 
+                // Update debug info with retry response
+                if (debugInfo && debugInfo.geminiResponse) {
+                    debugInfo.geminiResponse.httpStatus = response.status;
+                    debugInfo.geminiResponse.httpStatusText = response.statusText;
+                }
+
                 // Check the response of the retry attempt
                 if (!response.ok) {
                     const retryErrorResponse = responseData as GeminiErrorResponse;
                     const retryErrorMessage = retryErrorResponse?.error?.message || `HTTP error! status: ${response.status}`;
                     console.error('Gemini API Error Response (after retry):', JSON.stringify(retryErrorResponse, null, 2));
+                    
+                    // Capture retry error in debug info
+                    if (debugInfo) {
+                        if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                        debugInfo.geminiErrors.push({
+                            type: 'api_error',
+                            message: `Retry failed: ${retryErrorMessage}`,
+                            details: JSON.stringify(retryErrorResponse, null, 2),
+                            httpStatus: response.status,
+                            originalError: retryErrorResponse?.error?.message
+                        });
+                    }
+                    
                     // Throw error from the retry attempt
                     throw new Error(STRINGS.GEMINI_API_ERROR(`Retry failed: ${retryErrorMessage}`));
                 }
@@ -436,6 +473,17 @@ export async function processUserRequestViaGemini( // Renamed function
                         (result.headerText && typeof result.headerText !== 'string') // Validate headerText if present
                     ) {
                         console.error("Parsed 'add' action payload validation failed:", result);
+                        
+                        // Capture validation error in debug info
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_ADD_PAYLOAD,
+                                details: `Validation failed for 'add' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_ADD_PAYLOAD);
                     }
                     console.log("Successfully parsed 'add' action from Gemini:", result);
@@ -446,14 +494,41 @@ export async function processUserRequestViaGemini( // Renamed function
                     if (!result.filters || typeof result.filters !== 'object' ||
                         !result.headerText || typeof result.headerText !== 'string') {
                         console.error("Parsed 'show' action validation failed (missing filters or headerText):", result);
+                        
+                        // Capture validation error in debug info
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_SHOW_PAYLOAD,
+                                details: `Validation failed for 'show' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_SHOW_PAYLOAD);
                     }
                     // Optional: Add more specific validation for fields within result.filters if needed
                     // e.g., check date formats if 'from'/'to' exist
                     if (result.filters.from && (typeof result.filters.from !== 'string' || !result.filters.from.match(/^\d{4}-\d{2}-\d{2}$/))) {
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_SHOW_FROM_DATE,
+                                details: `Invalid 'from' date format: ${result.filters.from}`
+                            });
+                        }
                         throw new Error(STRINGS.GEMINI_INVALID_SHOW_FROM_DATE);
                     }
                     if (result.filters.to && (typeof result.filters.to !== 'string' || !result.filters.to.match(/^\d{4}-\d{2}-\d{2}$/))) {
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_SHOW_TO_DATE,
+                                details: `Invalid 'to' date format: ${result.filters.to}`
+                            });
+                        }
                         throw new Error(STRINGS.GEMINI_INVALID_SHOW_TO_DATE);
                     }
                     // Add checks for other filter types (arrays, strings, numbers) if necessary
@@ -462,6 +537,16 @@ export async function processUserRequestViaGemini( // Renamed function
                 case 'clarify':
                     if (!result.message || typeof result.message !== 'string') {
                         console.error("Parsed 'clarify' action validation failed:", result);
+                        
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_CLARIFY_PAYLOAD,
+                                details: `Validation failed for 'clarify' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_CLARIFY_PAYLOAD);
                     }
                     console.log("Successfully parsed 'clarify' action from Gemini:", result);
@@ -472,6 +557,16 @@ export async function processUserRequestViaGemini( // Renamed function
                         !result.updatePayload || typeof result.updatePayload !== 'object' || Object.keys(result.updatePayload).length === 0 ||
                         !result.headerText || typeof result.headerText !== 'string') {
                         console.error("Parsed 'edit' action validation failed:", result);
+                        
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_EDIT_PAYLOAD,
+                                details: `Validation failed for 'edit' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_EDIT_PAYLOAD);
                     }
                     // Optional: Add more specific validation for fields within result.updatePayload if needed
@@ -481,6 +576,16 @@ export async function processUserRequestViaGemini( // Renamed function
                     // Validate the 'info' action structure
                     if (!result.headerText || typeof result.headerText !== 'string') {
                         console.error("Parsed 'info' action validation failed:", result);
+                        
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_INFO_PAYLOAD,
+                                details: `Validation failed for 'info' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_INFO_PAYLOAD);
                     }
                     console.log("Successfully parsed 'info' action from Gemini:", result);
@@ -490,6 +595,16 @@ export async function processUserRequestViaGemini( // Renamed function
                     if (!result.headerText || typeof result.headerText !== 'string' ||
                         (result.accountName && typeof result.accountName !== 'string')) { // accountName is optional, but must be string if present
                         console.error("Parsed 'get_account_balances' action validation failed:", result);
+                        
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: STRINGS.GEMINI_INVALID_GET_BALANCE_PAYLOAD,
+                                details: `Validation failed for 'get_account_balances' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         throw new Error(STRINGS.GEMINI_INVALID_GET_BALANCE_PAYLOAD);
                     }
                     console.log("Successfully parsed 'get_account_balances' action from Gemini:", result);
@@ -498,6 +613,16 @@ export async function processUserRequestViaGemini( // Renamed function
                     // Validate the 'show_budgets' action structure
                     if (!result.headerText || typeof result.headerText !== 'string') {
                         console.error("Parsed 'show_budgets' action validation failed:", result);
+                        
+                        if (debugInfo) {
+                            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                            debugInfo.geminiErrors.push({
+                                type: 'validation_error',
+                                message: "Parsed JSON for 'show_budgets' action is missing the required 'headerText' field.",
+                                details: `Validation failed for 'show_budgets' action. Parsed result: ${JSON.stringify(result, null, 2)}`
+                            });
+                        }
+                        
                         // Consider creating a specific error string for this
                         throw new Error("Parsed JSON for 'show_budgets' action is missing the required 'headerText' field.");
                     }
@@ -507,6 +632,16 @@ export async function processUserRequestViaGemini( // Renamed function
                     // If action is not one of the expected types
                     const unknownAction = (result as { action?: string })?.action || 'unknown';
                     console.error("Parsed JSON has unknown action:", result);
+                    
+                    if (debugInfo) {
+                        if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                        debugInfo.geminiErrors.push({
+                            type: 'validation_error',
+                            message: STRINGS.GEMINI_UNKNOWN_ACTION(unknownAction),
+                            details: `Unknown action '${unknownAction}'. Parsed result: ${JSON.stringify(result, null, 2)}`
+                        });
+                    }
+                    
                     throw new Error(STRINGS.GEMINI_UNKNOWN_ACTION(unknownAction));
                 }
             }
@@ -518,8 +653,19 @@ export async function processUserRequestViaGemini( // Renamed function
             console.error('Cleaned text that failed parsing/validation:', cleanedText);
             
             // Capture parse error in debug info
-            if (debugInfo && debugInfo.errors) {
-                debugInfo.errors.push(`JSON Parse Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+            if (debugInfo) {
+                if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+                debugInfo.geminiErrors.push({
+                    type: 'parse_error',
+                    message: parseError instanceof Error ? parseError.message : String(parseError),
+                    details: `Failed to parse cleaned response: ${cleanedText}`,
+                    originalError: parseError instanceof Error ? parseError.stack : String(parseError)
+                });
+                
+                // Also add to legacy errors array for backward compatibility
+                if (debugInfo.errors) {
+                    debugInfo.errors.push(`JSON Parse Error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+                }
             }
             
             // Return a clarify action as a fallback? Or throw a more specific error?
@@ -528,6 +674,23 @@ export async function processUserRequestViaGemini( // Renamed function
         }
     } catch (error) {
         console.error('Error calling or processing Gemini API response:', error);
+        
+        // Capture network/general errors in debug info
+        if (debugInfo) {
+            if (!debugInfo.geminiErrors) debugInfo.geminiErrors = [];
+            debugInfo.geminiErrors.push({
+                type: 'network_error',
+                message: error instanceof Error ? error.message : String(error),
+                details: `Network or general error occurred during Gemini API call`,
+                originalError: error instanceof Error ? error.stack : String(error)
+            });
+            
+            // Also add to legacy errors array for backward compatibility
+            if (debugInfo.errors) {
+                debugInfo.errors.push(`Network Error: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        
         throw error; // Re-throw the error
     }
 }

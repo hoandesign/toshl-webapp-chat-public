@@ -124,7 +124,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
               target: {
                 files: [file]
               }
-            } as React.ChangeEvent<HTMLInputElement>;
+            } as unknown as React.ChangeEvent<HTMLInputElement>;
             
             handleImageUpload(syntheticEvent);
           }
@@ -438,7 +438,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
       </div>
 
       {/* Input Area */}
-      <div className="input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5] flex-shrink-0 safe-area-bottom"> {/* Use input-area class with safe area */}
+      <div className="mobile-chatbar-container flex-shrink-0">
+        <div className="mobile-chatbar-content input-area relative p-3 md:p-4 bg-card-bg shadow-inner z-[5]"> {/* Removed safe-area-bottom */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}
@@ -538,7 +539,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
                       target: {
                         files: [file]
                       }
-                    } as React.ChangeEvent<HTMLInputElement>;
+                    } as unknown as React.ChangeEvent<HTMLInputElement>;
                     
                     handleImageUpload(syntheticEvent);
                   }
@@ -569,6 +570,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
           </button>
         </form>
+        </div>
+        {/* Mobile bottom spacer to push chatbar above Android navigation bar */}
+        <div className="mobile-bottom-spacer"></div>
       </div>
 
       {/* Bottom Sheet */}
