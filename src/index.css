@@ -319,8 +319,8 @@ body, html {
 @media (max-width: 768px) {
   /* Add bottom spacer for Android navigation bar */
   .mobile-bottom-spacer {
-    /* Use a combination of safe area insets and minimum spacing */
-    height: max(env(safe-area-inset-bottom, 0), 20px);
+    /* Use a combination of safe area insets and minimum spacing - increased base height */
+    height: max(env(safe-area-inset-bottom, 0), 32px);
     background-color: theme('colors.card-bg');
   }
   
@@ -345,7 +345,7 @@ body, html {
   /* Additional spacing for devices with larger navigation bars */
   @media (max-height: 700px) {
     .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), 24px);
+      height: max(env(safe-area-inset-bottom, 0), 36px);
     }
   }
   
@@ -353,21 +353,21 @@ body, html {
   @media (max-width: 768px) and (orientation: portrait) {
     .mobile-bottom-spacer {
       /* Increase minimum height for portrait mode where nav bars are more prominent */
-      height: max(env(safe-area-inset-bottom, 0), 24px);
+      height: max(env(safe-area-inset-bottom, 0), 36px);
     }
   }
   
   /* For very small screens (like older Android phones) */
   @media (max-height: 600px) {
     .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), 28px);
+      height: max(env(safe-area-inset-bottom, 0), 40px);
     }
   }
   
   /* For devices with very prominent navigation bars (like some Android phones) */
   @supports (padding: max(0px)) {
     .mobile-bottom-spacer {
-      height: max(env(safe-area-inset-bottom, 0), max(20px, env(keyboard-inset-height, 0)));
+      height: max(env(safe-area-inset-bottom, 0), max(32px, env(keyboard-inset-height, 0)));
     }
   }
 }
