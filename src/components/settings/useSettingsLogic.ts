@@ -73,7 +73,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
     // Load settings from localStorage on mount
     useEffect(() => {
         const savedToshlKeyEncrypted = localStorage.getItem('toshlApiKey');
-        const savedGeminiKey = localStorage.getItem('geminiApiKey');
+        const savedGeminiKeyEncrypted = localStorage.getItem('geminiApiKey');
         const savedCurrency = localStorage.getItem('currency');
         const savedGeminiModel = localStorage.getItem('geminiModel');
         const savedHideNumbers = localStorage.getItem('hideNumbers'); // Load hideNumbers
@@ -84,7 +84,10 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
             const decryptedKey = decryptApiKey(savedToshlKeyEncrypted);
             setToshlApiKey(decryptedKey);
         }
-        if (savedGeminiKey) setGeminiApiKey(savedGeminiKey);
+        if (savedGeminiKeyEncrypted) {
+            const decryptedGeminiKey = decryptApiKey(savedGeminiKeyEncrypted);
+            setGeminiApiKey(decryptedGeminiKey);
+        }
         if (savedCurrency) {
             setCurrency(savedCurrency);
             initialCurrencyRef.current = savedCurrency; // Store initial currency
@@ -124,7 +127,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         // Only save locally and reload if the profile update was successful (or not needed)
         if (profileUpdateSuccess) {
             localStorage.setItem('toshlApiKey', encryptApiKey(toshlApiKey));
-            localStorage.setItem('geminiApiKey', geminiApiKey);
+            localStorage.setItem('geminiApiKey', encryptApiKey(geminiApiKey));
             localStorage.setItem('currency', currency); // Save potentially updated currency
             localStorage.setItem('geminiModel', geminiModel);
             localStorage.setItem('hideNumbers', JSON.stringify(hideNumbers)); // Save hideNumbers state
