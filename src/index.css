@@ -178,11 +178,12 @@
 
 /* Chatscope-inspired bubble chat with natural width handling */
 .message-bubble {
-  @apply relative px-3 py-2;
+  @apply relative px-4 py-2.5;
   border-radius: 18px;
   line-height: 1.25;
   /* Natural content-based width - works with flex container */
-  display: block;
+  display: flex;
+  align-items: flex-start;
   width: fit-content;
   /* Proper text wrapping following chatscope approach */
   white-space: pre-wrap;
@@ -327,14 +328,12 @@
 
 /* Audio-only messages */
 .message-bubble.audio-only {
-  min-width: 180px;
-  width: auto;
+  padding: 8px;
 }
 
 /* Messages with audio content (with or without text) */
 .message-bubble.has-audio {
-  min-width: 180px;
-  width: auto;
+  padding: 12px;
 }
 
 /* Remove artificial width constraints - let all messages use natural width */

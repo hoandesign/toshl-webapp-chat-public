@@ -386,8 +386,12 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         const hasAudio = !!message.audio;
         const hasAudioClass = hasAudio ? 'has-audio' : '';
 
+        // Check if message is image-only (has image but no text or audio)
+        const isImageOnly = msg.image && !msg.text && !msg.audio;
+        const imageOnlyClass = isImageOnly ? 'image-only' : '';
+
         // Remove dynamic width classes - use natural width for all messages
-        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass, hasAudioClass].filter(Boolean).join(' ');
+        return [baseClasses, senderClass, consecutiveClass, noTailClass, typeClass, emojiClass, audioOnlyClass, hasAudioClass, imageOnlyClass].filter(Boolean).join(' ');
     };
 
     // Function to handle copying text
@@ -540,8 +544,8 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         case 'loading': {
             // Loading message - no actions - Themed
             content = (
-                <div className={`${getBubbleClasses(msg)} flex items-center space-x-2 animate-pulse relative italic`}>
-                    <Loader2 size={16} className="animate-spin" />
+                <div className={`${getBubbleClasses(msg)} space-x-2 animate-pulse relative italic`}>
+                    <Loader2 size={16} className="animate-spin flex-shrink-0" />
                     <span className="text-sm">{msg.text || STRINGS.PROCESSING}</span>
                 </div>
             );
@@ -550,8 +554,8 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         case 'error': {
             // Error message - allow copy/delete - Themed
             content = (
-                <div className={`${getBubbleClasses(msg)} flex items-center space-x-2 relative`}>
-                    <AlertTriangle size={16} className="text-red-600" />
+                <div className={`${getBubbleClasses(msg)} space-x-2 relative`}>
+                    <AlertTriangle size={16} className="text-red-600 flex-shrink-0" />
                     <p className="text-sm">{msg.text}</p>
                 </div>
             );
@@ -569,8 +573,8 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
         case 'entry_edit_success': {
             // Edit success message - allow copy/delete - Themed (using purple still)
             content = (
-                <div className={`${getBubbleClasses(msg)} bg-purple-100 border border-purple-300 flex items-center space-x-2 relative`}>
-                    <Pencil size={16} className="text-purple-500" />
+                <div className={`${getBubbleClasses(msg)} bg-purple-100 border border-purple-300 space-x-2 relative`}>
+                    <Pencil size={16} className="text-purple-500 flex-shrink-0" />
                     <p className="text-sm text-purple-900">{msg.text}</p>
                 </div>
             );
@@ -640,11 +644,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                     <div className={`${getBubbleClasses(msg)} ${isMediaProcessing ? 'animate-pulse' : ''} relative`}>
 
 
-                        {/* Display image if present with enhanced loading state */}
-                        {msg.image && (
-                            <div className={hasText || hasAudio ? "mb-3" : "mb-1"}>
+                        {/* Combined Media and Text Display */}
+                        <div className="flex flex-col space-y-2">
+                            {/* Display image if present */}
+                            {msg.image && (
                                 <div className="relative">
-                                    {/* Image loading overlay for better UX */}
                                     <ImageDisplay
                                         src={msg.image}
                                         alt={`Uploaded image${msg.imageMetadata?.mimeType ? ` (${msg.imageMetadata.mimeType})` : ''}`}
@@ -652,7 +656,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                                         displayUrl={msg.imageDisplayUrl}
                                         metadata={msg.imageMetadata}
                                     />
-                                    {/* Accessibility enhancement: Screen reader description */}
                                     <div className="sr-only">
                                         Image message containing {msg.imageMetadata?.mimeType || 'image file'}
                                         {msg.imageMetadata?.fileSize && `, file size ${Math.round(msg.imageMetadata.fileSize / 1024)}KB`}
@@ -661,46 +664,42 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                                         }
                                     </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
 
-                        {/* Display audio if present */}
-                        {msg.audio && (
-                            <div className={hasText ? "mb-3" : "mb-1"}>
-                                <AudioDisplay
-                                    audioData={msg.audio}
-                                    metadata={msg.audioMetadata}
-                                    messageId={msg.id}
-                                />
-                                {/* Accessibility enhancement: Screen reader description */}
-                                <div className="sr-only">
-                                    Voice message
-                                    {msg.audioMetadata?.duration && `, duration ${Math.round(msg.audioMetadata.duration / 1000)} seconds`}
-                                    {msg.audioMetadata?.mimeType && `, format ${msg.audioMetadata.mimeType}`}
+                            {/* Display text if present */}
+                            {msg.text && <p className="text-sm">{msg.text}</p>}
+
+                            {/* Display audio if present */}
+                            {msg.audio && (
+                                <div>
+                                    <AudioDisplay
+                                        audioData={msg.audio}
+                                        metadata={msg.audioMetadata}
+                                        messageId={msg.id}
+                                    />
+                                    <div className="sr-only">
+                                        Voice message
+                                        {msg.audioMetadata?.duration && `, duration ${Math.round(msg.audioMetadata.duration / 1000)} seconds`}
+                                        {msg.audioMetadata?.mimeType && `, format ${msg.audioMetadata.mimeType}`}
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-
-                        {/* Display text if present */}
-                        {msg.text && <p className="text-sm">{msg.text}</p>}
+                            )}
+                        </div>
 
                         {/* Enhanced status section with better visual hierarchy */}
-                        <div className="flex items-center justify-between mt-2">
-                            <div className="flex items-center">
+                        {(isMediaProcessing || statusIndicator || retryButton) && (
+                            <div className="flex items-center justify-end mt-1">
                                 {/* Processing indicator for media messages */}
                                 {isMediaProcessing && (
                                     <div className="flex items-center text-blue-300 text-xs mr-2">
                                         <Loader2 size={12} className="animate-spin mr-1" />
                                         {hasImage && hasAudio ? 'Processing media...' : hasImage ? 'Processing image...' : 'Processing audio...'}
-                                        <span>Processing image...</span>
                                     </div>
                                 )}
-                            </div>
-                            <div className="flex items-center">
                                 {statusIndicator}
                                 {retryButton}
                             </div>
-                        </div>
+                        )}
                     </div>
                 );
 

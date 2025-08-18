@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { Mic, Square, X, Play, Pause } from 'lucide-react';
+import { Mic, Square } from 'lucide-react';
 import { AudioRecorder, AudioRecordingState, formatDuration, isAudioRecordingSupported } from '../../lib/audio';
 import * as STRINGS from '../../constants/strings';
 
@@ -23,10 +23,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     duration: 0,
     error: null
   });
-  
-  const [recordedAudio, setRecordedAudio] = useState<{ blob: Blob; duration: number } | null>(null);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const audioRef = useRef<HTMLAudioElement | null>(null);
   
   const recorderRef = useRef<AudioRecorder | null>(null);
   const [isSupported, setIsSupported] = useState(true);
@@ -58,7 +54,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       // onComplete
       (audioBlob: Blob, duration: number) => {
         onAudioRecorded(audioBlob, duration);
-        setRecordedAudio({ blob: audioBlob, duration });
         setRecordingState({
           isRecording: false,
           duration: 0,
@@ -78,7 +73,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
     recorderRef.current = recorder;
     return recorder;
-  }, [onError, setRecordingState, setRecordedAudio]);
+  }, [onError, onAudioRecorded]);
 
   // Start recording
   const startRecording = useCallback(async () => {
@@ -88,7 +83,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
     }
 
     try {
-      setRecordedAudio(null); // Clear any previous recording
       const recorder = initializeRecorder();
       await recorder.startRecording();
     } catch (error) {
@@ -103,50 +97,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       recorderRef.current.stopRecording();
     }
   }, []);
-
-  // Cancel recording
-  const cancelRecording = useCallback(() => {
-    if (recorderRef.current) {
-      recorderRef.current.cancelRecording();
-    }
-    setRecordingState({
-      isRecording: false,
-      duration: 0,
-      error: null
-    });
-    setRecordedAudio(null);
-  }, []);
-
-  // Send recorded audio
-  const sendAudio = useCallback(() => {
-    if (recordedAudio) {
-      onAudioRecorded(recordedAudio.blob, recordedAudio.duration);
-      setRecordedAudio(null);
-    }
-  }, [recordedAudio, onAudioRecorded]);
-
-  // Discard recorded audio
-  const discardAudio = useCallback(() => {
-    setRecordedAudio(null);
-    setIsPlaying(false);
-    if (audioRef.current) {
-      audioRef.current.pause();
-      audioRef.current.currentTime = 0;
-    }
-  }, []);
-
-  // Play/pause recorded audio
-  const togglePlayback = useCallback(() => {
-    if (!recordedAudio || !audioRef.current) return;
-
-    if (isPlaying) {
-      audioRef.current.pause();
-      setIsPlaying(false);
-    } else {
-      audioRef.current.play();
-      setIsPlaying(true);
-    }
-  }, [isPlaying, recordedAudio]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -188,52 +138,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         >
           <Square size={20} fill="currentColor" />
         </button>
-      </div>
-    );
-  }
-
-  // Recorded audio preview - appears above chat bar
-  if (recordedAudio) {
-    return (
-      <div className={`voice-recorder-preview mb-3 ${className}`}>
-        <div className="bg-navigation-bg border border-btn-red rounded-lg px-4 py-3 flex items-center justify-between">
-          {/* Audio preview with play button */}
-          <div className="flex items-center space-x-3">
-            <button
-              type="button"
-              onClick={togglePlayback}
-              className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
-              title={isPlaying ? "Pause" : "Play"}
-            >
-              {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-            </button>
-            <span className="text-sm text-navigation-text">
-              Audio recorded ({Math.round(recordedAudio.duration / 1000)}s)
-            </span>
-          </div>
-          
-          {/* Action buttons */}
-          <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={discardAudio}
-              className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
-              title="Discard audio"
-            >
-              <X size={16} />
-            </button>
-          </div>
-        </div>
-        
-        {/* Hidden audio element for playback */}
-        {recordedAudio && (
-          <audio
-            ref={audioRef}
-            src={URL.createObjectURL(recordedAudio.blob)}
-            onEnded={() => setIsPlaying(false)}
-            onPause={() => setIsPlaying(false)}
-          />
-        )}
       </div>
     );
   }

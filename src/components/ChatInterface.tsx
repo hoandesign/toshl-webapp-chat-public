@@ -3,7 +3,7 @@ import Settings from 'lucide-react/dist/esm/icons/settings';
 import History from 'lucide-react/dist/esm/icons/history';
 import SendHorizonal from 'lucide-react/dist/esm/icons/send-horizonal';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
-import { ImagePlus, X, Bug } from 'lucide-react';
+import { ImagePlus, X, Bug, Play, Pause } from 'lucide-react';
 import VoiceRecorder from './chat/VoiceRecorder';
 import * as STRINGS from '../constants/strings';
 import { Message, ChatInterfaceProps } from './chat/types'; // Removed unused EntryCardData, AccountBalanceCardData
@@ -69,11 +69,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
   } = useChatLogic();
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+  const audioPreviewRef = useRef<HTMLAudioElement>(null);
 
   const debouncedResizeTextarea = useCallback(() => {
       const resizeFunction = debounce(() => {
@@ -470,6 +472,60 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           </div>
         )}
         
+        {/* Audio Preview */}
+        {selectedAudio && selectedAudioMetadata && !isRecording && (
+          <div className="voice-recorder-preview mb-3">
+            <div className="bg-navigation-bg border border-btn-red rounded-lg px-4 py-3 flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (audioPreviewRef.current) {
+                      if (isPlayingAudio) {
+                        audioPreviewRef.current.pause();
+                      } else {
+                        audioPreviewRef.current.play();
+                      }
+                      setIsPlayingAudio(!isPlayingAudio);
+                    }
+                  }}
+                  className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
+                  title={isPlayingAudio ? "Pause" : "Play"}
+                >
+                  {isPlayingAudio ? <Pause size={16} /> : <Play size={16} />}
+                </button>
+                <span className="text-sm text-navigation-text">
+                  Audio recorded ({Math.round(selectedAudioMetadata.duration / 1000)}s)
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (audioPreviewRef.current) {
+                      audioPreviewRef.current.pause();
+                      audioPreviewRef.current.currentTime = 0;
+                    }
+                    setIsPlayingAudio(false);
+                    removeSelectedAudio();
+                  }}
+                  className="text-btn-red hover:text-btn-red-highlight p-1 rounded transition duration-200"
+                  title="Discard audio"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+            <audio
+              ref={audioPreviewRef}
+              src={selectedAudio}
+              onEnded={() => setIsPlayingAudio(false)}
+              onPause={() => setIsPlayingAudio(false)}
+              hidden
+            />
+          </div>
+        )}
+        
 
         <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
           {!isRecording && (
@@ -543,7 +599,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
                 accept="image/*"
                 className="hidden"
                 id="imageUpload"
-                onChange={handleImageUpload}
+                onChange={(e) => {
+                  handleImageUpload(e);
+                  // Reset the input value to allow selecting the same file again
+                  if (imageInputRef.current) {
+                    imageInputRef.current.value = '';
+                  }
+                }}
                 ref={imageInputRef}
               />
               <button
