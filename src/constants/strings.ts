@@ -6,6 +6,7 @@ export const SAVE = "Save";
 export const FETCHING_DATA = "Fetching Data...";
 export const PROCESSING = "Processing...";
 export const UNKNOWN_ERROR = "An unknown error occurred.";
+export const DEFAULT_ERROR_MESSAGE = "An error occurred while processing your request.";
 
 // Toshl Types (used in components)
 export const INCOME_TYPE = "Income";

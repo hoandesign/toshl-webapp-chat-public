@@ -668,12 +668,20 @@ export async function processUserRequestViaGemini( // Renamed function
                 }
             }
             
-            // Return a clarify action as a fallback? Or throw a more specific error?
             // Throwing error seems more appropriate to signal failure upstream.
-            throw new Error(STRINGS.GEMINI_JSON_PARSE_VALIDATE_FAILED(generatedText));
+            const parseErr = new Error(STRINGS.GEMINI_JSON_PARSE_VALIDATE_FAILED(generatedText));
+            // Attach the debug info to the error object so it can be caught upstream
+            (parseErr as unknown as { debugInfo: DebugInfo | undefined }).debugInfo = debugInfo;
+            throw parseErr;
         }
     } catch (error) {
         console.error('Error calling or processing Gemini API response:', error);
+
+        // If the error already has debugInfo, it's likely a parse error from the block above.
+        // We just re-throw it. Otherwise, we add new debug info.
+        if ((error as unknown as { debugInfo: DebugInfo | undefined }).debugInfo) {
+            throw error;
+        }
         
         // Capture network/general errors in debug info
         if (debugInfo) {
@@ -691,6 +699,8 @@ export async function processUserRequestViaGemini( // Renamed function
             }
         }
         
+        // Attach debug info to the error before throwing
+        (error as unknown as { debugInfo: DebugInfo | undefined }).debugInfo = debugInfo;
         throw error; // Re-throw the error
     }
 }

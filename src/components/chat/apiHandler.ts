@@ -571,11 +571,29 @@ export const handleProcessUserRequestApi = async (
             }
         }
         
-        // Create an enhanced error that includes debug info
-        const enhancedError = new Error(error instanceof Error ? error.message : String(error));
-        (enhancedError as unknown as { debugInfo: DebugInfo | undefined }).debugInfo = debugInfo;
+        // Check if the error object already has our custom debugInfo attached
+        const errorDebugInfo = (error as unknown as { debugInfo: DebugInfo | undefined }).debugInfo || debugInfo;
+
+        // Create a user-facing error message
+        const errorMessage: Message = {
+            id: `error_${Date.now()}`,
+            sender: 'system',
+            type: 'error',
+            text: error instanceof Error ? error.message : STRINGS.DEFAULT_ERROR_MESSAGE,
+            debugInfo: errorDebugInfo, // Attach the debug info here
+        };
         
-        throw enhancedError;
+        // Instead of throwing, we now return a result that includes the error message
+        // This allows the UI to handle displaying the error gracefully.
+        // We wrap it in a Promise.reject() so the calling code's .catch() block is triggered
+        // This maintains the expected async error flow for the UI component.
+        return Promise.reject({
+            messagesToAdd: [errorMessage],
+            newLastShowContext: currentLastShowContext,
+            newLastSuccessfulEntryId: currentLastSuccessfulEntryId,
+            updatedEntryId: undefined,
+            debugInfo: errorDebugInfo
+        });
     }
 };
 
