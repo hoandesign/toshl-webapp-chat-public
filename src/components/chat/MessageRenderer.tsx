@@ -636,7 +636,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 // User message - allow copy/delete + show status/retry + display images and audio
                 const hasImage = !!msg.image;
                 const hasAudio = !!msg.audio;
-                const hasText = !!msg.text;
                 const hasMedia = hasImage || hasAudio;
                 const isMediaProcessing = hasMedia && msg.status === 'pending';
 
