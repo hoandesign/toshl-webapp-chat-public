@@ -3,6 +3,7 @@ import React from 'react'; // Removed useState, useEffect
 import X from 'lucide-react/dist/esm/icons/x';
 import Loader2 from 'lucide-react/dist/esm/icons/loader-2';
 import Trash2 from 'lucide-react/dist/esm/icons/trash-2';
+import RotateCcw from 'lucide-react/dist/esm/icons/rotate-ccw';
 import * as STRINGS from '../constants/strings';
 // Import the custom hook and options
 import { useSettingsLogic, geminiModelOptions } from './settings/useSettingsLogic';
@@ -30,6 +31,7 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
     handleSave,
     handleToshlSetup,
     handleClearChatHistory,
+    handleRefreshApp,
   } = useSettingsLogic();
 
   // The component now only focuses on rendering the UI
@@ -178,6 +180,15 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
               className="w-full bg-btn-green hover:bg-btn-green-highlight text-button-text font-semibold py-2.5 px-4 rounded-lg shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-green transition duration-200 ease-in-out" // Use green theme
             >
               {STRINGS.SAVE_SETTINGS_BUTTON}
+            </button>
+            {/* Refresh App Button - Themed (Blue) */}
+            <button
+              type="button" // Prevent form submission
+              onClick={handleRefreshApp}
+              className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition duration-200 ease-in-out"
+            >
+              <RotateCcw size={18} className="mr-2" />
+              Refresh App
             </button>
             {/* Clear Chat History Button - Themed (Darker Red) */}
             <button

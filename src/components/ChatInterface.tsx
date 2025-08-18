@@ -68,6 +68,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
     removeSelectedAudio,
   } = useChatLogic();
 
+  const [isRecording, setIsRecording] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const imageInputRef = useRef<HTMLInputElement>(null);
@@ -441,14 +443,25 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
 
         {/* Input Area - Fixed at bottom */}
         <div className="toshl-message-input flex-shrink-0 relative p-3 md:p-4 bg-card-bg shadow-inner z-[5]"> {/* Fixed input area */}
-        {isMentionPopupOpen && mentionSuggestions.length > 0 && (
+        {isMentionPopupOpen && mentionSuggestions.length > 0 && !isRecording && (
           <MentionSuggestionsPopup
             suggestions={mentionSuggestions}
             onSelect={handleMentionSelect}
           />
         )}
+        
+        {/* Voice Recorder Preview (appears above input when audio is recorded) */}
+        <VoiceRecorder
+          onAudioRecorded={handleAudioRecorded}
+          onError={(error) => {
+            console.error('Voice recording error:', error);
+          }}
+          onRecordingStateChange={setIsRecording}
+          disabled={isLoading || isLoadingHistory || !!isDeleting}
+        />
+
         {/* Image Preview */}
-        {selectedImage && (
+        {selectedImage && !isRecording && (
           <div className="mb-3 relative inline-block">
             <img 
               src={selectedImage} 
@@ -466,8 +479,8 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           </div>
         )}
         
-        {/* Audio Preview */}
-        {selectedAudio && selectedAudioMetadata && (
+        {/* Audio Preview - Legacy (keeping for compatibility) */}
+        {selectedAudio && selectedAudioMetadata && !isRecording && (
           <div className="mb-3 relative inline-block">
             <div className="bg-navigation-bg border border-btn-red rounded-lg px-3 py-2 flex items-center space-x-2">
               <div className="w-2 h-2 bg-btn-red rounded-full" />
@@ -485,92 +498,98 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             </div>
           </div>
         )}
-        <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
-          <button
-            type="button"
-            onClick={() => handleFetchDateRange(undefined, undefined, 7)}
-            disabled={isLoadingHistory || isLoading || !!isDeleting}
-            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
-            title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
-          >
-            {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />}
-          </button>
-          <button
-            type="button"
-            onClick={() => imageInputRef.current?.click()}
-            disabled={isLoading || isLoadingHistory || !!isDeleting}
-            className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
-            title="Upload photo"
-          >
-            <ImagePlus size={20} />
-          </button>
-          <VoiceRecorder
-            onAudioRecorded={handleAudioRecorded}
-            onError={(error) => {
-              // For now, just log the error - in a real implementation, you'd want to
-              // pass a callback to handle errors or use a toast notification
-              console.error('Voice recording error:', error);
-            }}
-            disabled={isLoading || isLoadingHistory || !!isDeleting}
-          />
-          <textarea
-            ref={textareaRef}
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                handleFormSubmit();
-              }
-            }}
-            onPaste={(e) => {
-              // Handle image paste in textarea
-              const items = e.clipboardData?.items;
-              if (!items) return;
 
-              for (let i = 0; i < items.length; i++) {
-                const item = items[i];
-                if (item.type.startsWith('image/')) {
-                  e.preventDefault(); // Prevent default paste behavior
-                  
-                  const file = item.getAsFile();
-                  if (file) {
-                    // Create a synthetic event to reuse existing image upload logic
-                    const syntheticEvent = {
-                      target: {
-                        files: [file]
-                      }
-                    } as unknown as React.ChangeEvent<HTMLInputElement>;
-                    
-                    handleImageUpload(syntheticEvent);
-                  }
-                  return; // Exit after handling first image
+        {/* Chat Input Form - Hidden during recording */}
+        {!isRecording && (
+          <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
+            <button
+              type="button"
+              onClick={() => handleFetchDateRange(undefined, undefined, 7)}
+              disabled={isLoadingHistory || isLoading || !!isDeleting}
+              className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
+              title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
+            >
+              {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />}
+            </button>
+            <button
+              type="button"
+              onClick={() => imageInputRef.current?.click()}
+              disabled={isLoading || isLoadingHistory || !!isDeleting}
+              className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
+              title="Upload photo"
+            >
+              <ImagePlus size={20} />
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                // This will be handled by the VoiceRecorder component above
+              }}
+              disabled={isLoading || isLoadingHistory || !!isDeleting}
+              className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed self-end mb-1"
+              title={STRINGS.AUDIO_RECORD_BUTTON_TITLE}
+            >
+              <Mic size={20} />
+            </button>
+            <textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  handleFormSubmit();
                 }
-              }
-              // If no image found, allow default paste behavior for text
-            }}
-            placeholder={STRINGS.MESSAGE_PLACEHOLDER}
-            className="flex-1 px-4 py-2.5 border border-separator-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 ease-in-out text-sm text-black-text resize-none min-h-[44px] max-h-[200px] overflow-y-hidden" /* Use separator-gray */
-            rows={1}
-            disabled={isLoading || isLoadingHistory || !!isDeleting}
-          />
-          <input
-            type="file"
-            accept="image/*"
-            className="hidden"
-            id="imageUpload"
-            onChange={handleImageUpload}
-            ref={imageInputRef}
-          />
-          <button
-            type="submit"
-            disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
-            className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red flex items-center justify-center"
-            aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
-          >
-            {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
-          </button>
-        </form>
+              }}
+              onPaste={(e) => {
+                // Handle image paste in textarea
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                for (let i = 0; i < items.length; i++) {
+                  const item = items[i];
+                  if (item.type.startsWith('image/')) {
+                    e.preventDefault(); // Prevent default paste behavior
+                    
+                    const file = item.getAsFile();
+                    if (file) {
+                      // Create a synthetic event to reuse existing image upload logic
+                      const syntheticEvent = {
+                        target: {
+                          files: [file]
+                        }
+                      } as unknown as React.ChangeEvent<HTMLInputElement>;
+                      
+                      handleImageUpload(syntheticEvent);
+                    }
+                    return; // Exit after handling first image
+                  }
+                }
+                // If no image found, allow default paste behavior for text
+              }}
+              placeholder={STRINGS.MESSAGE_PLACEHOLDER}
+              className="flex-1 px-4 py-2.5 border border-separator-gray rounded-xl focus:outline-none focus:ring-2 focus:ring-accent focus:border-transparent transition duration-200 ease-in-out text-sm text-black-text resize-none min-h-[44px] max-h-[200px] overflow-y-hidden" /* Use separator-gray */
+              rows={1}
+              disabled={isLoading || isLoadingHistory || !!isDeleting}
+            />
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              id="imageUpload"
+              onChange={handleImageUpload}
+              ref={imageInputRef}
+            />
+            <button
+              type="submit"
+              disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
+              className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red flex items-center justify-center"
+              aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
+            >
+              {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
+            </button>
+          </form>
+        )}
         </div>
         
       </div>

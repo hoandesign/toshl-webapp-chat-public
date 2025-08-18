@@ -33,6 +33,7 @@ interface UseSettingsLogicReturn {
     handleSave: () => Promise<void>; // Make async
     handleToshlSetup: () => Promise<void>;
     handleClearChatHistory: () => void;
+    handleRefreshApp: () => void;
 }
 
 const CHAT_MESSAGES_LOCAL_STORAGE_KEY = 'chatMessages'; // Define key constant
@@ -206,6 +207,16 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         // }
     }, []); // No dependencies needed
 
+    // Function to refresh the entire app (hard reload)
+    const handleRefreshApp = useCallback(() => {
+        try {
+            // Force a hard reload to get the latest code and clear any cached resources
+            window.location.reload();
+        } catch (error) {
+            console.error("Failed to refresh app:", error);
+        }
+    }, []);
+
     return {
         toshlApiKey,
         setToshlApiKey,
@@ -224,5 +235,6 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         handleSave,
         handleToshlSetup,
         handleClearChatHistory,
+        handleRefreshApp,
     };
 };
