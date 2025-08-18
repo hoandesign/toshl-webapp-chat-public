@@ -1,4 +1,3 @@
-
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { Mic, Square, X, Play, Pause } from 'lucide-react';
 import { AudioRecorder, AudioRecordingState, formatDuration, isAudioRecordingSupported } from '../../lib/audio';
@@ -58,6 +57,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       },
       // onComplete
       (audioBlob: Blob, duration: number) => {
+        onAudioRecorded(audioBlob, duration);
         setRecordedAudio({ blob: audioBlob, duration });
         setRecordingState({
           isRecording: false,
@@ -78,7 +78,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
     recorderRef.current = recorder;
     return recorder;
-  }, [onError]);
+  }, [onError, setRecordingState, setRecordedAudio]);
 
   // Start recording
   const startRecording = useCallback(async () => {
@@ -214,14 +214,6 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
           
           {/* Action buttons */}
           <div className="flex items-center space-x-2">
-            <button
-              type="button"
-              onClick={sendAudio}
-              className="bg-btn-red hover:bg-btn-red-highlight text-white px-3 py-1 rounded text-sm transition duration-200"
-              title="Send audio"
-            >
-              Send
-            </button>
             <button
               type="button"
               onClick={discardAudio}
