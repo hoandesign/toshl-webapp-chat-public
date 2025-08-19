@@ -1,6 +1,6 @@
 # Toshl WebApp Chat
 
-[![DeepWiki](https://deepwiki.com/badge-maker?url=https%3A%2F%2Fdeepwiki.com%2Fhoandesign%2Ftoshl-webapp-chat-public)](https://deepwiki.com/hoandesign/toshl-webapp-chat-public)
+[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hoandesign/toshl-webapp-chat-public)
 
 A conversational web application to manage your Toshl Finance data using natural language, powered by Google Gemini.
 
