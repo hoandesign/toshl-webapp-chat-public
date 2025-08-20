@@ -159,7 +159,7 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
     if (filters.search) params.set('search', filters.search);
     if (filters.pending !== undefined) params.set('pending', filters.pending.toString());
     if (filters.starred !== undefined) params.set('starred', filters.starred.toString()); // Check API for actual param name
-    if (filters.repeat_status) params.set('repeat_status', filters.repeat_status); // Corrected param name
+    // NOTE: Toshl API does NOT support repeat_status. To filter repeat entries, filter client-side (see below).
     if (filters.min_amount !== undefined) params.set('min_amount', filters.min_amount.toString());
     if (filters.max_amount !== undefined) params.set('max_amount', filters.max_amount.toString());
     // Add other filters here
@@ -178,11 +178,13 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
         // Pass the full endpoint including initial filters.
         const entries = await fetchFromToshl<ToshlEntry>(endpoint, apiKey);
         console.log(`Successfully fetched ${entries.length} entries.`);
+        // Nếu muốn lọc chỉ các entry lặp lại (repeat), hãy lọc phía client:
+        //   const repeatEntries = entries.filter(e => e.repeat);
         return entries;
     } catch (error) {
         console.error('Failed to fetch Toshl entries:', error);
-    throw error; // Re-throw
-  }
+        throw error; // Re-throw
+    }
 }
 
 // --- Export API Helper Functions ---

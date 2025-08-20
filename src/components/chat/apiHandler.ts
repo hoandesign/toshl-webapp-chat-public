@@ -56,44 +56,51 @@ export const handleFetchEntriesApi = async (
     categories: ToshlCategory[],
     allTags: ToshlTag[]
 ): Promise<{ entries: ToshlEntry[], formattedMessages: Message[], rawEntryData: EntryCardData[] }> => { // Added rawEntryData to return type
-    const entries = await fetchEntries(toshlApiKey, filters); // API Call
+    let entries = await fetchEntries(toshlApiKey, filters); // API Call
+
+    // Lọc repeat phía client nếu filters.repeat_status được truyền từ Gemini
+    if (filters.repeat_status === 'instance') {
+        entries = entries.filter(e => !!e.repeat && !e.repeat.template);
+    } else if (filters.repeat_status === 'template') {
+        entries = entries.filter(e => !!e.repeat && !!e.repeat.template);
+    } else if (filters.repeat_status === 'all') {
+        entries = entries.filter(e => !!e.repeat);
+    }
 
     if (entries.length === 0) {
         const filterForRepeating = !!filters.repeat_status;
         const noEntriesText = filterForRepeating
-            ? STRINGS.HISTORY_NO_REPEATING_ENTRIES_MATCHING(`Filters: ${JSON.stringify(filters)}`) // Simplified header for API context
+            ? STRINGS.HISTORY_NO_REPEATING_ENTRIES_MATCHING(`Filters: ${JSON.stringify(filters)}`)
             : STRINGS.HISTORY_NO_ENTRIES_FOR_PERIOD(filters.from, filters.to);
-        // Return empty rawEntryData as well
         return { entries: [], formattedMessages: [{ id: `hist_empty_${Date.now()}`, text: noEntriesText, sender: 'system', type: 'system_info' }], rawEntryData: [] };
-    } else {
-        // First, map to EntryCardData to get the raw data structure needed
-        const rawEntryData: EntryCardData[] = entries
-            .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) // Sort before mapping
-            .map((entry): EntryCardData => {
-                const categoryName = categories.find(c => c.id === entry.category)?.name || STRINGS.UNKNOWN_CATEGORY;
-                const tagNames = entry.tags
-                    ?.map((tagId: string) => allTags.find(t => t.id === tagId)?.name)
-                    .filter((name: string | undefined): name is string => !!name);
+    }
 
-                return { // Return EntryCardData directly
-                    date: entry.date, type: entry.amount < 0 ? STRINGS.EXPENSE_TYPE : STRINGS.INCOME_TYPE, amount: Math.abs(entry.amount),
-                    currency: entry.currency.code, category: categoryName, tags: tagNames, description: entry.desc, id: entry.id
-                };
-            });
+    // First, map to EntryCardData to get the raw data structure needed
+    const rawEntryData: EntryCardData[] = entries
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .map((entry): EntryCardData => {
+            const categoryName = categories.find(c => c.id === entry.category)?.name || STRINGS.UNKNOWN_CATEGORY;
+            const tagNames = entry.tags
+                ?.map((tagId: string) => allTags.find(t => t.id === tagId)?.name)
+                .filter((name: string | undefined): name is string => !!name);
 
-        // Then, map the rawEntryData to Message format for display
-        const formattedMessages = rawEntryData.map((entryData, index): Message => {
             return {
-                id: `hist_${entryData.id}_${index}`,
-                sender: 'system',
-                type: 'history_entry',
-                entryData: entryData, // Use the already mapped data
-                text: undefined
+                date: entry.date, type: entry.amount < 0 ? STRINGS.EXPENSE_TYPE : STRINGS.INCOME_TYPE, amount: Math.abs(entry.amount),
+                currency: entry.currency.code, category: categoryName, tags: tagNames, description: entry.desc, id: entry.id
             };
         });
-        // Return entries, formatted messages, and the raw entry data
-        return { entries, formattedMessages: formattedMessages, rawEntryData: rawEntryData };
-    }
+
+    // Then, map the rawEntryData to Message format for display
+    const formattedMessages = rawEntryData.map((entryData, index): Message => {
+        return {
+            id: `hist_${entryData.id}_${index}`,
+            sender: 'system',
+            type: 'history_entry',
+            entryData: entryData,
+            text: undefined
+        };
+    });
+    return { entries, formattedMessages: formattedMessages, rawEntryData: rawEntryData };
 };
 
 
