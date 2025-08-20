@@ -178,7 +178,8 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
         // Pass the full endpoint including initial filters.
         let entries = await fetchFromToshl<ToshlEntry>(endpoint, apiKey);
         console.log(`Successfully fetched ${entries.length} entries.`);
-        // Lọc repeat_status phía client nếu có
+        // Client-side filtering for repeat_status (Toshl API does NOT support this parameter)
+        // Only keep entries that match the requested repeat_status
         if (filters.repeat_status === 'instance') {
             entries = entries.filter(e => !!e.repeat && !e.repeat.template);
         } else if (filters.repeat_status === 'template') {
@@ -187,7 +188,7 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
             entries = entries.filter(e => !!e.repeat);
         }
         if (filters.repeat_status) {
-            console.log('Entries after repeat_status filter:', entries);
+            console.log('Entries after client-side repeat_status filter:', entries);
         }
         return entries;
     } catch (error) {
