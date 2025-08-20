@@ -258,12 +258,11 @@ export const handleProcessUserRequestApi = async (
             break;
         }
         case 'show': {
-            newLastShowContext = { filters: geminiResult.filters, headerText: geminiResult.headerText }; // Set context on show
-            const finalFilters = geminiResult.filters || {}; // Use const
+            newLastShowContext = { filters: geminiResult.filters, headerText: geminiResult.headerText };
+            const finalFilters = geminiResult.filters || {};
             let finalHeaderText = geminiResult.headerText || STRINGS.ENTRIES_DEFAULT_HEADER;
 
             // Apply default date range if needed
-            // Note: We are modifying properties of finalFilters, which is allowed for const objects.
             if (!finalFilters.from || !finalFilters.to) {
                 const today = new Date();
                 const pastDate = new Date();
@@ -279,7 +278,6 @@ export const handleProcessUserRequestApi = async (
             }
 
             // Fetch entries using the determined filters
-            // Assert type as FetchEntriesFilters because the preceding logic guarantees 'from' and 'to' are strings here.
             const { entries, formattedMessages: fetchedFormattedMessages } = await handleFetchEntriesApi(finalFilters as FetchEntriesFilters, toshlApiKey, categories, tags);
 
             // --- Process fetched entries ---
@@ -292,77 +290,72 @@ export const handleProcessUserRequestApi = async (
                     const defaultCurrency = localStorage.getItem('currency') || STRINGS.DEFAULT_CURRENCY_VALUE;
                     let netSum = 0;
                     let skippedEntriesCount = 0;
-                    let conversionWarningLogged = false; // Flag to log only once
-
+                    let conversionWarningLogged = false;
                     entries.forEach(entry => {
                         if (typeof entry.amount === 'number' && entry.currency?.code) {
                             if (entry.currency.code === defaultCurrency) {
                                 netSum += entry.amount;
                             } else {
-                                // Attempt conversion using main_rate
                                 const mainRate = entry.currency.main_rate;
                                 if (typeof mainRate === 'number' && mainRate > 0) {
-                                    // Divide amount by main_rate to convert to default currency
                                     netSum += entry.amount / mainRate;
                                 } else {
-                                    // Cannot convert, skip this entry
                                     skippedEntriesCount++;
                                     if (!conversionWarningLogged) {
                                         console.warn(`Cannot convert entry ${entry.id} (${entry.amount} ${entry.currency.code}) to ${defaultCurrency}. Missing or invalid main_rate: ${mainRate}. Further warnings suppressed.`);
-                                        conversionWarningLogged = true; // Suppress further logs for this fetch
+                                        conversionWarningLogged = true;
                                     }
                                 }
                             }
                         } else {
-                            // Skip entries with invalid amount or currency data
                             skippedEntriesCount++;
-                             if (!conversionWarningLogged) {
+                            if (!conversionWarningLogged) {
                                 console.warn(`Skipping entry ${entry.id} due to missing amount or currency code. Further warnings suppressed.`);
                                 conversionWarningLogged = true;
-                             }
+                            }
                         }
                     });
-
                     const formattedSum = netSum.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                     calculatedSumText = `${formattedSum} ${defaultCurrency}`;
-
-                    // Add a note if some entries couldn't be included in the sum
                     if (skippedEntriesCount > 0) {
                         calculatedSumText += ` (${skippedEntriesCount} ${skippedEntriesCount === 1 ? 'entry' : 'entries'} excluded due to missing conversion rate)`;
                         console.log(`Sum calculation finished. ${skippedEntriesCount} entries were excluded.`);
                     }
-
                     headerTextWithSum = headerTextWithSum.replace(STRINGS.SUM_PLACEHOLDER, calculatedSumText);
                 } catch (manualSumError) {
                     console.error(STRINGS.CONSOLE_ERROR_MANUAL_SUM, manualSumError);
-                    // Replace placeholder with an error message if sum calculation fails
                     headerTextWithSum = headerTextWithSum.replace(STRINGS.SUM_PLACEHOLDER, '[Sum Calculation Error]');
                 }
             }
 
-            // Add header message FIRST
-            messagesToAdd.push({ id: `hist_header_${Date.now()}`, text: headerTextWithSum, sender: 'system', type: 'history_header' });
+            // Add header message FIRST, with debugInfo for list requests
+            messagesToAdd.push({
+                id: `hist_header_${Date.now()}`,
+                text: headerTextWithSum,
+                sender: 'system',
+                type: 'history_header',
+                debugInfo: debugInfo // Attach debug info for list requests
+            });
 
             // Add entry messages or "no entries" message
-            const allFormattedEntries = fetchedFormattedMessages.map(msg => msg.entryData).filter((d): d is EntryCardData => !!d); // Extract EntryCardData
-
+            const allFormattedEntries = fetchedFormattedMessages.map(msg => msg.entryData).filter((d): d is EntryCardData => !!d);
             if (allFormattedEntries.length === 0) {
-                // Use the "no entries" message returned by handleFetchEntriesApi
-                messagesToAdd.push(...fetchedFormattedMessages);
+                messagesToAdd.push(...fetchedFormattedMessages.map(msg => ({ ...msg, debugInfo })));
             } else if (allFormattedEntries.length <= 5) {
-                messagesToAdd.push(...fetchedFormattedMessages);
+                messagesToAdd.push(...fetchedFormattedMessages.map(msg => ({ ...msg, debugInfo })));
             } else {
-                // Add first 5 entries
-                messagesToAdd.push(...fetchedFormattedMessages.slice(0, 5));
-                // Add "See More" prompt
+                messagesToAdd.push(...fetchedFormattedMessages.slice(0, 5).map(msg => ({ ...msg, debugInfo })));
                 const remainingCount = allFormattedEntries.length - 5;
                 messagesToAdd.push({
-                    id: `hist_more_${Date.now()}`, sender: 'system', type: 'history_see_more',
-                    text: STRINGS.SHOW_MORE_ENTRIES(remainingCount), fullEntryData: allFormattedEntries // Pass all data
+                    id: `hist_more_${Date.now()}`,
+                    sender: 'system',
+                    type: 'history_see_more',
+                    text: STRINGS.SHOW_MORE_ENTRIES(remainingCount),
+                    fullEntryData: allFormattedEntries,
+                    debugInfo
                 });
             }
-            // --- End processing fetched entries ---
-            break; // End of 'show' case
+            break;
         }
         case 'edit': {
             messagesToAdd.push({ id: `confirm_edit_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
@@ -495,41 +488,47 @@ export const handleProcessUserRequestApi = async (
             break;
         }
         case 'show_budgets': { // Added case for budgets
-            newLastShowContext = null; // Reset context
-            newLastSuccessfulEntryId = null; // Reset context
-            messagesToAdd.push({ id: `budget_header_${Date.now()}`, sender: 'system', type: 'system_info', text: geminiResult.headerText, debugInfo: geminiDebugInfo });
-
+            newLastShowContext = null;
+            newLastSuccessfulEntryId = null;
+            messagesToAdd.push({
+                id: `budget_header_${Date.now()}`,
+                sender: 'system',
+                type: 'system_info',
+                text: geminiResult.headerText,
+                debugInfo // Attach debug info for budget list requests
+            });
             try {
-                // Pass from and to dates from Gemini result to the API call
-                const budgets: ToshlBudget[] = await fetchToshlBudgets(toshlApiKey, geminiResult.from, geminiResult.to); // API Call
-
+                const budgets: ToshlBudget[] = await fetchToshlBudgets(toshlApiKey, geminiResult.from, geminiResult.to);
                 if (budgets.length === 0) {
                     messagesToAdd.push({
                         id: `budgets_empty_${Date.now()}`,
                         sender: 'system',
                         type: 'system_info',
                         text: STRINGS.BUDGETS_NO_BUDGETS_FOUND,
-                        debugInfo: geminiDebugInfo
+                        debugInfo
                     });
                 } else {
-                    // Sort budgets (e.g., by name or period, adjust as needed)
-                    const sortedBudgets = budgets.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity)); // Sort by order like accounts
-
-                    // Create individual messages for each budget card
+                    const sortedBudgets = budgets.sort((a, b) => (a.order ?? Infinity) - (b.order ?? Infinity));
                     sortedBudgets.forEach((budget, index) => {
                         messagesToAdd.push({
-                            id: `budget_${budget.id}_${index}`, // Use budget ID in message ID
-                            sender: 'bot', // Use 'bot' sender for cards
-                            type: 'budget_card', // New type for individual card
-                            budgetData: budget, // Attach single budget data
-                            text: undefined
+                            id: `budget_${budget.id}_${index}`,
+                            sender: 'bot',
+                            type: 'budget_card',
+                            budgetData: budget,
+                            text: undefined,
+                            debugInfo // Attach debug info to each budget card
                         });
                     });
-                    // Note: No "See More" card for budgets as per requirement.
                 }
             } catch (fetchError) {
                 console.error(STRINGS.CONSOLE_ERROR_FETCHING_BUDGETS, fetchError);
-                messagesToAdd.push({ id: `budget_fetch_error_${Date.now()}`, sender: 'system', type: 'error', text: STRINGS.BUDGETS_FETCH_ERROR, debugInfo: geminiDebugInfo });
+                messagesToAdd.push({
+                    id: `budget_fetch_error_${Date.now()}`,
+                    sender: 'system',
+                    type: 'error',
+                    text: STRINGS.BUDGETS_FETCH_ERROR,
+                    debugInfo
+                });
             }
             break;
         }
