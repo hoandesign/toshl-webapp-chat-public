@@ -176,10 +176,19 @@ export async function fetchEntries(apiKey: string, filters: FetchEntriesFilters)
     try {
         // Use the paginated fetch helper. It will handle adding the page param.
         // Pass the full endpoint including initial filters.
-        const entries = await fetchFromToshl<ToshlEntry>(endpoint, apiKey);
+        let entries = await fetchFromToshl<ToshlEntry>(endpoint, apiKey);
         console.log(`Successfully fetched ${entries.length} entries.`);
-        // Nếu muốn lọc chỉ các entry lặp lại (repeat), hãy lọc phía client:
-        //   const repeatEntries = entries.filter(e => e.repeat);
+        // Lọc repeat_status phía client nếu có
+        if (filters.repeat_status === 'instance') {
+            entries = entries.filter(e => !!e.repeat && !e.repeat.template);
+        } else if (filters.repeat_status === 'template') {
+            entries = entries.filter(e => !!e.repeat && !!e.repeat.template);
+        } else if (filters.repeat_status === 'all') {
+            entries = entries.filter(e => !!e.repeat);
+        }
+        if (filters.repeat_status) {
+            console.log('Entries after repeat_status filter:', entries);
+        }
         return entries;
     } catch (error) {
         console.error('Failed to fetch Toshl entries:', error);
