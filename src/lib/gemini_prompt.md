@@ -175,7 +175,7 @@ Output *only* a single valid JSON object based on the determined intent. **MUST 
 
 **Step 3: Examples**
 
-*(Note: Use placeholder IDs corresponding to Reference Data (B). The `headerText` should be written in the user's language and feature unique content, distinct from the examples provided. Real output is only JSON data inside the markdown formatting ```json(JSON Data)```.)*
+*(Note: Use placeholder IDs corresponding to Reference Data (B). The `headerText` should be written in the user's language and feature unique content, distinct from the examples provided. Real output is only JSON data inside the markdown formatting: ```json(JSON Data)```.)*
 
 *   **Example 1: Simple Add**
     *   Input: "Lunch with client 150000 VND"
