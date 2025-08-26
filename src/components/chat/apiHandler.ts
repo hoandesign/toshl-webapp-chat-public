@@ -139,7 +139,7 @@ export const handleProcessUserRequestApi = async (
             (msg.sender === 'system' && (msg.type === 'system_info' || msg.type === 'history_header')) ||
             (msg.sender === 'bot' && msg.type === 'entry_success')
         )
-        .slice(-10)
+        .slice(-4)
         .map((msg): GeminiChatMessage | null => {
             if (msg.sender === 'user' && (msg.text || msg.image || msg.audio)) {
                 // Replace old image/audio messages with placeholders
