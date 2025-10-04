@@ -1,4 +1,67 @@
-@tailwind base;
+@import "tailwindcss";
+@config "../tailwind.config.cjs";
+
+@theme {
+  --font-family-sans: "Source Sans Pro", sans-serif;
+
+  --color-app-bg: #fafaf5;
+  --color-gray-text: rgba(8, 14, 16, 0.62);
+  --color-gray-text-2: #abb0b3;
+  --color-black-text: rgba(0, 0, 0, 0.8);
+  --color-expense-text: rgb(178, 54, 85);
+  --color-navigation-active: #474b4d;
+  --color-navigation-bg: #000000;
+  --color-navigation-lighter: #17191a;
+  --color-navigation-text: #ffffff;
+  --color-navigation-icon: rgba(255, 255, 255, 0.6);
+  --color-black-button-bg: rgba(0, 0, 0, 0.8);
+  --color-button-text: #ffffff;
+  --color-card-bg: #ffffff;
+  --color-river-flow-card-bg: #ffffff;
+  --color-chart-bg: #f2f2ed;
+  --color-dimmer-bg: rgba(0, 0, 0, 0.6);
+  --color-input-bg: rgba(0, 0, 0, 0.02);
+  --color-input-bg-2: hsl(200, 100%, 98%);
+  --color-input-border-side: rgba(0, 0, 0, 0.02);
+  --color-input-border-top: transparent;
+  --color-input-border-bottom: rgba(0, 0, 0, 0.1);
+  --color-input-border-side-active: rgba(0, 0, 0, 0.02);
+  --color-input-border-top-active: transparent;
+  --color-input-border-bottom-active: rgba(0, 0, 0, 0.1);
+  --color-input-focus: #ffffff;
+  --color-input-focus-opaq: #ffffff;
+  --color-modal-win-bg: #fafaf5;
+  --color-pale-card-bg: rgba(0, 0, 0, 0.02);
+  --color-switch-bg: #DBE1E5;
+  --color-switch-thumb: #ffffff;
+  --color-today-lollipop: #474b4d;
+  --color-tags-text: #ffffff;
+  --color-popup: #fafaf5;
+  --color-popup-white-bg: #ffffff;
+  --color-tabs-text: rgba(0, 0, 0, 0.8);
+  --color-tabs-active: rgba(0, 0, 0, 0.8);
+  --color-icon-on-white: rgba(0, 0, 0, 0.8);
+  --color-label-on-white: rgba(0, 0, 0, 0.8);
+  --color-icon-disabled: rgba(0, 0, 0, 0.35);
+  --color-info-normal-text: #0d6180;
+  --color-info-success-text: #0d8059;
+  --color-info-error-text: #8c2248;
+  --color-btn-red: #b23655;
+  --color-btn-red-highlight: #b23655;
+  --color-btn-green: #36b35f;
+  --color-btn-green-highlight: #52cc66;
+  --color-btn-dark: rgba(0, 0, 0, 0.6);
+  --color-btn-dark-highlight: rgba(0, 0, 0, 0.8);
+  --color-btn-format: #f3fbff;
+  --color-dropdown-bg: #ffffff;
+  --color-budget-chart-positive-bg: rgba(117, 209, 255, 0.2);
+  --color-accent: #48CFBF;
+  --color-accent-bg: #48CFBF33;
+  --color-separator-gray: #DBE1E5;
+  --color-red-100: #fee2e2;
+  --color-green-100: #dcfce7;
+  --color-yellow-100: #fef9c3;
+}
 
 @layer base {
   body {
@@ -24,7 +87,6 @@
     -webkit-tap-highlight-color: transparent;
   }
 }
-@tailwind components;
 
 @layer components {
   /* Custom prose styling for chat messages to match regular message spacing */
@@ -154,8 +216,6 @@
   }
 }
 
-@tailwind utilities;
-
 /* Basic slide-up animation for bottom sheet */
 @keyframes slide-up {
   from { transform: translateY(100%); }
@@ -208,13 +268,13 @@
 
 .message-bubble.from-user::before {
   border-bottom-left-radius: 0.8rem 0.7rem;
-  border-right: 1rem solid theme('colors.navigation-bg');
+  border-right: 1rem solid var(--color-navigation-bg);
   right: -0.35rem;
   transform: translate(0, -0.1rem);
 }
 
 .message-bubble.from-user::after {
-  background-color: theme('colors.app-bg');
+  background-color: var(--color-app-bg);
   border-bottom-left-radius: 0.5rem;
   right: -40px;
   transform: translate(-30px, -2px);
@@ -229,13 +289,13 @@
 
 .message-bubble.from-bot::before {
   border-bottom-right-radius: 0.8rem 0.7rem;
-  border-left: 1rem solid theme('colors.card-bg');
+  border-left: 1rem solid var(--color-card-bg);
   left: -0.35rem;
   transform: translate(0, -0.1rem);
 }
 
 .message-bubble.from-bot::after {
-  background-color: theme('colors.app-bg');
+  background-color: var(--color-app-bg);
   border-bottom-right-radius: 0.5rem;
   left: 20px;
   transform: translate(-30px, -2px);
@@ -271,7 +331,7 @@
 }
 
 .message-bubble.error.from-bot::before {
-  border-left-color: theme('colors.red.100');
+  border-left-color: var(--color-red-100);
 }
 
 .message-bubble.error.from-user {
@@ -279,7 +339,7 @@
 }
 
 .message-bubble.error.from-user::before {
-  border-right-color: theme('colors.btn-red');
+  border-right-color: var(--color-btn-red);
 }
 
 .message-bubble.success {
@@ -287,7 +347,7 @@
 }
 
 .message-bubble.success.from-bot::before {
-  border-left-color: theme('colors.green.100');
+  border-left-color: var(--color-green-100);
 }
 
 .message-bubble.success.from-user {
@@ -295,7 +355,7 @@
 }
 
 .message-bubble.success.from-user::before {
-  border-right-color: theme('colors.btn-green');
+  border-right-color: var(--color-btn-green);
 }
 
 .message-bubble.system {
@@ -303,7 +363,7 @@
 }
 
 .message-bubble.system.from-bot::before {
-  border-left-color: theme('colors.yellow.100');
+  border-left-color: var(--color-yellow-100);
 }
 
 .message-bubble.system.from-user {
@@ -311,7 +371,7 @@
 }
 
 .message-bubble.system.from-user::before {
-  border-right-color: theme('colors.navigation-bg');
+  border-right-color: var(--color-navigation-bg);
 }
 
 /* Emoji-only messages */
@@ -417,14 +477,14 @@ body, html {
 .input-area {
   position: relative;
   flex-shrink: 0;
-  border-top: 1px solid theme('colors.separator-gray');
-  background-color: theme('colors.card-bg');
+  border-top: 1px solid var(--color-separator-gray);
+  background-color: var(--color-card-bg);
 }
 
 /* New Toshl message input styling */
 .toshl-message-input {
-  border-top: 1px solid theme('colors.separator-gray');
-  background-color: theme('colors.card-bg');
+  border-top: 1px solid var(--color-separator-gray);
+  background-color: var(--color-card-bg);
 }
 
 /* Prevent any phantom touch areas */
