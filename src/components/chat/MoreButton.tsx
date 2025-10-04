@@ -67,14 +67,14 @@ const MoreButton: React.FC<MoreButtonProps> = ({
               className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-start space-x-2"
             >
               <History size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="text-left">{STRINGS.QUICK_ADD_HISTORY_BUTTON_TITLE}</span>
+              <span className="text-left flex-grow">{STRINGS.QUICK_ADD_HISTORY_BUTTON_TITLE}</span>
             </button>
             <button
               onClick={handleQuickAddClick}
               className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-gray-700 hover:bg-gray-100 flex items-center justify-start space-x-2"
             >
               <Zap size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="text-left">{STRINGS.QUICK_ADD_SETUP_BUTTON_TITLE}</span>
+              <span className="text-left flex-grow">{STRINGS.QUICK_ADD_SETUP_BUTTON_TITLE}</span>
             </button>
             <div className="border-t border-gray-200 my-1"></div>
             <button
@@ -82,7 +82,7 @@ const MoreButton: React.FC<MoreButtonProps> = ({
               className="w-full px-3 sm:px-4 py-2 text-left text-xs sm:text-sm text-red-600 hover:bg-red-50 flex items-center justify-start space-x-2"
             >
               <Trash2 size={14} className="sm:w-4 sm:h-4 flex-shrink-0" />
-              <span className="text-left">{STRINGS.CLEAR_CHAT_HISTORY_BUTTON}</span>
+              <span className="text-left flex-grow">{STRINGS.CLEAR_CHAT_HISTORY_BUTTON}</span>
             </button>
           </div>
         </div>

@@ -19,6 +19,9 @@ def run(playwright):
     page_mobile = context_mobile.new_page()
     page_mobile.goto("http://localhost:5173/")
     page_mobile.wait_for_selector('textarea[placeholder*="Type your request"]')
+    # Click the "More" button to open the dropdown
+    page_mobile.click('button[title="More options"]')
+    page_mobile.wait_for_timeout(500) # Wait for animation
     page_mobile.screenshot(path="jules-scratch/verification/final_ui_mobile.png")
 
     browser.close()
