@@ -73,6 +73,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
     quickAddMessages,
     setQuickAddMessages,
     handleQuickAddClick,
+    handleClearChatHistory,
   } = useChatLogic();
 
   const [isRecording, setIsRecording] = useState(false);
@@ -414,7 +415,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
       <div className="toshl-chat-container flex flex-col h-full"> {/* Chat container with flex layout */}
         
         {/* Header - Fixed at top */}
-        <header className="toshl-conversation-header flex-shrink-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
+        <header className="toshl-conversation-header flex-shrink-0 bg-navigation-bg text-navigation-text p-3 sm:p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
           <div className="flex items-center space-x-3 flex-1">
             <img
               src="/logo.webp"
@@ -424,19 +425,19 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
               height="32"
               loading="eager"
             />
-            <h1 className="text-xl font-bold tracking-wide">{STRINGS.CHAT_TITLE}</h1>
+            <h1 className="text-lg sm:text-xl font-bold tracking-wide">{STRINGS.CHAT_TITLE}</h1>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <button
                 onClick={() => setIsGlobalDebugOpen(true)}
-                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200"
+                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transform transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100"
                 title="View debug information for all messages"
             >
                 <Bug size={20} />
             </button>
             <button
                 onClick={toggleSettings}
-                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
+                className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transform transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100" /* Use navigation theme */
                 title={STRINGS.SETTINGS_BUTTON_TITLE}
             >
                 <Settings size={20} /> {/* Slightly smaller icon */}
@@ -546,13 +547,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
               <MoreButton
                 onHistoryClick={() => handleFetchDateRange(undefined, undefined, 7)}
                 onQuickAddClick={() => setIsQuickAddModalOpen(true)}
+                onClearChatClick={handleClearChatHistory}
                 disabled={isLoadingHistory || isLoading || !!isDeleting}
               />
               <button
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
                 disabled={isLoading || isLoadingHistory || !!isDeleting}
-                className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
+                className="text-gray-text hover:text-black-text p-2 rounded-full transform transition-transform duration-200 ease-in-out hover:scale-110 active:scale-100 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
                 title="Upload photo"
               >
                 <ImagePlus size={20} />
@@ -620,7 +622,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
               <button
                 type="submit"
                 disabled={isLoading || isLoadingHistory || !!isDeleting || (!inputValue.trim() && !selectedImage && !selectedAudio)}
-                className="bg-btn-red hover:bg-btn-red-highlight text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transition duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-btn-red flex items-center justify-center"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold p-2.5 rounded-full disabled:opacity-60 disabled:cursor-not-allowed transform transition-transform duration-200 ease-in-out shadow hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 flex items-center justify-center active:scale-95"
                 aria-label={STRINGS.SEND_MESSAGE_ARIA_LABEL}
               >
                 {isLoading ? <Loader2 size={20} className="animate-spin"/> : <SendHorizonal size={20} />}
