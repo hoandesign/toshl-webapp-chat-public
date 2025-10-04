@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, FormEvent, ChangeEvent } from 'react';
+import toast from 'react-hot-toast';
 // Import necessary types from toshl lib
 import { ToshlAccount, ToshlCategory, ToshlTag } from '../../lib/toshl';
 // Import types from gemini lib, API calls are handled elsewhere
@@ -31,6 +32,7 @@ interface UseChatLogicReturn {
     handleShowMoreClick: (fullData: EntryCardData[]) => void; // For entries
     handleShowMoreAccountsClick: (fullData: AccountBalanceCardData[]) => void; // Added for accounts
     retrySendMessage: (offlineId: string) => Promise<void>;
+    handleClearChatHistory: () => void;
     // Mention feature state and handlers
     isMentionPopupOpen: boolean;
     mentionSuggestions: MentionSuggestion[];
@@ -1398,6 +1400,24 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         // localStorage update happens automatically via the useEffect watching `messages`
     }, []);
 
+    const handleClearChatHistory = useCallback(() => {
+        if (window.confirm(STRINGS.CLEAR_CHAT_HISTORY_CONFIRM)) {
+            try {
+                localStorage.removeItem(LOCAL_STORAGE_KEY);
+                localStorage.removeItem('toshlAccounts');
+                localStorage.removeItem('toshlCategories');
+                localStorage.removeItem('toshlTags');
+                localStorage.removeItem('toshlDataFetched');
+                localStorage.removeItem(QUICK_ADD_MESSAGES_KEY);
+                console.log("Chat history and related data cleared from localStorage.");
+                window.location.reload();
+            } catch (error) {
+                console.error("Failed to clear chat history:", error);
+                toast.error("Failed to clear chat history.");
+            }
+        }
+    }, []);
+
 
     return {
         messages,
@@ -1418,6 +1438,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         handleShowMoreClick,
         handleShowMoreAccountsClick, // Added handler
         retrySendMessage,
+        handleClearChatHistory,
         // Mention feature
         isMentionPopupOpen,
         mentionSuggestions,

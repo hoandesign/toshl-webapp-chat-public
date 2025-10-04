@@ -10,9 +10,11 @@ import { useSettingsLogic, geminiModelOptions } from './settings/useSettingsLogi
 
 interface SettingsPageProps {
   closeSettings: () => void; // Function to close the sidebar
+  onConfigComplete?: () => void; // Optional: Callback for when setup is complete
+  isModal?: boolean; // Optional: Render as a modal with close button
 }
 
-const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
+const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings, onConfigComplete, isModal = true }) => {
   // Use the custom hook to get state and handlers
   const {
     toshlApiKey,
@@ -32,24 +34,26 @@ const SettingsPage: React.FC<SettingsPageProps> = ({ closeSettings }) => {
     handleToshlSetup,
     handleClearChatHistory,
     handleRefreshApp,
-  } = useSettingsLogic();
+  } = useSettingsLogic({ onConfigComplete });
 
   // The component now only focuses on rendering the UI
 
   return (
     // Themed container
-    <div className="flex flex-col h-full bg-app-bg"> {/* Changed main bg to app-bg for consistency */}
+    <div className={`flex flex-col bg-app-bg ${isModal ? 'h-full' : ''}`}> {/* Changed main bg to app-bg for consistency */}
        {/* Header with Close Button - Navigation Theme */}
-       <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
-         <h1 className="text-xl font-bold tracking-wide">{STRINGS.SETTINGS_TITLE}</h1> {/* Matched ChatInterface */}
-         <button
-           onClick={closeSettings}
-           className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
-           title={STRINGS.CLOSE_SETTINGS_TITLE}
-         >
-           <X size={20} /> {/* Consistent icon size */}
-         </button>
-       </header>
+       {isModal && (
+         <header className="sticky top-0 bg-navigation-bg text-navigation-text p-4 shadow-md z-10 flex items-center justify-between"> {/* Use navigation theme */}
+           <h1 className="text-xl font-bold tracking-wide">{STRINGS.SETTINGS_TITLE}</h1> {/* Matched ChatInterface */}
+           <button
+             onClick={closeSettings}
+             className="text-navigation-icon hover:text-navigation-text p-2 rounded-full transition duration-200" /* Use navigation theme */
+             title={STRINGS.CLOSE_SETTINGS_TITLE}
+           >
+             <X size={20} /> {/* Consistent icon size */}
+           </button>
+         </header>
+       )}
 
        {/* Scrollable Content Area - Wrapped in Form */}
        <form className="flex-1 overflow-y-auto p-4 md:p-8 space-y-5 bg-card-bg" onSubmit={(e) => { e.preventDefault(); handleSave(); }}> {/* Added bg-card-bg here */}

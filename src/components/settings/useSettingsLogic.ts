@@ -14,6 +14,11 @@ export const geminiModelOptions = [
     { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
 ];
 
+// Define the hook's arguments
+interface UseSettingsLogicProps {
+    onConfigComplete?: () => void;
+}
+
 // Define the return type of the hook
 interface UseSettingsLogicReturn {
     toshlApiKey: string;
@@ -38,7 +43,7 @@ interface UseSettingsLogicReturn {
 
 const CHAT_MESSAGES_LOCAL_STORAGE_KEY = 'chatMessages'; // Define key constant
 
-export const useSettingsLogic = (): UseSettingsLogicReturn => {
+export const useSettingsLogic = ({ onConfigComplete }: UseSettingsLogicProps = {}): UseSettingsLogicReturn => {
     const [toshlApiKey, setToshlApiKey] = useState('');
     const [geminiApiKey, setGeminiApiKey] = useState('');
     const [currency, setCurrency] = useState(STRINGS.DEFAULT_CURRENCY_VALUE); // Use constant for default
@@ -179,6 +184,11 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
             // Show success toast (updated message potentially)
             toast.success(STRINGS.TOSHL_SETUP_SUCCESS_ALERT(accounts.length, categories.length, tags.length) + ` Default currency set to ${userProfile?.currency?.main || 'default'}. Gemini cache cleared.`);
 
+            // Notify parent component that configuration is complete
+            if (onConfigComplete) {
+                onConfigComplete();
+            }
+
         } catch (error) {
             console.error('Toshl setup failed:', error); // Keep console error for debugging
             const errorMessage = error instanceof Error ? error.message : STRINGS.UNKNOWN_TOSHL_SETUP_ERROR;
@@ -188,7 +198,7 @@ export const useSettingsLogic = (): UseSettingsLogicReturn => {
         } finally {
             setIsLoadingSetup(false);
         }
-    }, [toshlApiKey, geminiApiKey]); // Add geminiApiKey to dependencies
+    }, [toshlApiKey, geminiApiKey, onConfigComplete]); // Add geminiApiKey and onConfigComplete to dependencies
 
     // Function to clear chat history from localStorage
     const handleClearChatHistory = useCallback(() => {

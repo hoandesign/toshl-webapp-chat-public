@@ -148,7 +148,7 @@ const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       type="button"
       onClick={startRecording}
       disabled={disabled}
-      className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed self-end mb-1"
+      className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
       title={STRINGS.AUDIO_RECORD_BUTTON_TITLE}
     >
       <Mic size={20} />

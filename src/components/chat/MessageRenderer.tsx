@@ -347,7 +347,6 @@ const ImageDisplay: React.FC<{
 };
 
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDeleting, isRetrying, handleDeleteEntry, handleDeleteMessageLocally, retrySendMessage, hideNumbers }) => { // Accept hideNumbers prop
-    const [showActions, setShowActions] = useState(false); // State to control action visibility on hover
     const [copySuccess, setCopySuccess] = useState(false); // State for copy feedback
     const [showDebugModal, setShowDebugModal] = useState(false); // State for debug modal
 
@@ -422,7 +421,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     
     if (shouldShowActions) {
         actionButtons = (
-            <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 ${showActions ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2 pointer-events-none'}`}>
+            <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto`}>
                 {msg.timestamp && canHaveActions && (
                     <span className="text-xs text-gray-300 whitespace-nowrap" title={new Date(msg.timestamp).toLocaleString()}>
                         {new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString()
@@ -719,11 +718,9 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     return (
         <>
             <div
-                className={`flex ${alignment} message-container relative group`}
-                onMouseEnter={() => shouldShowActions && setShowActions(true)}
-                onMouseLeave={() => shouldShowActions && setShowActions(false)}
+                className={`flex ${alignment} message-container`}
             >
-                <div className="relative">
+                <div className="relative group">
                     {content}
                     {actionButtons}
                 </div>
