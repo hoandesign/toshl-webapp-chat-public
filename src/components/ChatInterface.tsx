@@ -17,6 +17,9 @@ import MentionSuggestionsPopup from './chat/MentionSuggestionsPopup';
 import AccountBalanceCard from './chat/AccountBalanceCard';
 import BudgetCard from './chat/BudgetCard'; // Import BudgetCard
 import GlobalDebugModal from './chat/GlobalDebugModal';
+import QuickAddModal from './chat/QuickAddModal';
+import QuickAddButtonRow from './chat/QuickAddButtonRow';
+import MoreButton from './chat/MoreButton';
 
 // --- Simple Debounce Utility ---
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -37,6 +40,7 @@ function debounce<T extends (...args: any[]) => void>(func: T, wait: number): (.
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbers }): React.ReactElement => { // Accept hideNumbers prop
   const [isGlobalDebugOpen, setIsGlobalDebugOpen] = useState(false);
+  const [isQuickAddModalOpen, setIsQuickAddModalOpen] = useState(false);
   const {
     messages,
     inputValue,
@@ -66,6 +70,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
     selectedAudioMetadata,
     handleAudioRecorded,
     removeSelectedAudio,
+    quickAddMessages,
+    setQuickAddMessages,
+    handleQuickAddClick,
   } = useChatLogic();
 
   const [isRecording, setIsRecording] = useState(false);
@@ -526,19 +533,21 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           </div>
         )}
         
+        {/* Quick Add Button Row */}
+        <QuickAddButtonRow
+          quickAddMessages={quickAddMessages}
+          onQuickAddClick={handleQuickAddClick}
+          isVisible={!isRecording}
+        />
 
         <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
           {!isRecording && (
             <>
-              <button
-                type="button"
-                onClick={() => handleFetchDateRange(undefined, undefined, 7)}
+              <MoreButton
+                onHistoryClick={() => handleFetchDateRange(undefined, undefined, 7)}
+                onQuickAddClick={() => setIsQuickAddModalOpen(true)}
                 disabled={isLoadingHistory || isLoading || !!isDeleting}
-                className="text-gray-text hover:text-black-text p-2 rounded-full transition duration-200 disabled:opacity-50 disabled:cursor-wait flex items-center justify-center"
-                title={STRINGS.FETCH_HISTORY_BUTTON_TITLE}
-              >
-                {isLoadingHistory ? <Loader2 size={20} className="animate-spin" /> : <History size={20} />}
-              </button>
+              />
               <button
                 type="button"
                 onClick={() => imageInputRef.current?.click()}
@@ -636,6 +645,14 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
         isOpen={isGlobalDebugOpen}
         onClose={() => setIsGlobalDebugOpen(false)}
         messages={messages}
+      />
+
+      {/* Quick Add Modal */}
+      <QuickAddModal
+        isOpen={isQuickAddModalOpen}
+        onClose={() => setIsQuickAddModalOpen(false)}
+        quickAddMessages={quickAddMessages}
+        onSave={setQuickAddMessages}
       />
     </div>
   );

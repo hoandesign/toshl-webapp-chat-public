@@ -8,6 +8,7 @@ import { handleFetchEntriesApi, handleProcessUserRequestApi, handleDeleteEntryAp
 import { getDecryptedApiKey } from '../../utils/encryption';
 import * as STRINGS from '../../constants/strings';
 import { EntryCardData, Message, MentionSuggestion, AccountBalanceCardData, DebugInfo } from './types'; // Added AccountBalanceCardData
+import { QuickAddMessage } from './QuickAddModal';
 // Removed vietnamese-search import
 
 // Define the return type of the hook, adding retry function and mention logic
@@ -47,12 +48,17 @@ interface UseChatLogicReturn {
     // Image cache functionality
     getCachedDisplayImage: (imageId: string) => Promise<string | null>;
     clearImageCache: () => Promise<void>;
+    // Quick add functionality
+    quickAddMessages: QuickAddMessage[];
+    setQuickAddMessages: React.Dispatch<React.SetStateAction<QuickAddMessage[]>>;
+    handleQuickAddClick: (message: QuickAddMessage) => void;
 }
 
 const LOCAL_STORAGE_KEY = 'chatMessages';
 const TOSHL_ACCOUNTS_KEY = 'toshlAccounts';
 const TOSHL_CATEGORIES_KEY = 'toshlCategories';
 const TOSHL_TAGS_KEY = 'toshlTags';
+const QUICK_ADD_MESSAGES_KEY = 'quickAddMessages';
 
 // IndexedDB configuration for image caching
 const IMAGE_CACHE_DB_NAME = 'ImageCacheDB';
@@ -545,6 +551,17 @@ const [selectedImage, setSelectedImage] = useState<string | null>(null);
 const [selectedAudio, setSelectedAudio] = useState<string | null>(null);
 const [selectedAudioMetadata, setSelectedAudioMetadata] = useState<{ duration: number; mimeType: string } | null>(null);
 
+// State for Quick Add Messages
+const [quickAddMessages, setQuickAddMessages] = useState<QuickAddMessage[]>(() => {
+    try {
+        const stored = localStorage.getItem(QUICK_ADD_MESSAGES_KEY);
+        return stored ? JSON.parse(stored) : [];
+    } catch (error) {
+        console.error("Failed to load quick add messages from localStorage:", error);
+        return [];
+    }
+});
+
 // --- State for Mention Feature ---
 const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]>([]);
     const [isMentionPopupOpen, setIsMentionPopupOpen] = useState(false);
@@ -563,6 +580,15 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             // Optionally notify user or implement more robust error handling
         }
     }, [messages]);
+
+    // Save quick add messages to localStorage whenever they change
+    useEffect(() => {
+        try {
+            localStorage.setItem(QUICK_ADD_MESSAGES_KEY, JSON.stringify(quickAddMessages));
+        } catch (error) {
+            console.error("Failed to save quick add messages to localStorage:", error);
+        }
+    }, [quickAddMessages]);
 
     // Effect to handle online/offline events
     useEffect(() => {
@@ -773,6 +799,19 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
     const removeSelectedAudio = useCallback(() => {
         setSelectedAudio(null);
         setSelectedAudioMetadata(null);
+    }, []);
+
+    // Quick add click handler
+    const handleQuickAddClick = useCallback((message: QuickAddMessage) => {
+        setInputValue(message.text);
+        // Focus the textarea after setting the value
+        setTimeout(() => {
+            const textarea = document.querySelector('textarea[placeholder*="Type your request"]') as HTMLTextAreaElement;
+            if (textarea) {
+                textarea.focus();
+                textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+            }
+        }, 0);
     }, []);
 
     // --- Core Logic Functions ---
@@ -1415,5 +1454,9 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         clearImageCache: useCallback(async (): Promise<void> => {
             await clearImageCache();
         }, []),
+        // Quick add functionality
+        quickAddMessages,
+        setQuickAddMessages,
+        handleQuickAddClick,
     };
 };

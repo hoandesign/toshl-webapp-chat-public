@@ -256,3 +256,23 @@ export const AUDIO_CANCEL_RECORDING_TITLE = "Cancel recording";
 export const AUDIO_RECORDING_STATUS = "Recording...";
 export const AUDIO_MAX_DURATION_WARNING = "Maximum recording duration is 60 seconds.";
 export const AUDIO_PROCESSING_STATUS = "Processing audio...";
+
+// Quick Add Feature Strings
+export const QUICK_ADD_MODAL_TITLE = "Quick Add Setup";
+export const QUICK_ADD_MESSAGE_TEXT_LABEL = "Message Text";
+export const QUICK_ADD_MESSAGE_TEXT_PLACEHOLDER = "e.g., $10 chicken set";
+export const QUICK_ADD_MESSAGE_LABEL_LABEL = "Label (optional)";
+export const QUICK_ADD_MESSAGE_LABEL_PLACEHOLDER = "e.g., Lunch";
+export const QUICK_ADD_ADD_MESSAGE_BUTTON = "Add Message";
+export const QUICK_ADD_QUICK_MESSAGES_TITLE = "Quick Messages";
+export const QUICK_ADD_NO_MESSAGES_TEXT = "No quick messages yet. Add your first one above!";
+export const QUICK_ADD_REMOVE_MESSAGE_TITLE = "Remove message";
+export const QUICK_ADD_SAVE_CHANGES_BUTTON = "Save Changes";
+export const QUICK_ADD_CANCEL_BUTTON = "Cancel";
+export const QUICK_ADD_MORE_BUTTON_TITLE = "More options";
+export const QUICK_ADD_SETUP_BUTTON_TITLE = "Quick Add Setup";
+export const QUICK_ADD_HISTORY_BUTTON_TITLE = "Fetch History";
+export const QUICK_ADD_EDIT_MESSAGE_TITLE = "Edit Quick Message";
+export const QUICK_ADD_EDIT_MESSAGE_BUTTON_TITLE = "Edit message";
+export const QUICK_ADD_SAVE_CHANGES_BUTTON_TEXT = "Save Changes";
+export const QUICK_ADD_CANCEL_EDIT_BUTTON_TEXT = "Cancel";
