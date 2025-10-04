@@ -1197,10 +1197,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         // console.log(`Filtering effect: open=${isMentionPopupOpen}, index=${mentionTriggerIndex}, query='${mentionQuery}'`); // Remove logging
         if (!isMentionPopupOpen || mentionTriggerIndex === null) {
             // Only clear if suggestions exist, prevent unnecessary updates
-            if (mentionSuggestions.length > 0) {
-                setMentionSuggestions([]);
-                // console.log("Filtering effect: clearing suggestions (not open or no index)"); // Remove logging
-            }
+            setMentionSuggestions(currentSuggestions => (currentSuggestions.length > 0 ? [] : currentSuggestions));
             return;
         }
 
@@ -1248,7 +1245,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         setMentionSuggestions(limitedFilteredSuggestions);
         // console.log(`Filtering effect: found ${filteredSuggestions.length} matches, showing ${limitedFilteredSuggestions.length}`, limitedFilteredSuggestions); // Remove logging
 
-    }, [mentionQuery, isMentionPopupOpen, mentionTriggerIndex, accounts, categories, tags, mentionSuggestions.length]); // Added back mentionSuggestions.length dependency
+    }, [mentionQuery, isMentionPopupOpen, mentionTriggerIndex, accounts, categories, tags]);
 
 
     const handleMentionSelect = useCallback((suggestion: MentionSuggestion) => {
