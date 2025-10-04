@@ -17,7 +17,7 @@ const QuickAddButtonRow: React.FC<QuickAddButtonRowProps> = ({
   }
 
   return (
-    <div className="flex-shrink-0 py-2 sm:py-3">
+    <div className="flex-shrink-0">
       <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pb-1 -mx-4 px-4">
         {quickAddMessages.map((message) => (
           <button
