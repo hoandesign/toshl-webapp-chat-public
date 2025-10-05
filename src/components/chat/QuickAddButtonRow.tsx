@@ -17,13 +17,13 @@ const QuickAddButtonRow: React.FC<QuickAddButtonRowProps> = ({
   }
 
   return (
-    <div className="flex-shrink-0">
-      <div className="flex items-center space-x-1 sm:space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 pb-1 -mx-4 px-4">
+    <div className="flex-shrink-0 bg-navigation-bg border-t border-separator-gray px-3 md:px-4 py-2.5 shadow-sm">
+      <div className="flex items-center space-x-1.5 sm:space-x-2 overflow-x-auto scrollbar-thin scrollbar-thumb-btn-red/30 hover:scrollbar-thumb-btn-red/50 scrollbar-track-transparent">
         {quickAddMessages.map((message) => (
           <button
             key={message.id}
             onClick={() => onQuickAddClick(message)}
-            className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition duration-200 text-xs sm:text-sm font-medium text-gray-700 shadow-sm"
+            className="flex-shrink-0 px-3 sm:px-4 py-2 sm:py-2.5 bg-white border border-btn-red/20 rounded-lg hover:bg-btn-red/5 hover:border-btn-red/40 transition duration-200 text-xs sm:text-sm font-medium text-gray-700 shadow-sm hover:shadow"
             title={message.text}
           >
             <span className="truncate max-w-[80px] sm:max-w-[120px]">

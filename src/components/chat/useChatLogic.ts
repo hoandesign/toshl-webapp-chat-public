@@ -521,9 +521,15 @@ export const useChatLogic = (): UseChatLogicReturn => {
             if (storedMessages) {
                 // Basic validation: ensure it's an array
                 const parsed = JSON.parse(storedMessages);
-                return Array.isArray(parsed)
-                    ? parsed
-                    : [{ id: 'init', text: STRINGS.INITIAL_GREETING, sender: 'system', type: 'system_info', status: 'sent', timestamp: new Date().toISOString() }];
+                if (Array.isArray(parsed)) {
+                    // Filter out loading messages - they represent transient states
+                    // that should not persist across page reloads
+                    const filteredMessages = parsed.filter(msg => msg.type !== 'loading');
+                    return filteredMessages.length > 0
+                        ? filteredMessages
+                        : [{ id: 'init', text: STRINGS.INITIAL_GREETING, sender: 'system', type: 'system_info', status: 'sent', timestamp: new Date().toISOString() }];
+                }
+                return [{ id: 'init', text: STRINGS.INITIAL_GREETING, sender: 'system', type: 'system_info', status: 'sent', timestamp: new Date().toISOString() }];
             }
         } catch (error) {
             console.error("Failed to load messages from localStorage:", error);
@@ -574,9 +580,13 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
     // --- Effects for Network Status, Local Storage, and Data Loading ---
 
     // Save messages to localStorage whenever they change
+    // Filter out loading messages as they represent transient states
     useEffect(() => {
         try {
-            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messages));
+            // Filter out loading messages before saving - they represent transient states
+            // that should not persist across page reloads
+            const messagesToSave = messages.filter(msg => msg.type !== 'loading');
+            localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(messagesToSave));
         } catch (error) {
             console.error("Failed to save messages to localStorage:", error);
             // Optionally notify user or implement more robust error handling

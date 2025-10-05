@@ -451,6 +451,13 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
           <div ref={messagesEndRef} className="h-1" />
         </div>
 
+        {/* Quick Add Button Row - Above the chatbar */}
+        <QuickAddButtonRow
+          quickAddMessages={quickAddMessages}
+          onQuickAddClick={handleQuickAddClick}
+          isVisible={!isRecording}
+        />
+
         {/* Input Area - Fixed at bottom */}
         <div className="toshl-message-input flex-shrink-0 relative p-3 md:p-4 bg-card-bg shadow-inner z-[5]"> {/* Fixed input area */}
         {isMentionPopupOpen && mentionSuggestions.length > 0 && !isRecording && (
@@ -533,13 +540,6 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ toggleSettings, hideNumbe
             />
           </div>
         )}
-        
-        {/* Quick Add Button Row */}
-        <QuickAddButtonRow
-          quickAddMessages={quickAddMessages}
-          onQuickAddClick={handleQuickAddClick}
-          isVisible={!isRecording}
-        />
 
         <form onSubmit={handleFormSubmit} className="flex items-center space-x-2 md:space-x-3">
           {!isRecording && (
