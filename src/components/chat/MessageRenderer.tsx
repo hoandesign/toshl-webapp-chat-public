@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Message } from './types'; // Import Message type
 // Added Clock, RefreshCw, Copy icons
 import CheckCircle from 'lucide-react/dist/esm/icons/check-circle';
@@ -15,7 +15,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Clock from 'lucide-react/dist/esm/icons/clock';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Copy from 'lucide-react/dist/esm/icons/copy';
-import { FileImage, Volume2, Play, Pause } from 'lucide-react';
+import { FileImage, Volume2, Play, Pause, X } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
@@ -349,7 +349,34 @@ const ImageDisplay: React.FC<{
 const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDeleting, isRetrying, handleDeleteEntry, handleDeleteMessageLocally, retrySendMessage, hideNumbers }) => { // Accept hideNumbers prop
     const [copySuccess, setCopySuccess] = useState(false); // State for copy feedback
     const [showDebugModal, setShowDebugModal] = useState(false); // State for debug modal
+    const [showContextMenu, setShowContextMenu] = useState(false); // State for mobile context menu
+    const messageRef = useRef<HTMLDivElement>(null);
 
+    // Detect if device is mobile/touch
+    const isMobile = typeof window !== 'undefined' && ('ontouchstart' in window || navigator.maxTouchPoints > 0);
+
+    // Handle clicks outside to close context menu
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (isMobile && showContextMenu && messageRef.current && !messageRef.current.contains(event.target as Node)) {
+                setShowContextMenu(false);
+            }
+        };
+
+        if (isMobile && showContextMenu) {
+            document.addEventListener('mousedown', handleClickOutside);
+            return () => {
+                document.removeEventListener('mousedown', handleClickOutside);
+            };
+        }
+    }, [isMobile, showContextMenu]);
+
+    // Handle touch to toggle context menu
+    const handleTouch = (e: React.TouchEvent) => {
+        if (!isMobile) return;
+        e.stopPropagation();
+        setShowContextMenu(prev => !prev);
+    };
 
     // Helper function to determine bubble classes
     const getBubbleClasses = (message: Message, isConsecutive = false): string => {
@@ -421,7 +448,17 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     
     if (shouldShowActions) {
         actionButtons = (
-            <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto`}>
+            <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto ${isMobile && showContextMenu ? 'opacity-100 translate-y-0 pointer-events-auto' : ''}`}>
+                {/* Mobile close button */}
+                {isMobile && showContextMenu && (
+                    <button
+                        onClick={() => setShowContextMenu(false)}
+                        className="text-gray-300 hover:text-white p-1 rounded transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
+                        title="Close menu"
+                    >
+                        <X size={14} />
+                    </button>
+                )}
                 {msg.timestamp && canHaveActions && (
                     <span className="text-xs text-gray-300 whitespace-nowrap" title={new Date(msg.timestamp).toLocaleString()}>
                         {new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString()
@@ -433,7 +470,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 {canCopy && canHaveActions && (
                     <button
                         onClick={() => handleCopy(msg.text)}
-                        className="text-gray-300 hover:text-white p-1 rounded transition-colors"
+                        className={`text-gray-300 hover:text-white p-1 rounded transition-colors ${isMobile ? 'touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center' : ''}`}
                         title={STRINGS.COPY_MESSAGE_BUTTON_TITLE}
                     >
                         {copySuccess ? <CheckCircle size={14} className="text-green-400" /> : <Copy size={14} />}
@@ -443,7 +480,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 {hasDebugInfo && (
                     <button
                         onClick={() => setShowDebugModal(true)}
-                        className="text-gray-300 hover:text-blue-400 p-1 rounded transition-colors"
+                        className={`text-gray-300 hover:text-blue-400 p-1 rounded transition-colors ${isMobile ? 'touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center' : ''}`}
                         title={STRINGS.DEBUG_INFO_BUTTON_TITLE}
                     >
                         <Info size={14} />
@@ -454,7 +491,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
                 {canDeleteLocally && canHaveActions && (
                     <button
                         onClick={() => handleDeleteMessageLocally(msg.id)}
-                        className="text-gray-300 hover:text-red-400 p-1 rounded transition-colors"
+                        className={`text-gray-300 hover:text-red-400 p-1 rounded transition-colors ${isMobile ? 'touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center' : ''}`}
                         title={STRINGS.DELETE_MESSAGE_BUTTON_TITLE}
                     >
                         <Trash2 size={14} />
@@ -720,7 +757,11 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             <div
                 className={`flex ${alignment} message-container`}
             >
-                <div className="relative group">
+                <div 
+                    ref={messageRef}
+                    className={`relative group ${isMobile && showContextMenu ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
+                    onTouchEnd={handleTouch}
+                >
                     {content}
                     {actionButtons}
                 </div>
