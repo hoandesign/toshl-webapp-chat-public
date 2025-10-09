@@ -15,7 +15,7 @@ import FileText from 'lucide-react/dist/esm/icons/file-text';
 import Clock from 'lucide-react/dist/esm/icons/clock';
 import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw';
 import Copy from 'lucide-react/dist/esm/icons/copy';
-import { FileImage, Volume2, Play, Pause, X } from 'lucide-react';
+import { FileImage, Volume2, Play, Pause } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import * as STRINGS from '../../constants/strings';
@@ -449,16 +449,6 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
     if (shouldShowActions) {
         actionButtons = (
             <div className={`absolute -top-8 ${msg.sender === 'user' ? 'right-0' : 'left-0'} flex items-center space-x-1 bg-gray-800/90 backdrop-blur-sm px-2 py-1 rounded-lg shadow-lg transition-all duration-200 opacity-0 translate-y-2 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto ${isMobile && showContextMenu ? 'opacity-100 translate-y-0 pointer-events-auto' : ''}`}>
-                {/* Mobile close button */}
-                {isMobile && showContextMenu && (
-                    <button
-                        onClick={() => setShowContextMenu(false)}
-                        className="text-gray-300 hover:text-white p-1 rounded transition-colors touch-manipulation min-h-[44px] min-w-[44px] flex items-center justify-center"
-                        title="Close menu"
-                    >
-                        <X size={14} />
-                    </button>
-                )}
                 {msg.timestamp && canHaveActions && (
                     <span className="text-xs text-gray-300 whitespace-nowrap" title={new Date(msg.timestamp).toLocaleString()}>
                         {new Date(msg.timestamp).toLocaleDateString() === new Date().toLocaleDateString()
@@ -759,7 +749,7 @@ const MessageRenderer: React.FC<MessageRendererProps> = ({ message: msg, isDelet
             >
                 <div 
                     ref={messageRef}
-                    className={`relative group ${isMobile && showContextMenu ? 'ring-2 ring-blue-400 ring-opacity-50' : ''}`}
+                    className="relative group"
                     onTouchEnd={handleTouch}
                 >
                     {content}
