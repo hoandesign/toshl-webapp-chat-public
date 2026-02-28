@@ -1,0 +1,674 @@
+@import "tailwindcss";
+@config "../tailwind.config.cjs";
+
+@theme {
+  --font-family-sans: "Source Sans Pro", sans-serif;
+
+  --color-app-bg: #fafaf5;
+  --color-gray-text: rgba(8, 14, 16, 0.62);
+  --color-gray-text-2: #abb0b3;
+  --color-black-text: rgba(0, 0, 0, 0.8);
+  --color-expense-text: rgb(178, 54, 85);
+  --color-navigation-active: #474b4d;
+  --color-navigation-bg: #000000;
+  --color-navigation-lighter: #17191a;
+  --color-navigation-text: #ffffff;
+  --color-navigation-icon: rgba(255, 255, 255, 0.6);
+  --color-black-button-bg: rgba(0, 0, 0, 0.8);
+  --color-button-text: #ffffff;
+  --color-card-bg: #ffffff;
+  --color-river-flow-card-bg: #ffffff;
+  --color-chart-bg: #f2f2ed;
+  --color-dimmer-bg: rgba(0, 0, 0, 0.6);
+  --color-input-bg: rgba(0, 0, 0, 0.02);
+  --color-input-bg-2: hsl(200, 100%, 98%);
+  --color-input-border-side: rgba(0, 0, 0, 0.02);
+  --color-input-border-top: transparent;
+  --color-input-border-bottom: rgba(0, 0, 0, 0.1);
+  --color-input-border-side-active: rgba(0, 0, 0, 0.02);
+  --color-input-border-top-active: transparent;
+  --color-input-border-bottom-active: rgba(0, 0, 0, 0.1);
+  --color-input-focus: #ffffff;
+  --color-input-focus-opaq: #ffffff;
+  --color-modal-win-bg: #fafaf5;
+  --color-pale-card-bg: rgba(0, 0, 0, 0.02);
+  --color-switch-bg: #DBE1E5;
+  --color-switch-thumb: #ffffff;
+  --color-today-lollipop: #474b4d;
+  --color-tags-text: #ffffff;
+  --color-popup: #fafaf5;
+  --color-popup-white-bg: #ffffff;
+  --color-tabs-text: rgba(0, 0, 0, 0.8);
+  --color-tabs-active: rgba(0, 0, 0, 0.8);
+  --color-icon-on-white: rgba(0, 0, 0, 0.8);
+  --color-label-on-white: rgba(0, 0, 0, 0.8);
+  --color-icon-disabled: rgba(0, 0, 0, 0.35);
+  --color-info-normal-text: #0d6180;
+  --color-info-success-text: #0d8059;
+  --color-info-error-text: #8c2248;
+  --color-btn-red: #b23655;
+  --color-btn-red-highlight: #b23655;
+  --color-btn-green: #36b35f;
+  --color-btn-green-highlight: #52cc66;
+  --color-btn-dark: rgba(0, 0, 0, 0.6);
+  --color-btn-dark-highlight: rgba(0, 0, 0, 0.8);
+  --color-btn-format: #f3fbff;
+  --color-dropdown-bg: #ffffff;
+  --color-budget-chart-positive-bg: rgba(117, 209, 255, 0.2);
+  --color-accent: #48CFBF;
+  --color-accent-bg: #48CFBF33;
+  --color-separator-gray: #DBE1E5;
+  --color-red-100: #fee2e2;
+  --color-green-100: #dcfce7;
+  --color-yellow-100: #fef9c3;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-app-bg text-black-text;
+    /* Add other base body styles from the provided CSS if needed */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    height: 100%; /* Ensure body takes full height */
+    width: 100%; /* Ensure body takes full width */
+    margin: 0; /* Reset default margin */
+    padding: 0; /* Reset default padding */
+  }
+  /* Ensure html also has no margin/padding */
+  html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    width: 100%;
+  }
+  /* Apply box-sizing globally */
+  *, :after, :before {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+  }
+}
+
+@layer components {
+  /* Custom prose styling for chat messages to match regular message spacing */
+  .prose-chat {
+    @apply prose prose-sm break-words;
+  }
+  
+  /* Paragraph spacing to match regular chat messages */
+  .prose-chat p {
+    @apply text-sm my-2 leading-5;
+  }
+  
+  .prose-chat p:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat p:last-child {
+    @apply mb-0;
+  }
+  
+  /* List spacing - compact for chat */
+  .prose-chat ul, .prose-chat ol {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat ul:first-child, .prose-chat ol:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat ul:last-child, .prose-chat ol:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat li {
+    @apply text-sm my-0.5;
+  }
+  
+  /* Table spacing - compact for chat */
+  .prose-chat table {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat table:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat table:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat th, .prose-chat td {
+    @apply text-sm py-1 px-2;
+  }
+  
+  .prose-chat th {
+    @apply font-semibold;
+  }
+  
+  /* Heading spacing */
+  .prose-chat h1, .prose-chat h2, .prose-chat h3, .prose-chat h4, .prose-chat h5, .prose-chat h6 {
+    @apply text-sm font-semibold my-2;
+  }
+  
+  .prose-chat h1:first-child, .prose-chat h2:first-child, .prose-chat h3:first-child, 
+  .prose-chat h4:first-child, .prose-chat h5:first-child, .prose-chat h6:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat h1:last-child, .prose-chat h2:last-child, .prose-chat h3:last-child, 
+  .prose-chat h4:last-child, .prose-chat h5:last-child, .prose-chat h6:last-child {
+    @apply mb-0;
+  }
+  
+  /* Code and blockquote spacing */
+  .prose-chat code {
+    @apply text-xs;
+  }
+  
+  .prose-chat pre {
+    @apply my-2 text-xs;
+  }
+  
+  .prose-chat pre:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat pre:last-child {
+    @apply mb-0;
+  }
+  
+  .prose-chat blockquote {
+    @apply my-2 text-sm;
+  }
+  
+  .prose-chat blockquote:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat blockquote:last-child {
+    @apply mb-0;
+  }
+  
+  /* Horizontal rule spacing */
+  .prose-chat hr {
+    @apply my-2;
+  }
+  
+  .prose-chat hr:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat hr:last-child {
+    @apply mb-0;
+  }
+  
+  /* Image spacing */
+  .prose-chat img {
+    @apply my-2;
+  }
+  
+  .prose-chat img:first-child {
+    @apply mt-0;
+  }
+  
+  .prose-chat img:last-child {
+    @apply mb-0;
+  }
+}
+
+/* Basic slide-up animation for bottom sheet */
+@keyframes slide-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Dimmer background */
+@keyframes fade-in-dimmer {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.animate-fade-in-dimmer {
+  animation: fade-in-dimmer 0.3s ease-out forwards;
+}
+
+/* Chatscope-inspired bubble chat with natural width handling */
+.message-bubble {
+  @apply relative px-4 py-2.5;
+  border-radius: 18px;
+  line-height: 1.25;
+  /* Natural content-based width - works with flex container */
+  display: flex;
+  align-items: flex-start;
+  width: fit-content;
+  /* Proper text wrapping following chatscope approach */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  word-break: break-word; /* break-word value is deprecated, but necessary for Safari */
+  /* Remove artificial width constraints - let content determine width */
+}
+
+.message-bubble::before,
+.message-bubble::after {
+  content: "";
+  position: absolute;
+  bottom: -0.1rem;
+  height: 1rem;
+}
+
+/* User messages (right side, using Toshl brand colors) */
+.message-bubble.from-user {
+  @apply bg-navigation-bg text-navigation-text;
+  /* Natural width with flex container alignment */
+}
+
+.message-bubble.from-user::before {
+  border-bottom-left-radius: 0.8rem 0.7rem;
+  border-right: 1rem solid var(--color-navigation-bg);
+  right: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+
+.message-bubble.from-user::after {
+  background-color: var(--color-app-bg);
+  border-bottom-left-radius: 0.5rem;
+  right: -40px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}
+
+/* Bot/System messages (left side, using Toshl brand colors) */
+.message-bubble.from-bot {
+  @apply bg-card-bg text-black-text;
+  /* Natural width with flex container alignment */
+}
+
+.message-bubble.from-bot::before {
+  border-bottom-right-radius: 0.8rem 0.7rem;
+  border-left: 1rem solid var(--color-card-bg);
+  left: -0.35rem;
+  transform: translate(0, -0.1rem);
+}
+
+.message-bubble.from-bot::after {
+  background-color: var(--color-app-bg);
+  border-bottom-right-radius: 0.5rem;
+  left: 20px;
+  transform: translate(-30px, -2px);
+  width: 10px;
+}
+
+/* Remove tail for consecutive messages */
+.message-bubble.no-tail::before {
+  display: none;
+}
+
+/* Consecutive message spacing */
+.message-bubble.consecutive {
+  @apply mt-1;
+}
+
+.message-bubble:not(.consecutive) {
+  @apply mt-3;
+}
+
+/* Margin adjustments for message containers */
+.message-container {
+  @apply mb-2;
+}
+
+.message-container.consecutive {
+  @apply mb-1;
+}
+
+/* Special styling for different message types */
+.message-bubble.error {
+  @apply bg-red-100 text-red-800;
+}
+
+.message-bubble.error.from-bot::before {
+  border-left-color: var(--color-red-100);
+}
+
+.message-bubble.error.from-user {
+  @apply bg-btn-red text-white;
+}
+
+.message-bubble.error.from-user::before {
+  border-right-color: var(--color-btn-red);
+}
+
+.message-bubble.success {
+  @apply bg-green-100 text-green-800;
+}
+
+.message-bubble.success.from-bot::before {
+  border-left-color: var(--color-green-100);
+}
+
+.message-bubble.success.from-user {
+  @apply bg-btn-green text-white;
+}
+
+.message-bubble.success.from-user::before {
+  border-right-color: var(--color-btn-green);
+}
+
+.message-bubble.system {
+  @apply bg-yellow-100 text-yellow-800;
+}
+
+.message-bubble.system.from-bot::before {
+  border-left-color: var(--color-yellow-100);
+}
+
+.message-bubble.system.from-user {
+  @apply bg-navigation-bg text-navigation-text;
+}
+
+.message-bubble.system.from-user::before {
+  border-right-color: var(--color-navigation-bg);
+}
+
+/* Emoji-only messages */
+.message-bubble.emoji-only {
+  @apply bg-transparent text-4xl p-1;
+  width: auto;
+  min-width: auto;
+}
+
+.message-bubble.emoji-only::before,
+.message-bubble.emoji-only::after {
+  display: none;
+}
+
+/* Audio-only messages */
+.message-bubble.audio-only {
+  padding: 8px;
+}
+
+/* Messages with audio content (with or without text) */
+.message-bubble.has-audio {
+  padding: 12px;
+}
+
+/* Remove artificial width constraints - let all messages use natural width */
+
+/* Fix mobile viewport issues and prevent empty touch areas */
+.App {
+  height: 100vh;
+  height: 100dvh; /* Use dynamic viewport height on supported browsers */
+  overflow: hidden;
+}
+
+/* CSS custom property for JavaScript fallback */
+:root {
+  --viewport-height: 100vh;
+}
+
+/* Toshl Chat UI Layout - Following chatscope approach */
+.toshl-main-container {
+  /* Main container that defines the chat area */
+  position: relative;
+  height: 100%;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.toshl-chat-container {
+  /* Chat container with proper flex layout */
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  position: relative;
+}
+
+.toshl-conversation-header {
+  /* Fixed header at the top */
+  flex: 0 0 auto; /* Don't grow or shrink */
+  z-index: 10;
+}
+
+.toshl-message-list {
+  /* Scrollable message area that takes remaining space */
+  flex: 1 1 auto; /* Grow and shrink as needed */
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+  /* Ensure proper scrolling behavior */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+
+.toshl-message-input {
+  /* Fixed input area at the bottom */
+  flex: 0 0 auto; /* Don't grow or shrink */
+  z-index: 5;
+}
+
+/* Prevent any unwanted spacing or touch areas */
+body, html {
+  touch-action: manipulation;
+  overscroll-behavior: none;
+}
+
+/* Ensure no extra space at bottom on mobile */
+@supports (-webkit-touch-callout: none) {
+  .App {
+    height: -webkit-fill-available;
+  }
+}
+
+/* Prevent unwanted touch interactions and scrolling */
+.chat-container {
+  position: relative;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Legacy input-area class for compatibility */
+.input-area {
+  position: relative;
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-separator-gray);
+  background-color: var(--color-card-bg);
+}
+
+/* New Toshl message input styling */
+.toshl-message-input {
+  border-top: 1px solid var(--color-separator-gray);
+  background-color: var(--color-card-bg);
+}
+
+/* Prevent any phantom touch areas */
+.input-area::after,
+.toshl-message-input::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: transparent;
+  pointer-events: none;
+}
+
+/* Mobile Safari specific fixes */
+@supports (-webkit-appearance: none) {
+  .chat-container {
+    height: 100vh;
+    height: calc(var(--vh, 1vh) * 100);
+  }
+}
+
+/* Prevent bounce scrolling on iOS and improve mobile experience */
+.chat-container,
+.input-area {
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: none;
+}
+
+/* Ensure proper stacking and positioning for mobile navigation bars */
+@media (max-width: 768px) {
+  /* Prevent content from being hidden behind system UI */
+  .toshl-main-container {
+    /* Ensure content respects safe areas */
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  
+  /* Input area positioning improvements */
+  .toshl-message-input {
+    /* Ensure it's always above navigation bars */
+    position: relative;
+    z-index: 1000;
+    
+    /* Prevent keyboard from pushing content up too much */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+  
+  /* Handle virtual keyboard appearance */
+  @media (max-height: 500px) {
+    .toshl-message-input {
+      /* Reduce padding when keyboard is likely visible */
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+  }
+}
+
+/* Additional mobile viewport fixes */
+@supports (padding: max(0px)) {
+  .input-area {
+    padding-left: max(1rem, env(safe-area-inset-left));
+    padding-right: max(1rem, env(safe-area-inset-right));
+  }
+}
+
+/* Ensure proper touch targets on mobile with navigation bar considerations */
+@media (max-width: 768px) {
+  .toshl-message-input button {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .toshl-message-input textarea {
+    min-height: 44px;
+  }
+  
+  /* Ensure form elements stay centered */
+  .toshl-message-input form {
+    align-items: center;
+  }
+  
+  /* Additional spacing for devices with prominent navigation bars */
+  @media (max-height: 700px) {
+    .toshl-message-input {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 16px);
+    }
+  }
+  
+  /* Extra spacing for very small screens (older Android phones) */
+  @media (max-height: 600px) {
+    .toshl-message-input {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 20px);
+    }
+  }
+  
+  /* Landscape orientation handling */
+  @media (orientation: landscape) {
+    .toshl-message-input {
+      padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px);
+    }
+  }
+}
+
+/* Mobile viewport and safe area handling with Android navigation bar support */
+@media (max-width: 768px) {
+  /* Modern solution using dynamic viewport height */
+  .toshl-main-container {
+    height: 100dvh; /* Dynamic viewport height - adjusts automatically */
+    height: 100vh; /* Fallback for older browsers */
+  }
+  
+  /* Input area with comprehensive Android navigation bar handling */
+  .toshl-message-input {
+    /* Safe area insets for devices that support it */
+    padding-bottom: max(env(safe-area-inset-bottom, 0px), 12px);
+    
+    /* Ensure proper positioning above navigation bars */
+    position: relative;
+    z-index: 10;
+  }
+  
+  /* Mobile-optimized chat bubbles */
+  .message-bubble {
+    font-size: 16px; /* Ensure minimum 16px for iOS zoom prevention */
+    /* Remove width constraints - use natural width on mobile too */
+  }
+  
+  /* Progressive enhancement for modern browsers with dvh support */
+  @supports (height: 100dvh) {
+    .toshl-main-container {
+      height: 100dvh;
+    }
+  }
+  
+  /* iOS Safari specific fix for older versions */
+  @supports (-webkit-touch-callout: none) and (not (height: 100dvh)) {
+    .toshl-main-container {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Android Chrome specific handling */
+  @supports (height: -webkit-fill-available) and (not (height: 100dvh)) {
+    .toshl-main-container {
+      height: -webkit-fill-available;
+    }
+  }
+  
+  /* Fallback for very old browsers using JavaScript-set custom properties */
+  @supports ((not (height: 100dvh)) and (not (height: -webkit-fill-available))) {
+    .toshl-main-container {
+      height: calc(var(--vh, 1vh) * 100);
+      height: var(--viewport-height, 100vh);
+    }
+  }
+  
+  /* Additional fallback class for JavaScript-enhanced elements */
+  .js-viewport-height {
+    height: var(--viewport-height, 100vh);
+  }
+  
+  /* Debug utility classes (remove in production) */
+  .debug-viewport-info::after {
+    content: 'VH: ' var(--vh, 'N/A') ' | DVH: ' attr(data-dvh) ' | Fill: ' attr(data-fill);
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background: rgba(0, 0, 0, 0.8);
+    color: white;
+    padding: 4px 8px;
+    font-size: 12px;
+    z-index: 9999;
+    border-radius: 4px;
+  }
+}
+
+/* Remove all responsive width constraints - use natural width on all screen sizes */
+
+/* Safe area utility class - deprecated, keeping for compatibility */
+.safe-area-bottom {
+  padding-bottom: env(safe-area-inset-bottom, 0);
+}

@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    
+    <!-- Basic Meta Tags -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <meta name="description" content="A conversational web application to manage your Toshl Finance data using natural language, powered by Google Gemini AI. Add expenses, track income, and manage finances through simple chat commands." />
+    <meta name="keywords" content="Toshl Finance, expense tracker, budget management, AI chat, Google Gemini, personal finance, expense logging, voice recording, receipt scanning" />
+    <meta name="author" content="Toshl WebApp Chat" />
+    <meta name="robots" content="index, follow" />
+    <meta name="language" content="English" />
+    <meta name="theme-color" content="#10b981" />
+    
+    <!-- Favicon and Icons -->
+    <link rel="icon" type="image/webp" href="/logo.webp" />
+    <link rel="apple-touch-icon" href="/512icon.webp" />
+    <link rel="manifest" href="/manifest.json" />
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://toshl-webapp-chat.vercel.app/" />
+    <meta property="og:title" content="Toshl WebApp Chat - AI-Powered Finance Management" />
+    <meta property="og:description" content="Manage your Toshl Finance data using natural language with Google Gemini AI. Add expenses, track income, upload receipts, and record voice messages for hands-free finance management." />
+    <meta property="og:image" content="https://toshl-webapp-chat.vercel.app/og.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Toshl WebApp Chat - AI-powered conversational finance management interface" />
+    <meta property="og:site_name" content="Toshl WebApp Chat" />
+    <meta property="og:locale" content="en_US" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:url" content="https://toshl-webapp-chat.vercel.app/" />
+    <meta name="twitter:title" content="Toshl WebApp Chat - AI-Powered Finance Management" />
+    <meta name="twitter:description" content="Manage your Toshl Finance data using natural language with Google Gemini AI. Add expenses, track income, upload receipts, and record voice messages." />
+    <meta name="twitter:image" content="https://toshl-webapp-chat.vercel.app/og.jpg" />
+    <meta name="twitter:image:alt" content="Toshl WebApp Chat - AI-powered conversational finance management interface" />
+    <meta name="twitter:creator" content="@toshl" />
+    <meta name="twitter:site" content="@toshl" />
+    
+    <!-- Additional SEO Meta Tags -->
+    <meta name="application-name" content="Toshl WebApp Chat" />
+    <meta name="msapplication-TileColor" content="#10b981" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Toshl WebApp Chat",
+      "description": "A conversational web application to manage your Toshl Finance data using natural language, powered by Google Gemini AI",
+      "url": "https://toshl-webapp-chat.vercel.app/",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "Web Browser",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "featureList": [
+        "Natural language expense tracking",
+        "Voice recording for hands-free logging",
+        "Receipt image processing",
+        "Toshl Finance API integration",
+        "Google Gemini AI integration",
+        "Offline support",
+        "Real-time budget insights"
+      ],
+      "screenshot": "https://toshl-webapp-chat.vercel.app/og.jpg",
+      "softwareVersion": "1.0.0",
+      "author": {
+        "@type": "Organization",
+        "name": "Toshl WebApp Chat"
+      }
+    }
+    </script>
+    
+    <!-- Preconnect for Performance -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- DNS Prefetch for External APIs -->
+    <link rel="dns-prefetch" href="//generativelanguage.googleapis.com">
+    <link rel="dns-prefetch" href="//toshl.com">
+    
+    <title>Toshl WebApp Chat - AI-Powered Finance Management</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
