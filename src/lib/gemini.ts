@@ -30,7 +30,7 @@ let cacheAttempted = false; // Track if cache creation has been attempted to avo
 /**
  * Calls the Gemini API to process the user's request.
  * @param apiKey - The Gemini API key.
- * @param model - The Gemini model name (e.g., 'gemini-pro').
+ * @param model - The Gemini model name (e.g., 'gemini-2.5-pro').
  * @param userMessage - The natural language input from the user.
  * @param categories - Array of available Toshl categories.
  * @param tags - Array of available Toshl tags.

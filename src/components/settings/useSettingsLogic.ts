@@ -8,10 +8,10 @@ import * as STRINGS from '../../constants/strings';
 // Define all model options (copied from SettingsPage)
 export const geminiModelOptions = [
     { value: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro (Advanced reasoning)' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash (Old fast model)' },
-    { value: 'gemini-2.0-flash-lite', label: 'Gemini 2.0 Flash Lite (Old cheap and fast model)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.0 Flash (Old fast model)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.0 Flash Lite (Old cheap and fast model)' },
     { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (Adaptive thinking, cost efficiency)' },
-    { value: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
+    { value: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash Lite (Most cost efficiency)' },
 ];
 
 // Define the hook's arguments
