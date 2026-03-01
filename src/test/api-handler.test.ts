@@ -26,7 +26,7 @@ describe('API Handler - Image Message Processing', () => {
       toshlApiKey: encryptApiKey('test-toshl-key'),
       geminiApiKey: encryptApiKey('test-gemini-key'),
       currency: 'USD',
-      geminiModel: 'gemini-1.5-flash',
+      geminiModel: 'gemini-2.5-flash',
       toshlDataFetched: 'true',
       toshlAccounts: JSON.stringify([{ id: 'acc1', name: 'Test Account', balance: 1000, currency: { code: 'USD' } }]),
       toshlCategories: JSON.stringify([{ id: 'cat1', name: 'Food', type: 'expense' }]),
@@ -109,7 +109,7 @@ describe('API Handler - Image Message Processing', () => {
 
         expect(processUserRequestViaGemini).toHaveBeenCalledWith(
           'test-gemini-key',
-          'gemini-1.5-flash',
+          'gemini-2.5-flash',
           'Show me recent expenses',
           expect.any(Array),
           expect.any(Array),
