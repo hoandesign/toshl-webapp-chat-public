@@ -1,0 +1,252 @@
+# Toshl WebApp Chat – Logic & Architecture Overview
+
+This document provides a clear, up-to-date explanation of the core architecture, data flow, and logic of the Toshl WebApp Chat application. It is based on the current codebase, including all major React components, hooks, and supporting libraries.
+
+---
+
+## Application Flow Diagram
+
+```mermaid
+flowchart TD
+    subgraph UI
+        A[App.tsx]
+        B[SettingsPage.tsx]
+        C[ChatInterface.tsx]
+    end
+    subgraph Hooks
+        D[useSettingsLogic.ts]
+        E[useChatLogic.ts]
+    end
+    subgraph API
+        F[apiHandler.ts]
+        G[lib/toshl.ts]
+        H[lib/gemini.ts]
+        I[lib/gemini/prompt.ts]
+    end
+    subgraph Storage
+        J[localStorage]
+    end
+
+    A -- opens/closes --> B
+    A -- renders --> C
+    B -- uses --> D
+    C -- uses --> E
+    D -- reads/writes --> J
+    E -- reads/writes --> J
+    E -- calls --> F
+    F -- orchestrates --> G
+    F -- orchestrates --> H
+    H -- uses --> I
+    G -- reads/writes --> J
+    F -- reads/writes --> J
+```
+
+---
+
+## 1. Core Architecture
+
+- **App.tsx**: The root component. Handles layout, initialization, and conditional rendering of the chat and settings interfaces. Checks for required API keys in `localStorage` and manages the visibility of the settings sidebar.
+- **ChatInterface.tsx**: The main chat UI. Renders header, messages, input, and controls. Delegates all chat-related state and logic to the `useChatLogic` hook.
+- **SettingsPage.tsx**: UI for user configuration. Lets users enter API keys, select currency/Gemini model, and clear chat history. Delegates logic and state to `useSettingsLogic`.
+- **useChatLogic.ts**: Custom React hook providing all chat state and logic, including message management, API interactions, mention handling, offline support, history fetching, and image upload handling.
+- **useSettingsLogic.ts**: Custom hook for settings state and logic. Handles API key validation, metadata fetching, and persistence to `localStorage`.
+- **apiHandler.ts**: Centralizes all API calls and orchestration between Gemini and Toshl. Handles request routing, data formatting, and error handling.
+- **lib/toshl.ts**: Handles all Toshl API operations (fetch, add, edit, delete entries and metadata). Used by `apiHandler.ts`.
+- **lib/gemini.ts**: Handles all Gemini API interactions, including prompt construction, response parsing, and multimodal content support (text + images + audio).
+- **lib/gemini/prompt.ts**: Builds dynamic prompts for Gemini using templates and runtime data.
+- **lib/audio.ts**: Handles audio recording, validation, and processing for voice messages.
+- **VoiceRecorder.tsx**: Audio recording component with real-time feedback, duration tracking, and validation.
+- **DebugModal.tsx, GlobalDebugModal.tsx**: Debug interfaces for inspecting API calls, request/response data, and troubleshooting.
+- **AccountBalanceCard.tsx, BudgetCard.tsx, HistoryCard.tsx**: Specialized UI components for displaying Toshl account, budget, and entry data in chat.
+- **localStorage**: Used throughout to persist API keys, settings, Toshl metadata, chat history, and user preferences.
+
+---
+
+## 2. Initialization & State Flow
+
+### On App Startup (App.tsx)
+1. On mount, checks for `toshlApiKey` and `geminiApiKey` in `localStorage`.
+2. If missing, opens the settings sidebar for user input.
+3. Loads the `hideNumbers` preference from storage.
+4. Sets up listeners for online/offline browser events (via `useChatLogic`).
+5. Lazy-loads `ChatInterface` and `SettingsPage` for performance.
+
+---
+
+## 3. Settings Management (SettingsPage.tsx & useSettingsLogic.ts)
+1. User enters Toshl and Gemini API keys, selects currency/model, and saves.
+2. Inputs are validated by `useSettingsLogic`.
+3. Valid settings are saved to `localStorage`.
+4. Metadata (accounts, categories, tags) is fetched from Toshl and stored locally.
+5. Settings UI displays feedback and closes on success.
+
+---
+
+## 4. Chat Logic & Message Flow (ChatInterface.tsx & useChatLogic.ts)
+
+### Sending a Message (Online)
+1. User types and submits a request (optionally with an attached image or recorded audio).
+2. Input is validated (non-empty, not offline, not loading).
+3. User message is added to chat state (including image/audio data if present).
+4. Loading indicator is shown.
+5. `handleFormSubmit` calls `handleProcessUserRequestApi` (API handler).
+6. API handler:
+   - Loads all required data (API keys, settings, Toshl metadata) from `localStorage`.
+   - Prepares chat history for Gemini (including image/audio content in multimodal format).
+   - Sends request to Gemini with text, image, and/or audio content and parses action/response.
+   - If needed, calls Toshl API (add/edit/delete entry, fetch history, accounts, budgets).
+   - Formats all results into `Message` objects for display.
+7. Chat state is updated with new messages, context, and any updated entry IDs.
+8. Loading indicator is removed, UI scrolls to bottom, and state is persisted to `localStorage`.
+
+### Fetching History (handleFetchDateRange)
+1. User clicks the History button.
+2. If offline, an error is shown.
+3. Otherwise, loading state is set and a loading message is displayed.
+4. API handler fetches entries for the selected date range and formats them as messages.
+5. Results are displayed, including a 'See More' option if truncated.
+
+### Deleting an Entry
+1. User clicks the delete icon on an entry.
+2. `handleDeleteEntry` validates the request and calls the API handler.
+3. Toshl API is called to delete the entry.
+4. On success, the message is updated to reflect deletion. On error, an error message is shown.
+
+### Showing More Entries/Accounts/Budgets
+- 'See More' cards open a bottom sheet with the full list for the selected group (entries, accounts, budgets).
+
+---
+
+## 5. Offline Support
+- `useChatLogic` tracks online/offline status.
+- If offline, submitted messages are marked as 'pending' and saved locally with a unique `offlineId`.
+- When online, pending messages are automatically retried and updated based on API responses.
+- Errors are handled and surfaced to the user if retries fail.
+
+---
+
+## 6. Mention Feature
+- Typing `@` in the chat input triggers a popup with filtered suggestions for Toshl accounts, categories, and tags.
+- Suggestions are dynamically filtered as the user types.
+- Selecting a suggestion inserts a formatted mention into the input.
+- The popup closes on space, deletion, cursor movement, or submit.
+
+---
+
+## 7. Image Message Rendering & Processing
+- Users can attach images to their messages using the image upload button in the chat interface.
+- **Caption-free sending**: Images can be sent without requiring text captions for streamlined receipt processing.
+- **Visual display**: Images are displayed directly in the chat interface with proper aspect ratio and sizing.
+- **Image caching**: Browser-based cache stores resized images for display performance using IndexedDB.
+- **Metadata display**: Shows image dimensions, file size, and format information alongside images.
+- **Multimodal AI processing**: The Gemini API receives both text and image content in multimodal format.
+- **Files API optimization**: Images are preferentially uploaded to the Gemini Files API for better performance and larger file support.
+- **Fallback handling**: If Files API upload fails, the system falls back to inline base64 data with MIME type encoding.
+- **Chat history optimization**: Old images in chat history are replaced with "[image]" placeholders when sending to AI to reduce payload size.
+- **Context preservation**: Only current/new images are sent to AI while maintaining conversation context.
+- **Error handling**: Graceful degradation for image processing failures with user-friendly error messages.
+- **Accessibility**: Visual indicators distinguish image messages from text-only messages.
+
+## 8. Voice Message Recording & Processing
+- Users can record voice messages using the microphone button in the chat interface.
+- **Real-time recording**: Live duration tracking with visual feedback and recording status indicators.
+- **Audio validation**: File size, format, and duration validation before processing (max 60 seconds, 10MB limit).
+- **Browser compatibility**: Uses MediaRecorder API with fallback MIME type detection for cross-browser support.
+- **Optimal encoding**: Prefers Opus codec in WebM container for best Gemini API compatibility.
+- **Permission handling**: Graceful handling of microphone permission requests and denials.
+- **Auto-stop**: Automatic recording termination at maximum duration to prevent oversized files.
+- **Multimodal AI processing**: Audio is sent to Gemini API for speech-to-text and financial data extraction.
+- **Error handling**: Comprehensive error handling for hardware issues, permissions, and processing failures.
+- **Cancellation support**: Users can cancel recordings before completion.
+
+## 9. Debug System & Development Tools
+- **Individual message debug**: Each message with API interactions includes debug information accessible via debug button.
+- **Global debug view**: Comprehensive debug interface showing all messages with debug data in a searchable, filterable view.
+- **API call tracking**: Detailed logging of all Gemini and Toshl API requests, responses, and errors.
+- **Request inspection**: Full request bodies, headers, and payloads for both Gemini and Toshl APIs.
+- **Response analysis**: Raw and processed responses with parsing details and error information.
+- **Copy functionality**: Easy copying of debug data in JSON format for external analysis.
+- **Tabbed interface**: Organized presentation of request data, response data, and API call sequences.
+- **Timestamp tracking**: All debug information includes precise timestamps for performance analysis.
+
+---
+
+## 10. Data Persistence & Local Storage
+- API keys, user settings, Toshl metadata, chat history, and preferences (like `hideNumbers`) are all stored in `localStorage`.
+- State is loaded from storage on startup and updated after relevant actions.
+
+---
+
+## 11. Error Handling & User Feedback
+- All API operations are wrapped with error handling.
+- Errors (e.g., offline actions, failed API calls) are surfaced in the chat as system messages or UI toasts.
+- Loading, retry, and deletion states are clearly indicated in the UI.
+- Debug information is captured for all API interactions to aid in troubleshooting.
+
+---
+
+## 12. Extensibility
+- The architecture is modular, with clear separation between UI, logic hooks, and API handlers.
+- Adding new Toshl or Gemini features typically involves updating the API handler, logic hook, and possibly new UI cards/components.
+- Debug system provides comprehensive visibility into all API interactions for development and troubleshooting.
+
+---
+
+## Directory Structure
+
+```
+toshl-webapp-chat/
+├── public/                    # Static assets (images, icons, etc.)
+├── src/
+│   ├── App.tsx                # Root React component
+│   ├── main.tsx               # Entry point
+│   ├── assets/                # App-specific images/assets
+│   ├── components/            # UI components
+│   │   ├── ChatInterface.tsx      # Main chat UI
+│   │   ├── SettingsPage.tsx       # Settings UI
+│   │   ├── LoadingFallback.tsx    # Loading UI
+│   │   ├── chat/
+│   │   │   ├── AccountBalanceCard.tsx
+│   │   │   ├── BudgetCard.tsx
+│   │   │   ├── HistoryCard.tsx
+│   │   │   ├── MentionSuggestionsPopup.tsx
+│   │   │   ├── MessageRenderer.tsx
+│   │   │   ├── SeeMoreAccountsCard.tsx
+│   │   │   ├── SeeMoreEntriesCard.tsx
+│   │   │   ├── BottomSheet.tsx
+│   │   │   ├── VoiceRecorder.tsx
+│   │   │   ├── DebugModal.tsx
+│   │   │   ├── GlobalDebugModal.tsx
+│   │   │   ├── apiHandler.ts
+│   │   │   ├── types.ts
+│   │   │   └── useChatLogic.ts
+│   │   └── settings/
+│   │       └── ...             # Settings-related components
+│   ├── constants/
+│   │   └── strings.ts          # String constants
+│   ├── lib/
+│   │   ├── toshl.ts            # Toshl API logic
+│   │   ├── gemini.ts           # Gemini API logic
+│   │   ├── prompts.ts          # Prompt templates
+│   │   ├── audio.ts            # Audio recording and processing
+│   │   ├── gemini/             # Gemini helpers
+│   │   │   ├── prompt.ts       # Prompt construction logic
+│   │   └── toshl/              # Toshl helpers
+│   ├── utils/
+│   │   └── formatting.ts       # Formatting helpers
+│   └── index.css, App.css      # Stylesheets
+├── index.html                  # Main HTML file
+├── package.json                # Project metadata and dependencies
+├── tailwind.config.cjs         # Tailwind CSS config
+├── tsconfig*.json              # TypeScript configs
+├── vite.config.ts              # Vite config
+├── README.md                   # Project overview
+├── logic.md                    # Architecture & logic details
+└── ...                         # Other configs and files
+```
+
+This structure reflects the modular, feature-oriented organization of the codebase. Major logic is separated into UI components, hooks, API handlers, and helpers for maintainability and clarity.
+
+---
+
+*This document is based on direct inspection of the current codebase (January 2025). For further technical details, see the source files referenced above.*

@@ -1,0 +1,5 @@
+Contact: https://github.com/toshl-webapp-chat/issues
+Expires: 2025-12-31T23:59:59.000Z
+Acknowledgments: https://github.com/toshl-webapp-chat
+Preferred-Languages: en
+Canonical: https://toshl-webapp-chat.vercel.app/.well-known/security.txt
