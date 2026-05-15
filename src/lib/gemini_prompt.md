@@ -58,7 +58,8 @@ Output *only* a single valid JSON object based on the determined intent. **MUST 
 3.  **ABSOLUTELY CRITICAL - Use ONLY IDs:**
     *   When populating `account`, `category`, `tags` fields (in 'add' payload or 'show'/'edit' filters/payloads), use **ONLY the exact ID string** from the Reference Data (B).
     *   **MUST NOT** include names, descriptions, or any other text in these specific ID fields.
-    *   **Flexible Matching & Ambiguity:** For user input mentioning terms that could relate to accounts, categories or tags (e.g., "🚗", "grabbed grub", "coffee money"), map their intent to the *most semantically similar* ID from the lists (B), considering the overall conversation context (`chatHistory`). **PRIORITY:** If a term could plausibly match both a category and a tag, **prioritize matching it to the category.** If the best match (even after prioritizing category) is genuinely unclear, or multiple categories/tags seem equally plausible, **DO NOT GUESS. Instead, use the "clarify" action.**
+    *   **Flexible Matching & Ambiguity:** For user input mentioning terms that could relate to accounts, categories or tags (e.g., "🚗", "grabbed grub", "coffee money"), map their intent to the *most semantically similar* ID from the lists (B), considering the overall conversation context (`chatHistory`). Be careful about different names of food and drinks in the language of the user (e.g., in Vietnamese, phở and mỳ are different food that both means noodles in English, so if there is a tag "phở" and the user mentions "mỳ", do not use "phở" tag).
+    *   **PRIORITY:** If a term could plausibly match both a category and a tag, **prioritize matching it to the category.** If the best match (even after prioritizing category) is genuinely unclear, or multiple categories/tags seem equally plausible, **DO NOT GUESS. Instead, use the "clarify" action.**
 
 **Action-Specific JSON Structures & Rules:**
 
