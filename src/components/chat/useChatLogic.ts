@@ -1002,6 +1002,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
             const currentLastSuccessfulEntryId = lastSuccessfulEntryId;
 
             let resultMessages: Message[] = [];
+            let updatedEntryIdForMarking: string | undefined;
 
             try {
                 const apiResult = await handleProcessUserRequestApi(
@@ -1305,7 +1306,7 @@ const [mentionSuggestions, setMentionSuggestions] = useState<MentionSuggestion[]
         const currentLastSuccessfulEntryId = lastSuccessfulEntryId; // Use current context
 
         let resultMessages: Message[] = [];
-        let updatedEntryIdForMarking: string | undefined = undefined;
+        let updatedEntryIdForMarking: string | undefined;
 
         try {
             const apiResult = await handleProcessUserRequestApi(
